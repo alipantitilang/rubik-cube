@@ -1,5 +1,18 @@
-import { GESTURE_CONFIG } from './gesture.js';
-import { resolveDragTurn, getDragStickerContext } from './drag-move-resolver.js';
+import { resolveDragTurn } from './drag-move-resolver.js';
+
+export const GESTURE_CONFIG = Object.freeze({
+  minDistancePx: 10,
+  pixelsPerQuarterTurn: 82,
+  commitProgress: 0.5
+});
+
+function getDragStickerContext({ physicalStickerFace, cubieType, cubiePosition }) {
+  return Object.freeze({
+    physicalStickerFace,
+    cubieType,
+    cubiePosition: [...cubiePosition]
+  });
+}
 
 /**
  * Phase 5 direct-geometric interaction owner.
@@ -47,12 +60,17 @@ export class ManualInteractionController {
     this._onPointerMove = this._onPointerMove.bind(this);
     this._onPointerUp = this._onPointerUp.bind(this);
     this._onPointerCancel = this._onPointerCancel.bind(this);
+    this._onLostPointerCapture = this._onLostPointerCapture.bind(this);
+    this._onWindowBlur = this._onWindowBlur.bind(this);
 
     domElement.style.touchAction = 'none';
     domElement.addEventListener('pointerdown', this._onPointerDown);
     domElement.addEventListener('pointermove', this._onPointerMove);
     domElement.addEventListener('pointerup', this._onPointerUp);
     domElement.addEventListener('pointercancel', this._onPointerCancel);
+    domElement.addEventListener('lostpointercapture', this._onLostPointerCapture);
+    this._window = typeof window !== 'undefined' ? window : null;
+    this._window?.addEventListener('blur', this._onWindowBlur);
   }
 
   setEnabled(enabled) {
@@ -67,6 +85,8 @@ export class ManualInteractionController {
     el.removeEventListener('pointermove', this._onPointerMove);
     el.removeEventListener('pointerup', this._onPointerUp);
     el.removeEventListener('pointercancel', this._onPointerCancel);
+    el.removeEventListener('lostpointercapture', this._onLostPointerCapture);
+    this._window?.removeEventListener('blur', this._onWindowBlur);
     this.cameraController.setPointerOrbitEnabled?.(false);
   }
 
@@ -198,8 +218,29 @@ export class ManualInteractionController {
   }
 
   _cancelPointer(cancelInteractive) {
-    if (this._pointer?.mode === 'face-drag' && cancelInteractive) this.endInteractive?.({ commit: false, durationMs: 0 });
+    if (this._pointer?.mode === 'face-drag' && cancelInteractive) {
+      this.endInteractive?.({ commit: false, durationMs: 0 });
+    }
     if (this._pointer) this.domElement.releasePointerCapture?.(this._pointer.id);
+    this._pointer = null;
+  }
+
+  _onLostPointerCapture(event) {
+    if (this._pointer?.id !== event.pointerId) return;
+    // A browser/OS pointer-capture loss can happen without a pointerup
+    // (window switch, device interruption, browser gesture cancellation).
+    // Never leave the interactive runtime locked in that state.
+    if (this._pointer.mode === 'face-drag') {
+      this.endInteractive?.({ commit: false, durationMs: 0 });
+    }
+    this._pointer = null;
+  }
+
+  _onWindowBlur() {
+    if (!this._pointer) return;
+    if (this._pointer.mode === 'face-drag') {
+      this.endInteractive?.({ commit: false, durationMs: 0 });
+    }
     this._pointer = null;
   }
 

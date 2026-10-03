@@ -42,6 +42,18 @@
     </aside>
   </main>
 
+  <script>
+    window.__rubikBooted = false;
+    window.setTimeout(() => {
+      if (window.__rubikBooted) return;
+      const status = document.querySelector('#status');
+      if (status) {
+        status.textContent = 'Preview gagal memuat modul 3D. Jalankan lewat HTTP server.';
+        status.dataset.error = 'true';
+      }
+    }, 4000);
+  </script>
+
   <script type="module">
     import { createSolvedCube } from './src/core/cube.js';
     import { CubeTurnRuntime } from './src/animation/cube-turn-runtime.js';
@@ -50,6 +62,7 @@
     import { ManualInteractionController } from './src/interaction/manual-controller.js';
 
     const renderer = new RubikRenderer(document.querySelector('#cube'));
+    window.__rubikBooted = true;
     const adapter = new TurnRenderAdapter(renderer);
     const runtime = new CubeTurnRuntime({
       cubeState: createSolvedCube(),

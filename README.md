@@ -90,7 +90,6 @@ Center stickers use the same model. A middle slice carries 4 edge cubies + 4 cen
 │   │   ├── cube-turn-runtime.js
 │   │   └── shuffle-controller.js
 │   ├── interaction/
-│   │   ├── gesture.js
 │   │   ├── drag-move-resolver.js
 │   │   ├── manual-controller.js
 │   │   ├── cube-orientation-state.js
@@ -107,7 +106,7 @@ Center stickers use the same model. A middle slice carries 4 edge cubies + 4 cen
 
 There is intentionally **one production HTML entry point**: `index.html`.
 
-Future changes should update this HTML rather than creating another phase preview HTML.
+Future changes should update this HTML rather than creating another phase preview HTML. The production entry point is always `index.html`.
 
 ## GitHub Pages
 
@@ -211,3 +210,18 @@ When a phase changes the active product:
 All fixes remain traceable in `FIX_LOG.md`.
 
 The current Phase 5 architecture is the result of the later direct-geometric and sticker-position decisions, not the earlier POV/notation experiments.
+
+## Repository cleanup status
+
+The production entry point remains `index.html`; phase-specific HTML files are not recreated.
+
+Current source modules are intentionally separated by responsibility:
+- `src/core/` — cube state, sticker identity, generic turns, and Phase 6 shuffle generation.
+- `src/animation/` — turn animation/runtime and Phase 6 shuffle lifecycle.
+- `src/interaction/` — geometric drag resolution, manual pointer ownership, and cube orientation.
+- `src/render/` — render model, Three.js renderer, and temporary turn adapter.
+- `src/camera-*` — camera state and camera input.
+
+`src/interaction/gesture.js` was removed in FIX-526 because its only production responsibility was small gesture configuration/helper logic now owned by `manual-controller.js`.
+
+The Phase 6 shuffle modules remain even though `index.html` does not wire them yet; they are planned production code, not orphaned leftovers.

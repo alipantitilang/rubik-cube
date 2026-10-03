@@ -570,3 +570,5 @@ Sebelum fase ditandai `COMPLETE`:
 - **Invariant:** Sticker identity, sticker-position model, generic `{axis, layer, quarterTurns}` turn, center movement, cube orientation quaternion, dan gesture resolution tidak diubah.
 - **Acceptance:** Single RAF architecture, shared render resources, 26 cubie bodies, maksimal 3 sticker meshes/cubie, no dynamic shadow map, syntax checks, dan full regression suite lulus.
 
+
+| FIX-526 | Post-Phase 5 | Interaction lifecycle / Source cleanup | FIXED | Mencegah manual interaction tertahan setelah pointer capture hilang atau window kehilangan fokus; konfigurasi gesture dan helper kecil digabung ke `manual-controller.js`, alias resolver lama dihapus, dan regression test untuk release→settle→unlock ditambahkan. Phase 5 tetap COMPLETE. | `src/interaction/manual-controller.js`, `src/interaction/drag-move-resolver.js`, `tests/interactive-drag.test.js`, `index.html`, `package.json`, `README.md`, `PHASE_05_MANUAL_INTERACTION.md` |

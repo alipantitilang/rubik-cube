@@ -117,3 +117,32 @@ test('input lock prevents gesture ownership', () => {
   assert.equal(camera.lastOrbit, undefined);
   controller.dispose();
 });
+
+
+test('lost pointer capture cancels an in-progress interactive turn so input cannot remain stuck', () => {
+  let ended = null;
+  const ctx = makeController({
+    pickFace: () => ({ face: 'F', normal: [0,0,1], cubieId: 'c', cubieType: 'corner', logicalPosition: [-1,1,1] })
+  });
+  // Recreate with interactive callbacks because makeController's enqueue path is intentionally minimal.
+  ctx.controller.dispose();
+  const el = makeElement();
+  const camera = makeCamera();
+  const cube = makeCubeOrientation();
+  const controller = new ManualInteractionController({
+    domElement: el,
+    cameraController: camera,
+    cubeOrientationController: cube,
+    pickFace: () => ({ face: 'F', normal: [0,0,1], cubieId: 'c', cubieType: 'corner', logicalPosition: [-1,1,1] }),
+    beginInteractive: () => true,
+    updateInteractive: () => {},
+    endInteractive: options => { ended = options; }
+  });
+
+  el.emit('pointerdown', makeEvent());
+  el.emit('pointermove', makeEvent({ clientX: 140, clientY: 100 }));
+  el.emit('lostpointercapture', makeEvent());
+
+  assert.deepEqual(ended, { commit: false, durationMs: 0 });
+  controller.dispose();
+});

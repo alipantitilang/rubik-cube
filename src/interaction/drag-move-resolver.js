@@ -85,9 +85,6 @@ export function resolveDragTurn({
   return createTurn({ axis: layerAxis.name, layer, quarterTurns });
 }
 
-// Alias kept for callers that used the previous resolver name.
-export const resolveDragMove = resolveDragTurn;
-
 export function getDragStickerContext({ physicalStickerFace, cubieType, cubiePosition }) {
   return Object.freeze({
     physicalStickerFace,

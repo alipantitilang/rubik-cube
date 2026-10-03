@@ -58,13 +58,13 @@ Setelah dicatat di sini:
 | FIX-505 | Phase 5 | Interaction / Animation | FIXED | Mengubah manual face turn menjadi live drag: layer mengikuti displacement pointer dan snap/cancel saat release. | `src/interaction/gesture.js`, `src/interaction/manual-controller.js`, `src/animation/cube-turn-runtime.js`, `PHASE_05_MANUAL_INTERACTION.md` |
 | FIX-506 | Phase 5 | Interaction / Coverage | FIXED | Semua sticker center, edge, dan corner menggunakan kontrak picking dan interactive turn yang sama. | `src/render/cube-renderer.js`, `src/interaction/manual-controller.js`, `tests/interactive-drag.test.js` |
 | FIX-507 | Phase 5 | Gesture | FIXED | Diagonal live drag diselesaikan berdasarkan dominant axis sehingga arah drag alami tetap dapat memutar face. | `src/interaction/gesture.js`, `tests/interactive-drag.test.js` |
-| FIX-508 | Phase 5 | Architecture / Interaction | FIXED | Mengganti gesture face-plane lama dengan POV front-face method: dominant camera face menjadi virtual F dan R/L/U/D/B diturunkan relatif terhadap POV. | `src/interaction/pov-move-resolver.js`, `src/interaction/manual-controller.js`, `PHASE_05_MANUAL_INTERACTION.md` |
+| FIX-508 | Phase 5 | Architecture / Interaction | FIXED | Mengganti gesture face-plane lama dengan POV front-face method: dominant camera face menjadi virtual F dan R/L/U/D/B diturunkan relatif terhadap POV. | `src/interaction/drag-move-resolver.js`, `src/interaction/manual-controller.js`, `PHASE_05_MANUAL_INTERACTION.md` |
 | FIX-509 | Phase 5 / Phase 1 | Move Engine | FIXED | Menambahkan M/E/S sebagai legal slice moves dengan konvensi M mengikuti L, E mengikuti D, S mengikuti F. | `src/core/cube.js`, `05_MOVE_ENGINE.md`, `tests/cube.test.js` |
-| FIX-510 | Phase 5 | Interaction / Renderer | FIXED | Picking sekarang mengembalikan `cubieType` dan `logicalPosition` agar resolver tidak menebak struktur cubie dari render transform. | `src/render/cube-renderer.js`, `tests/pov-move-resolver.test.js` |
+| FIX-510 | Phase 5 | Interaction / Renderer | FIXED | Picking sekarang mengembalikan `cubieType` dan `logicalPosition` agar resolver tidak menebak struktur cubie dari render transform. | `src/render/cube-renderer.js`, `tests/drag-move-resolver.test.js` |
 | FIX-511 | Phase 5 | Cleanup | FIXED | Menghapus contract gesture lama yang memiliki mapping face langsung dan menjadikan POV resolver sebagai satu-satunya sumber aturan manual interaction. | `src/interaction/gesture.js`, `src/interaction/index.js`, `tests/interaction.test.js` |
-| FIX-512 | Phase 5 | Cube Model / Renderer / Interaction | FIXED | Menetapkan canonical color orientation: U yellow, D white, F red, R green, B orange, L blue; hanya F/R/B/L menjadi POV front. | `src/core/cube.js`, `src/render/cube-render-model.js`, `src/interaction/pov-move-resolver.js`, `21_COLOR_ORIENTATION_AND_POV.md` |
-| FIX-513 | Phase 5 / Phase 1 | Move Engine / Animation | FIXED | Mengoreksi M/E/S agar hanya memutar 4 middle-slice edge cubies; center cubies tetap fixed. | `src/core/cube.js`, `src/animation/face-turn-animator.js`, `tests/cube.test.js`, `tests/animation.test.js` |
-| FIX-514 | Phase 5 | Interaction / Coverage | FIXED | Yellow/White centers tetap draggable sebagai U/D anchors tanpa memperoleh hak menjadi POV front. | `src/interaction/pov-move-resolver.js`, `tests/pov-move-resolver.test.js` |
+| FIX-512 | Phase 5 | Cube Model / Renderer / Interaction | FIXED | Menetapkan canonical color orientation: U yellow, D white, F red, R green, B orange, L blue; hanya F/R/B/L menjadi POV front. | `src/core/cube.js`, `src/render/cube-render-model.js`, `src/interaction/drag-move-resolver.js`, `21_INTERACTION_GEOMETRY_AND_STICKER_IDENTITY.md` |
+| FIX-513 | Phase 5 / Phase 1 | Move Engine / Animation | FIXED | Mengoreksi M/E/S agar hanya memutar 4 middle-slice edge cubies; center cubies tetap fixed. | `src/core/cube.js`, `src/animation/turn-animator.js`, `tests/cube.test.js`, `tests/animation.test.js` |
+| FIX-514 | Phase 5 | Interaction / Coverage | FIXED | Yellow/White centers tetap draggable sebagai U/D anchors tanpa memperoleh hak menjadi POV front. | `src/interaction/drag-move-resolver.js`, `tests/drag-move-resolver.test.js` |
 
 ---
 
@@ -175,11 +175,11 @@ Belum ada fix.
 - **Tipe:** Integration / Animation
 - **Tanggal:** 2026-10-03
 - **Fase:** Phase 5 — Manual Rubik Interaction
-- **Ringkasan:** Entry point Phase 5 belum memasang `FaceTurnRenderAdapter`, sehingga gesture dapat mengubah logical state setelah runtime selesai tetapi tidak menampilkan face-turn animation.
+- **Ringkasan:** Entry point Phase 5 belum memasang `TurnRenderAdapter`, sehingga gesture dapat mengubah logical state setelah runtime selesai tetapi tidak menampilkan face-turn animation.
 - **Masalah / Alasan:** `CubeTurnRuntime` hanya melakukan transform sementara jika adapter disediakan.
-- **Perubahan:** `public/index.html` dan `public/phase5.html` sekarang membuat `FaceTurnRenderAdapter` dan memasukkannya ke `CubeTurnRuntime`.
+- **Perubahan:** `index.html` dan `index.html` sekarang membuat `TurnRenderAdapter` dan memasukkannya ke `CubeTurnRuntime`.
 - **Acceptance:** Manual sticker drag menghasilkan animasi face-turn sebelum logical state di-commit.
-- **Dokumentasi Terkait:** `PHASE_05_MANUAL_INTERACTION.md`, `public/index.html`, `public/phase5.html`, `tests/integration-contract.test.js`
+- **Dokumentasi Terkait:** `PHASE_05_MANUAL_INTERACTION.md`, `index.html`, `index.html`, `tests/integration-contract.test.js`
 
 ### FIX-502
 - **Status:** `FIXED`
@@ -448,7 +448,7 @@ Sebelum fase ditandai `COMPLETE`:
 ### 2026-10-04 — U/D center interaction coverage
 
 - Yellow/White centers remain draggable as direct U/D anchors without becoming POV front (`FIX-514`).
-- Full regression suite: 68 passed, 0 failed.
+- Full regression suite: 69 passed, 0 failed.
 
 ### FIX-515
 - **Status:** `FIXED`
@@ -496,7 +496,7 @@ Sebelum fase ditandai `COMPLETE`:
 - **Ringkasan:** Kontrak POV sebelumnya masih menganggap hanya F/R/B/L yang dapat menjadi Front dan memaksa U/D sebagai Up/Down. Ini tidak sesuai dengan model Rubik bebas-orientasi yang diinginkan.
 - **Perubahan:** Semua enam physical faces U/D/R/L/F/B sekarang dapat menjadi Front. Resolver membentuk frame lengkap dari camera position + camera screen-right + camera screen-up, menjaga pasangan opposite dan handedness. Gesture dipahami dalam virtual frame lalu dikonversi ke physical notation.
 - **Camera:** Manual controller mengirim basis world-right/world-up kamera dan mengunci frame selama gesture. Camera yaw tetap kontinu 360°; pitch diperluas hingga mendekati ±90°.
-- **Dokumentasi:** `21_COLOR_ORIENTATION_AND_POV.md`, `PHASE_05_MANUAL_INTERACTION.md`, `PHASE_05_AUDIT.md`, `PHASE_04_CAMERA_CONTROLS.md`, `17_ROADMAP.md`, `20_CHANGELOG.md`, `README.md`, dan file terkait diperbarui.
+- **Dokumentasi:** `21_INTERACTION_GEOMETRY_AND_STICKER_IDENTITY.md`, `PHASE_05_MANUAL_INTERACTION.md`, `PHASE_05_AUDIT.md`, `PHASE_04_CAMERA_CONTROLS.md`, `17_ROADMAP.md`, `20_CHANGELOG.md`, `README.md`, dan file terkait diperbarui.
 - **Acceptance:** 6 Front × frame invariants × horizontal/vertical front gestures × side-face rules × center interaction diuji; regression suite 67/67 lulus.
 
 
@@ -535,3 +535,21 @@ Sebelum fase ditandai `COMPLETE`:
 - **Perubahan:** Menambahkan generic turn `{axis, layer, quarterTurns}` dan mengalirkannya dari drag resolver → runtime → animator → render adapter → CubeState.
 - **Dampak:** Tidak ada lagi Front-based move conversion. Shuffle juga menghasilkan generic layer turns.
 - **Acceptance:** Full regression suite **71/71 passed**.
+
+
+### FIX-524
+- **Status:** `FIXED`
+- **Tipe:** Phase 5 Final / Repository Cleanup
+- **Tanggal:** 2026-10-04
+- **Ringkasan:** Merapikan repository setelah model sticker-position menjadi arsitektur final Phase 5.
+- **Perubahan:**
+  - `phase5.html` dipindahkan menjadi `index.html` sebagai satu-satunya production entry point.
+  - `styles.css` dipindahkan ke root agar GitHub Pages root deployment langsung dapat menyajikan aplikasi.
+  - Preview HTML Phase 3/4 dihapus karena tidak lagi diperlukan.
+  - `pov-move-resolver.js` dan test-nya dihapus.
+  - Legacy notation parser, inverse notation helpers, `MoveHistory`, `MoveQueue`, dan dead `getMoveDefinitions()` dihapus.
+  - `face-turn-animator.js` → `turn-animator.js`.
+  - `face-turn-renderer.js` → `turn-renderer.js`.
+  - Local `serve` script diperbarui untuk root repository.
+  - Dokumentasi aktif diselaraskan dengan direct-geometric + sticker-position architecture.
+- **Acceptance:** satu `index.html`, tidak ada active legacy notation API, tidak ada obsolete POV resolver, dan full regression suite lulus.

@@ -1,11 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CubeState, MoveHistory, MoveQueue, StickerHistory, createSolvedCube, COLOR_TO_FACE, parseMove } from '../src/core/cube.js';
+import { StickerHistory, createSolvedCube } from '../src/core/cube.js';
 import { createTurn } from '../src/core/turn.js';
 
-test('canonical solved colors remain stable identities', () => {
-  assert.deepEqual(COLOR_TO_FACE, { yellow:'U', white:'D', green:'R', blue:'L', red:'F', orange:'B' });
-});
 
 test('solved cube has 26 visible cubies, no core, and 54 stickers', () => {
   const cube = createSolvedCube();
@@ -43,20 +40,8 @@ test('each outer generic turn selects exactly nine cubies', () => {
   }
 });
 
-test('legacy notation adapter remains isolated from Phase 5 generic turns', () => {
-  assert.deepEqual(parseMove('R'), { notation:'R', face:'R', axis:'x', layer:1, quarterTurns:-1 });
-  assert.deepEqual(createTurn({axis:'x',layer:1,quarterTurns:1}), {axis:'x',layer:1,quarterTurns:1});
-});
 
-test('legacy MoveHistory is not the new sticker history', () => {
-  const history=new MoveHistory(); history.push('R'); assert.equal(history.length,1); history.clear(); assert.equal(history.length,0);
-  const stickerHistory=new StickerHistory(); assert.equal(stickerHistory.length,0);
-});
 
-test('MoveQueue stores generic turns', () => {
-  const queue=new MoveQueue(); queue.enqueue({axis:'x',layer:1,quarterTurns:1},{axis:'y',layer:-1,quarterTurns:-1});
-  assert.deepEqual(queue.dequeue(),{axis:'x',layer:1,quarterTurns:1}); assert.deepEqual(queue.dequeue(),{axis:'y',layer:-1,quarterTurns:-1}); assert.equal(queue.empty,true);
-});
 
 test('middle layer turn carries face centers between center positions', () => {
   const cube=createSolvedCube();
@@ -73,4 +58,15 @@ test('middle layer turn carries face centers between center positions', () => {
 
 test('CubeState clone preserves sticker identities', () => {
   const cube=createSolvedCube(); assert.equal(cube.clone().getStickerPositions().rc1,'p01');
+});
+
+
+test('cube API exposes generic turns without legacy notation helpers', async () => {
+  const module = await import('../src/core/cube.js');
+  assert.equal('parseMove' in module, false);
+  assert.equal('turnFromMoveNotation' in module, false);
+  assert.equal('invertMove' in module, false);
+  assert.equal('MoveHistory' in module, false);
+  assert.equal('MoveQueue' in module, false);
+  assert.equal('getMoveDefinitions' in module, false);
 });

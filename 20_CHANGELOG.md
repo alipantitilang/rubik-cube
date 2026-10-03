@@ -36,7 +36,7 @@ No application code is included yet.
 
 ### 2026-10-03 — Phase 5 audit and stabilization
 
-- Fixed missing `FaceTurnRenderAdapter` wiring in Phase 5 entry points (`FIX-501`).
+- Fixed missing `TurnRenderAdapter` wiring in Phase 5 entry points (`FIX-501`).
 - Added safe runtime cancellation and renderer resynchronization (`FIX-502`).
 - Removed duplicated gesture-to-move mapping from the manual controller (`FIX-503`).
 - Added integration and edge-case tests.
@@ -60,7 +60,7 @@ No application code is included yet.
 - Restricted POV front-face authority to F/R/B/L; U/D never become virtual front.
 - Replaced camera-roll-derived side mapping with fixed color adjacency for all four eligible front faces.
 - Updated generic slice semantics so M/E/S-style middle slices rotate 8 visible cubies: four edges plus four face centers, allowing center sticker identities to move between face-position slots.
-- Added `21_COLOR_ORIENTATION_AND_POV.md` as the canonical orientation contract.
+- Added `21_INTERACTION_GEOMETRY_AND_STICKER_IDENTITY.md` as the canonical orientation contract.
 - Expanded POV and slice regression coverage; suite now passes 65/65.
 
 ### 2026-10-04 — Red-front horizontal drag correction
@@ -68,7 +68,7 @@ No application code is included yet.
 - Corrected horizontal front-face direction when red/F is the active POV front (`FIX-515`).
 - Left column drag-right and right column drag-left now resolve to moves whose visible layer motion follows the grab direction.
 - Vertical front-face mapping is unchanged. Green/orange/blue POV horizontal mappings are intentionally not changed in this fix.
-- Regression suite: **68 passed, 0 failed**.
+- Regression suite: **69 passed, 0 failed**.
 
 
 ### 2026-10-04 — Four-front horizontal POV direction generalization
@@ -158,3 +158,16 @@ Validasi:
 ## FIX-521 — Center sticker movement
 
 The generic sticker-position model no longer treats centers as fixed during middle-slice turns. Each middle slice carries four edge cubies and four face-center cubies. Center sticker identities therefore move between `p01..p54` and are captured by StickerHistory like every other sticker.
+
+
+## 2026-10-04 — Phase 5 Final Repository Cleanup (FIX-524)
+
+- `phase5.html` became the production `index.html`; no new HTML preview is created.
+- `styles.css` moved to repository root for a simple GitHub Pages root deployment.
+- Removed obsolete Phase 3/4 preview HTML files.
+- Removed the obsolete POV resolver and its tests.
+- Removed the legacy face-notation parser, inverse-notation helpers, and unused move-history containers.
+- Renamed generic animation/render modules to `turn-animator.js` and `turn-renderer.js`.
+- Updated the development server to serve the repository root.
+- Active documentation now describes the direct-geometric generic-turn and 54-sticker position architecture.
+- Cleanup regression: **69 passed, 0 failed**.

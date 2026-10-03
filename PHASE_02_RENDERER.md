@@ -591,8 +591,8 @@ Implemented renderer layer:
 
 - `src/render/cube-render-model.js` — pure logical-to-render mapping, cubie classification, sticker descriptors, centralized face colors.
 - `src/render/cube-renderer.js` — Three.js scene, camera, lighting, cubie geometry, stickers, stable object mapping, resize/high-DPI handling.
-- `public/index.html` — minimal Phase 2 renderer preview.
-- `public/styles.css` — responsive renderer viewport and debug label.
+- `index.html` — minimal Phase 2 renderer preview.
+- `styles.css` — responsive renderer viewport and debug label.
 - `tests/render-model.test.js` — renderer mapping/invariant tests.
 
 The renderer consumes `CubeState`; it does not create or modify puzzle state.

@@ -24,8 +24,8 @@ Pengguna dapat:
 5. Menggunakan zoom bar.
 6. Menekan Play untuk mengacak Rubik secara otomatis.
 7. Melakukan gerakan face secara manual seperti Rubik normal.
-8. Menggunakan drag pada setiap sticker center, edge, dan corner untuk menentukan legal turn berdasarkan POV.
-9. Menggunakan POV front-face method: face yang dominan dari kamera menjadi virtual F, dengan R/L/U/D/B relatif terhadap POV.
+8. Menggunakan drag pada setiap sticker center, edge, dan corner untuk menentukan generic layer turn berdasarkan geometri.
+9. Menggunakan direct geometric drag resolution tanpa Front/Back/Up/Down/Left/Right sebagai patokan gerakan.
 10. Menggunakan M/E/S untuk slice interaction sesuai konvensi `M mengikuti L`, `E mengikuti D`, `S mengikuti F`.
 11. Melihat animasi turn yang halus.
 12. Menyelesaikan Rubik.

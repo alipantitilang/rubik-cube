@@ -1,10 +1,10 @@
 import { CubeState, StickerHistory } from '../core/cube.js';
 import { createTurn } from '../core/turn.js';
-import { FaceTurnAnimator } from './face-turn-animator.js';
+import { TurnAnimator } from './turn-animator.js';
 
 /** Coordinates generic layer-turn animation and authoritative CubeState commits. */
 export class CubeTurnRuntime {
-  constructor({ cubeState = new CubeState(), animator = new FaceTurnAnimator(), adapter = null, renderer = null, history = new StickerHistory() } = {}) {
+  constructor({ cubeState = new CubeState(), animator = new TurnAnimator(), adapter = null, renderer = null, history = new StickerHistory() } = {}) {
     this.cubeState = cubeState;
     this.animator = animator;
     this.adapter = adapter;

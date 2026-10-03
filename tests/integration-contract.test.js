@@ -5,10 +5,10 @@ import path from 'node:path';
 
 const root = path.resolve(new URL('..', import.meta.url).pathname);
 
-test('Phase 5 entry points wire the face-turn render adapter', () => {
-  for (const file of ['public/index.html', 'public/phase5.html']) {
+test('production entry point wires the generic turn render adapter', () => {
+  for (const file of ['index.html']) {
     const html = fs.readFileSync(path.join(root, file), 'utf8');
-    assert.match(html, /FaceTurnRenderAdapter/);
+    assert.match(html, /TurnRenderAdapter/);
     assert.match(html, /adapter\s*,/);
   }
 });

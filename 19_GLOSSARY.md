@@ -52,11 +52,10 @@ M E S
 
 The geometric middle plane has 8 visible positions: 4 edge cubies and 4 face-center cubies. Generic slice turns rotate all 8 visible cubies, allowing center sticker identities to move between faces.
 
-## POV front face
+## Direct geometric layer turn
 
-The dominant horizontal physical face among `F/R/B/L` in the camera view. In the canonical color orientation these are Red/Green/Orange/Blue. `U` (Yellow) and `D` (White) never become virtual `F`.
+A generic turn resolved from sticker surface normal, screen drag, camera screen basis, cube quaternion, and cubie position. It returns `{ axis, layer, quarterTurns }` without a named face movement.
 
-See `21_COLOR_ORIENTATION_AND_POV.md`.
 
 ## Move
 

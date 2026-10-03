@@ -1,20 +1,14 @@
-# Color Orientation & Object-Relative Interaction Contract
+# Interaction Geometry & Sticker Identity Contract
 
-## 1. Colors are identities, not movement directions
+## 1. Colors are permanent sticker identities
 
-Solved colors remain:
+Each sticker has a permanent color identity. The solved registry uses six colors:
 
 ```text
-U = yellow
-D = white
-R = green
-L = blue
-F = red
-B = orange
+red, orange, yellow, white, green, blue
 ```
 
-These labels describe the solved cube's local geometry only.
-
+A color is never a movement direction.
 No color is permanently Front, Back, Top, Bottom, Left, or Right in the user interaction model.
 
 ## 2. Cube is the object being rotated

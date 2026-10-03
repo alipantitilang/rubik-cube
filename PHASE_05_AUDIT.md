@@ -1,46 +1,65 @@
-# PHASE 05 AUDIT
+# PHASE 05 FINAL AUDIT
 
 ## Result
 
-**PASS — direct geometric interaction + 54-sticker position history**
+**PASS — final direct-geometric interaction + sticker-position model**
 
 ### Verified
 
-- No Front/Back/Up/Down movement frame exists in the active resolver.
-- Sticker drag resolves to `{ axis, layer, quarterTurns }`.
-- Cube orientation quaternion is part of the geometric calculation.
-- Empty-space drag rotates the cube object, not the camera.
-- Camera pointer orbit is disabled during Phase 5.
-- Middle-slice turns affect 4 edge cubies + 4 face centers; center sticker identities can move between faces.
+- No Front/Back/Up/Down/Left/Right movement frame exists.
+- Sticker drag resolves directly to `{ axis, layer, quarterTurns }`.
+- Cube quaternion participates in the geometric calculation.
+- Empty-space drag rotates the Rubik object.
+- Camera pointer orbit is disabled for Phase 5; zoom remains available.
+- Middle slices carry 4 edge cubies + 4 face-center cubies.
+- Center sticker identities can move between `p01..p54`.
 - All 26 visible cubies remain valid interaction anchors.
-- 54 sticker identities are stable and unique.
-- 54 slot IDs `p01..p54` are stable and unique.
+- Exactly 54 permanent sticker identities exist.
+- Exactly 54 permanent position IDs exist.
 - Sticker history records changed sticker code + old slot + new slot.
-- Renderer color follows sticker color identity after turns.
+- Renderer color follows permanent sticker identity.
+- The project has one production HTML entry point: `index.html`.
+- Obsolete preview pages and the obsolete POV resolver have been removed.
 
-### Regression
-
-```text
-72 passed
-0 failed
-```
-
-## Architectural contract
+## Architecture
 
 ```text
 Camera = viewer
-CubeOrientation = object orientation
-CubeState = logical puzzle state
-Sticker IDs = permanent identity
-Position IDs = current physical slot
+CubeOrientation = visual object orientation
+CubeState = authoritative logical state
+Sticker identity = permanent color-block code
+Position identity = permanent physical slot
 
 screen drag
   ↓
-local geometric layer turn
+direct geometric layer turn
+  ↓
+CubeTurnRuntime
   ↓
 CubeState
   ↓
 StickerHistory
 ```
 
-Legacy R/L/U/D/F/B notation remains only as a compatibility adapter and is not part of Phase 5 interaction semantics.
+## Cleanup
+
+Removed:
+
+- `src/interaction/pov-move-resolver.js`
+- `tests/pov-move-resolver.test.js`
+- obsolete Phase 3/4/5 preview HTML files
+- legacy notation-only history containers
+- legacy notation parser/adapter
+- stale face-turn file naming
+
+Renamed active generic files:
+
+- `turn-animator.js`
+- `turn-renderer.js`
+
+## Regression
+
+```text
+69 passed
+0 failed
+```

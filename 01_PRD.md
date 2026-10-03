@@ -8,7 +8,6 @@ The cube behaves like a physical 3×3 Rubik:
 
 - six colored faces
 
-Canonical solved color orientation is fixed as U=yellow, D=white, F=red, R=green, B=orange, L=blue. Only F/R/B/L can become the manual-interaction POV front.
 - 26 visible cubies
 - center internal position empty
 - legal face turns
@@ -141,11 +140,16 @@ The implementation must centralize this mapping so colors can be changed later w
 
 ### Visual requirement
 
-Each face color must have enough contrast from adjacent face colors.
+Each sticker has a permanent color identity. The renderer uses that identity even after the sticker moves to another face.
 
-Do not use two blue tones that are visually difficult to distinguish.
+Default solved sticker colors:
 
-Color values must live in a theme/config file rather than being scattered through renderer code.
+```text
+red, orange, yellow, white, green, blue
+```
+
+The color palette is centralized in the renderer configuration.
+
 
 ---
 
@@ -165,32 +169,32 @@ Touch:
 
 ### Cube interaction
 
-A drag beginning on any visible sticker is a potential Rubik move. All 26 visible cubies are valid anchors:
+A drag beginning on any visible sticker is a potential Rubik layer turn. All 26 visible cubies are valid anchors:
 
 - center
 - edge
 - corner
 
-The interaction uses a POV front-face method:
+The interaction is view-independent and has no Front/Back/Up/Down/Left/Right movement reference.
 
-1. Determine the physical face most directly facing the camera.
-2. Treat that face as virtual `F`.
-3. Derive virtual `R/L/U/D/B` from camera-relative directions.
-4. Freeze that frame for the pointer gesture.
-5. Use the picked cubie type/position and drag direction to resolve legal notation.
+The resolver combines:
 
-Supported notation includes:
+1. picked sticker surface normal;
+2. screen drag direction;
+3. camera screen basis;
+4. current cube quaternion;
+5. selected cubie's logical position.
+
+It directly produces:
 
 ```text
-R R' L L' U U' D D' F F' B B'
-M M' E E' S S'
+{ axis, layer, quarterTurns }
 ```
 
 A live turn follows pointer displacement. On release it snaps to 90° when the commit threshold is reached, otherwise it returns to its starting orientation.
 
-The logical cube state is changed only on commit.
+The logical cube state changes only on commit.
 
-The exact POV corner/edge mapping is normative in `PHASE_05_MANUAL_INTERACTION.md`.
 
 ## 7. Buttons
 

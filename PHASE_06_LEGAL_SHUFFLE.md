@@ -42,7 +42,7 @@ Tanggung jawab:
 
 ### 3. Play flow
 
-`public/index.html` sekarang menggunakan entry point utama aplikasi.
+`index.html` sekarang menggunakan entry point utama aplikasi.
 
 Play:
 

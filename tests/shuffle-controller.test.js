@@ -1,14 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { CubeTurnRuntime } from '../src/animation/cube-turn-runtime.js';
-import { FaceTurnAnimator } from '../src/animation/face-turn-animator.js';
+import { TurnAnimator } from '../src/animation/turn-animator.js';
 import { createSolvedCube } from '../src/core/cube.js';
 import { ShuffleController, SHUFFLE_STATES } from '../src/animation/shuffle-controller.js';
 
 function makeController(overrides = {}) {
   const runtime = new CubeTurnRuntime({
     cubeState: createSolvedCube(),
-    animator: new FaceTurnAnimator({ durationMs: 10 })
+    animator: new TurnAnimator({ durationMs: 10 })
   });
   const interaction = { enabled: true, setEnabled(value) { this.enabled = value; } };
   const controller = new ShuffleController({
@@ -64,7 +64,7 @@ test('reset safely cancels an active runtime turn and resynchronizes it', () => 
   const calls = [];
   const runtime = new CubeTurnRuntime({
     cubeState: createSolvedCube(),
-    animator: new FaceTurnAnimator({ durationMs: 10 }),
+    animator: new TurnAnimator({ durationMs: 10 }),
     adapter: { begin() {}, update() {}, finish() { calls.push('finish'); } },
     renderer: { renderCube() { calls.push('render'); } }
   });

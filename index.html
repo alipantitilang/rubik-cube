@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Rubik 26 Cubies — Phase 5</title>
+  <title>Rubik 26 Cubies</title>
   <link rel="stylesheet" href="./styles.css">
   <style>
-    .phase5-panel {
+    .interaction-panel {
       position: absolute;
       left: 20px;
       top: 20px;
@@ -22,20 +22,20 @@
       font-size: 13px;
       line-height: 1.4;
     }
-    .phase5-panel strong { font-size: 15px; }
-    .phase5-panel .status { opacity: .82; }
+    .interaction-panel strong { font-size: 15px; }
+    .interaction-panel .status { opacity: .82; }
     @media (max-width: 640px) {
-      .phase5-panel { left: 12px; top: 12px; }
+      .interaction-panel { left: 12px; top: 12px; }
     }
   </style>
 </head>
 <body>
-  <main class="stage" aria-label="Rubik phase 5 manual interaction preview">
+  <main class="stage" aria-label="Interactive 3D Rubik cube">
     <div id="cube" class="cube-viewport"></div>
-    <aside class="phase5-panel">
-      <strong>Phase 5 — Manual Interaction</strong>
-      <span>Drag any center, edge, or corner sticker; the selected layer follows the drag direction from the current view.</span>
-      <span>Release to snap the layer turn or return if the drag is too short.</span>
+    <aside class="interaction-panel">
+      <strong>Interactive Rubik</strong>
+      <span>Drag any sticker on a center, edge, or corner; the selected layer follows your drag.</span>
+      <span>Release after roughly half a turn to snap 90°; release earlier to return.</span>
       <span>Drag empty space to rotate the Rubik itself.</span>
       <span>Wheel / touchpad = zoom.</span>
       <span id="status" class="status">Ready</span>
@@ -43,14 +43,14 @@
   </main>
 
   <script type="module">
-    import { createSolvedCube } from '../src/core/cube.js';
-    import { CubeTurnRuntime } from '../src/animation/cube-turn-runtime.js';
-    import { RubikRenderer } from '../src/render/cube-renderer.js';
-    import { FaceTurnRenderAdapter } from '../src/render/face-turn-renderer.js';
-    import { ManualInteractionController } from '../src/interaction/manual-controller.js';
+    import { createSolvedCube } from './src/core/cube.js';
+    import { CubeTurnRuntime } from './src/animation/cube-turn-runtime.js';
+    import { RubikRenderer } from './src/render/cube-renderer.js';
+    import { TurnRenderAdapter } from './src/render/turn-renderer.js';
+    import { ManualInteractionController } from './src/interaction/manual-controller.js';
 
     const renderer = new RubikRenderer(document.querySelector('#cube'));
-    const adapter = new FaceTurnRenderAdapter(renderer);
+    const adapter = new TurnRenderAdapter(renderer);
     const runtime = new CubeTurnRuntime({
       cubeState: createSolvedCube(),
       adapter,
@@ -72,7 +72,7 @@
       isInputLocked: () => runtime.busy,
       onGesture: event => {
         if (event.type === 'face-drag') {
-          status.textContent = `Drag: ${event.turn.axis.toUpperCase()}${event.turn.layer > 0 ? '+' : event.turn.layer < 0 ? '-' : '0'} • ${Math.round(event.progress * 90)}°`;
+          status.textContent = `Layer ${event.turn.axis.toUpperCase()}${event.turn.layer > 0 ? '+' : event.turn.layer < 0 ? '-' : '0'} • ${Math.round(event.progress * 90)}°`;
         } else if (event.type === 'cube-rotate') {
           status.textContent = 'Cube rotation';
         }
@@ -85,7 +85,7 @@
       previous = now;
       const result = runtime.tick(delta);
       if (result.completed) {
-        status.textContent = result.completed ? `Turn complete: ${result.completed.axis.toUpperCase()}${result.completed.layer > 0 ? '+' : result.completed.layer < 0 ? '-' : '0'}` : 'Ready';
+        status.textContent = result.completed ? `Turn complete: layer ${result.completed.axis.toUpperCase()}${result.completed.layer > 0 ? '+' : result.completed.layer < 0 ? '-' : '0'}` : 'Ready';
       } else if (!runtime.busy) {
         status.textContent = 'Ready';
       }

@@ -33,7 +33,7 @@ CubeState
    ├── legal move definition
    │
    ▼
-FaceTurnAnimator
+TurnAnimator
    │
    ├── queue
    ├── duration
@@ -41,7 +41,7 @@ FaceTurnAnimator
    └── easing
    │
    ▼
-FaceTurnRenderAdapter
+TurnRenderAdapter
    │
    ├── select 9 layer cubies
    ├── move temporary pivot group
@@ -163,9 +163,9 @@ Later interaction phases may use these flags to decide whether direct face input
 ## 9. Files
 
 ```text
-src/animation/face-turn-animator.js
+src/animation/turn-animator.js
 src/animation/cube-turn-runtime.js
-src/render/face-turn-renderer.js
+src/render/turn-renderer.js
 tests/animation.test.js
 public/phase3.html
 ```

@@ -1,208 +1,169 @@
-# Technical Architecture
+# Architecture
 
-## 1. Layered Architecture
-
-```text
-UI
- │
- ├── Controls
- ├── History
- ├── Congratulations
- └── Information
-       │
-       ▼
-Interaction Controller
-       │
-       ├── Camera Interaction
-       ├── Face Gesture Detection
-       └── Button Commands
-       │
-       ▼
-Cube Domain
-       │
-       ├── CubeState
-       ├── Cubie
-       ├── Face
-       ├── Move
-       ├── MoveEngine
-       ├── ScrambleGenerator
-       └── SolvedChecker
-       │
-       ▼
-Renderer
-       │
-       ├── Cubie Meshes
-       ├── Materials
-       ├── Scene
-       ├── Camera
-       └── Lighting
-```
-
-## 2. Suggested project structure
+## 1. Authoritative layers
 
 ```text
-src/
-├── app/
-│   ├── App
-│   └── routes
-├── cube/
-│   ├── CubeState
-│   ├── Cubie
-│   ├── Face
-│   ├── Move
-│   ├── MoveEngine
-│   ├── ScrambleGenerator
-│   └── SolvedChecker
-├── renderer/
-│   ├── CubeRenderer
-│   ├── CubieRenderer
-│   ├── Materials
-│   ├── CameraController
-│   └── Lighting
-├── interaction/
-│   ├── POVMoveResolver
-│   ├── ManualInteractionController
-│   ├── GestureHelpers
-│   └── PointerState
-├── ui/
-│   ├── ControlPanel
-│   ├── ZoomControl
-│   ├── RotateControls
-│   ├── MoveHistory
-│   ├── Congratulations
-│   └── InfoPanel
-├── config/
-│   ├── colors
-│   ├── dimensions
-│   └── interaction
-└── tests/
-    ├── cube
-    ├── scramble
-    └── interaction
+UI / pointer
+    ↓
+Interaction geometry
+    ↓
+Generic Turn
+    ↓
+CubeTurnRuntime
+    ↓
+CubeState
+    ↓
+StickerHistory
 ```
 
-## 3. Separation of responsibilities
+The renderer observes state; it does not decide puzzle legality.
 
-### CubeState
+## 2. CubeState
 
-Stores the current puzzle state.
+`src/core/cube.js` owns:
 
-### MoveEngine
+- 26 visible cubies;
+- cubie positions;
+- sticker identities;
+- sticker local faces;
+- generic layer turns;
+- solved detection;
+- state validation.
 
-Applies legal moves.
+The internal position `(0,0,0)` is intentionally empty.
 
-### Renderer
+## 3. Generic movement
 
-Converts state to visual representation.
-
-### Interaction Controller
-
-Converts pointer/touch input into commands. Phase 5 uses a dedicated `POVMoveResolver` whose source of truth is the canonical color orientation and fixed F/R/B/L adjacency table.
-
-```text
-Camera position
-   ↓
-POV front resolver (F/R/B/L only)
-   ↓
-Selected sticker + cubie type + logical position
-   ↓
-POV move table
-   ↓
-Standard notation
-```
-
-### UI
-
-Displays state and sends commands.
-
----
-
-## 4. Recommended state shape
-
-Conceptual example:
+`src/core/turn.js` defines the only active movement command:
 
 ```ts
-type Axis = 'x' | 'y' | 'z'
-
-type Vector3Int = {
-  x: -1 | 0 | 1
-  y: -1 | 0 | 1
-  z: -1 | 0 | 1
-}
-
-type Cubie = {
-  id: string
-  position: Vector3Int
-  orientation: Orientation
-  stickers: Sticker[]
-}
-
-type CubeState = {
-  cubies: Cubie[]
-  moveHistory: Move[]
-  status: 'idle' | 'scrambling' | 'playing' | 'solved'
+{
+  axis: 'x' | 'y' | 'z',
+  layer: -1 | 0 | 1,
+  quarterTurns: -1 | 1 | 2
 }
 ```
 
-This is conceptual. The final representation may be optimized after correctness is established.
+There is no active R/L/U/D/F/B notation API.
 
----
+## 4. Sticker identity
 
-## 5. Renderer rule
+`src/core/sticker-map.js` defines:
 
-The renderer should maintain a mapping:
+- 54 permanent sticker codes;
+- 54 permanent position IDs;
+- face-local slot layout;
+- solved registry.
+
+Identity and position are separate concepts:
 
 ```text
-logical cubie id → render object
+sticker code = who the color block is
+position ID   = where that block currently is
 ```
 
-When state changes:
+## 5. Interaction
 
-- update logical transform target
-- animate if required
-- do not create a new random cubie
-- preserve stable IDs
-
-Stable IDs simplify animation and debugging.
-
----
-
-## 6. Internal core
-
-The empty `(0,0,0)` position may be represented by an internal core object.
-
-The core is not a puzzle cubie and must not receive face stickers.
-
-It exists only to support:
-
-- structural grouping
-- rotation pivot
-- future implementation convenience
-
-If a scene graph approach requires a pivot, the pivot may be invisible.
-
----
-
-## 7. Animation model
-
-A face turn should rotate a temporary layer/pivot.
-
-Conceptually:
+`src/interaction/drag-move-resolver.js` directly converts geometry into a generic turn.
 
 ```text
-layer cubies
-    ↓
-attach to turn pivot
-    ↓
-animate pivot rotation
-    ↓
-detach
-    ↓
-commit logical state
-    ↓
-snap/resolve transforms
+sticker normal
++ screen drag
++ camera screen basis
++ cube quaternion
++ cubie position
+        ↓
+cube-local tangent
+        ↓
+cross(normal, tangent)
+        ↓
+X/Y/Z axis
+        ↓
+layer coordinate
+        ↓
+generic turn
 ```
 
-The exact rendering technique may vary.
+No virtual Front frame is created.
 
-The logical state must remain consistent with the final result.
+## 6. Object orientation
+
+`CubeOrientationController` owns the visual orientation of the Rubik object.
+
+```text
+empty drag → cube quaternion → cubeGroup
+```
+
+The camera remains a viewer/reference. Zoom remains camera-owned.
+
+## 7. Animation
+
+`src/animation/turn-animator.js` queues generic turns.
+
+`src/render/turn-renderer.js` temporarily attaches the selected layer to a pivot, animates the generic axis, then returns control to the authoritative state.
+
+`CubeTurnRuntime` commits the turn only after animation completion.
+
+## 8. Center movement
+
+Outer layer:
+
+```text
+9 cubies
+```
+
+Middle layer:
+
+```text
+4 edge cubies
++
+4 center cubies
+=
+8 cubies
+```
+
+Centers are not fixed anchors in the logical model.
+
+## 9. History
+
+`StickerHistory` compares sticker positions before and after each committed turn.
+
+```text
+rc1: p01 → p37
+```
+
+Only changed stickers are stored in each event.
+
+## 10. Renderer
+
+The renderer maintains:
+
+```text
+cubie ID → render object
+```
+
+Sticker material color is taken from the sticker's permanent color identity, not from the local face.
+
+## 11. Camera
+
+Camera infrastructure remains separate from cube state.
+
+Phase 4 camera orbit capability is retained as reusable infrastructure, but Phase 5 disables pointer orbit so empty-space pointer ownership belongs to cube orientation.
+
+## 12. Production entry point
+
+Only `index.html` is used for the current product.
+
+No phase-specific HTML previews remain in the repository.
+
+## 13. Removed legacy architecture
+
+Removed from active code:
+
+- POV move resolver;
+- notation parser and inverse-notation helpers;
+- legacy move history containers;
+- phase-specific HTML previews;
+- stale face-turn filenames.
+
+Historical references remain in change logs for traceability.

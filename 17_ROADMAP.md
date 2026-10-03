@@ -77,25 +77,24 @@ Build:
 
 ---
 
-## Phase 5 — Manual Face Interaction
+## Phase 5 — Manual Rubik Interaction
 
 Build:
 
 - raycast/picking
-- face identification
-- gesture projection
-- direction mapping
-- turn command
+- direct geometric drag resolution
+- generic layer turn
+- cube object orientation
+- live drag and snap/cancel
+- 54 sticker identity tracking
+- 54 position tracking
+- movable center stickers
+- sticker transition history
+- production entry-point cleanup
 
-This is a high-risk interaction phase and needs dedicated testing.
+Status: **FINAL / Complete**
 
-Status: **Complete — direct geometric layer interaction**
-
-Validation: **71 tests passed, 0 failed**
-
-The finalized interaction contract has no virtual Front frame. A sticker drag is resolved directly from sticker normal, screen drag, cube quaternion, and cubie position into `{ axis, layer, quarterTurns }`. Empty-space drag rotates the Rubik object. All 54 stickers have stable identity codes and all 54 visible slots are `p01..p54`; committed turns record `code: from → to`.
-
----
+Phase 5 no longer depends on notation or a virtual Front frame.
 
 ## Phase 6 — Shuffle
 

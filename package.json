@@ -1,10 +1,10 @@
 {
-  "name": "rubik-26-cubies-core",
+  "name": "rubik-26-cubies",
   "private": true,
   "version": "0.1.0",
   "type": "module",
   "scripts": {
     "test": "node --test tests/*.test.js",
-    "serve": "python3 -m http.server 4173 --bind 127.0.0.1 -d public"
+    "serve": "python3 -m http.server 4173 --bind 127.0.0.1 -d ."
   }
 }

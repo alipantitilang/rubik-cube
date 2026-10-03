@@ -12,7 +12,7 @@ export function moveAngleRadians(turn, progress) {
   return (Math.PI / 2) * parsed.quarterTurns * p;
 }
 
-export class FaceTurnAnimator {
+export class TurnAnimator {
   constructor({ durationMs = DEFAULT_MOVE_DURATION_MS, easing = easeInOutCubic } = {}) {
     if (!Number.isFinite(durationMs) || durationMs <= 0) throw new Error('durationMs must be positive');
     this.durationMs = durationMs;

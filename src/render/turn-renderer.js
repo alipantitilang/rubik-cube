@@ -1,10 +1,10 @@
 /**
- * Phase 3 — Adapter that applies temporary face-turn transforms to a
+ * Phase 3 — Adapter that applies temporary generic layer-turn transforms to a
  * RubikRenderer. It never mutates CubeState while a turn is in progress.
  */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
 import { createTurn } from '../core/turn.js';
-import { getLayerCubieIds, moveAngleRadians } from '../animation/face-turn-animator.js';
+import { getLayerCubieIds, moveAngleRadians } from '../animation/turn-animator.js';
 
 const AXIS = {
   x: new THREE.Vector3(1, 0, 0),
@@ -12,11 +12,11 @@ const AXIS = {
   z: new THREE.Vector3(0, 0, 1)
 };
 
-export class FaceTurnRenderAdapter {
+export class TurnRenderAdapter {
   constructor(renderer) {
     this.renderer = renderer;
     this.turnGroup = new THREE.Group();
-    this.turnGroup.name = 'active-face-turn';
+    this.turnGroup.name = 'active-layer-turn';
     this.renderer.cubeGroup.add(this.turnGroup);
     this.activeIds = [];
     this.activeMove = null;

@@ -1,4 +1,4 @@
-/** Shared pointer thresholds for the POV-relative manual interaction system. */
+/** Shared pointer thresholds for the direct geometric manual interaction system. */
 export const GESTURE_CONFIG = Object.freeze({
   minDistancePx: 10,
   pixelsPerQuarterTurn: 82,

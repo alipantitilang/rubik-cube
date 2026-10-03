@@ -8,7 +8,7 @@ function makeAdapter() {
   return { begin() {}, update() {}, finish() {} };
 }
 
-test('a POV drag command can be previewed and committed through CubeTurnRuntime', () => {
+test('a generic layer-turn command can be previewed and committed through CubeTurnRuntime', () => {
   const move = resolveDragMove({
     physicalStickerFace: 'F',
     cameraRight: [1,0,0],

@@ -1,146 +1,231 @@
-# PHASE 05 — Manual Rubik Interaction
+# PHASE 05 — Final Manual Rubik Interaction
 
 ## Status
 
-**COMPLETE — direct geometric layer interaction**
+**COMPLETE — final direct-geometric sticker/position model**
 
-## 1. New interaction contract
+Phase 5 is the finalized interaction foundation for the current project architecture.
 
-Phase 5 no longer uses Front/Back/Up/Down/Left/Right as movement references.
+## 1. Core contract
 
-The user drags a visible sticker. The system determines the layer and rotation direction directly from geometry:
+There is no movement reference named Front, Back, Up, Down, Left, or Right.
+
+A sticker drag is resolved directly from geometry:
 
 ```text
-sticker normal
-     +
-screen drag direction
-     +
-cube orientation
-     ↓
-world drag vector
-     ↓
+picked sticker
+    ↓
+sticker local normal
+    +
+screen drag
+    +
+camera screen basis
+    +
+cube quaternion
+    +
+cubie logical position
+    ↓
 cube-local drag tangent
-     ↓
+    ↓
 rotation axis = stickerNormal × tangent
-     ↓
-snap to X/Y/Z
-     ↓
-cubie's coordinate on that axis
-     ↓
+    ↓
+snap to X / Y / Z
+    ↓
+layer coordinate -1 / 0 / +1
+    ↓
 { axis, layer, quarterTurns }
 ```
 
-## 2. No Front concept
+The turn descriptor is the only movement command required by Phase 5.
 
-There is no active Front face and no virtual Front frame.
+## 2. Cube orientation
 
-The same algorithm is used whether the user sees red, orange, yellow, white, green, blue, or any combination of faces.
-
-## 3. Direction principle
-
-Positive rotation is chosen so the selected sticker's normal moves toward the drag tangent.
-
-Therefore the layer visually follows the user's drag instead of depending on a named face.
-
-## 4. Cube orientation
-
-Empty-space drag rotates the Rubik object through `CubeOrientationController`.
+The Rubik is the object being rotated.
 
 ```text
-empty drag
-   ↓
-CubeOrientationController
-   ↓
-cubeGroup quaternion
+Camera = viewer/reference
+CubeOrientation = visual object orientation
+CubeState = logical puzzle state
 ```
 
-Camera pointer orbit remains disabled for Phase 5. Camera zoom remains available.
+Dragging empty viewport rotates `cubeGroup` through `CubeOrientationController`.
 
-## 5. Gesture freeze
+Camera pointer orbit is disabled for the final Phase 5 interaction model. Camera zoom remains available.
 
-At sticker `pointerdown`, the controller captures:
+The cube quaternion can accumulate through multiple full rotations without yaw wrapping.
 
-- camera screen-right
-- camera screen-up
-- cube quaternion
-- physical sticker face
-- cubie logical position
+## 3. Sticker drag
 
-The captured geometry remains fixed for the gesture.
+At `pointerdown`, the controller captures:
 
-## 6. Live turn
+- picked physical sticker face;
+- cubie type;
+- cubie logical position;
+- camera screen-right;
+- camera screen-up;
+- cube quaternion.
 
-After the movement threshold:
+That geometry is frozen for the gesture.
+
+Later visual changes cannot silently change the turn being previewed.
+
+## 4. Direction
+
+The resolver projects the screen drag into cube-local space and onto the sticker plane.
+
+The rotation axis is derived geometrically:
 
 ```text
-pointer displacement
-      ↓
-resolveDragTurn()
-      ↓
-generic turn descriptor
-      ↓
-CubeTurnRuntime.beginInteractive()
-      ↓
-FaceTurnRenderAdapter
+axis = stickerNormal × dragTangent
 ```
 
-The logical state is unchanged during the preview.
+The axis is snapped to the nearest local cube axis.
 
-On release:
+The cubie's coordinate on that axis selects the layer.
 
-- progress ≥ commit threshold → commit 90°;
-- progress < commit threshold → cancel preview.
+The resulting quarter-turn direction makes the selected sticker surface follow the user's drag direction.
 
-## 7. Middle slices
+## 5. Center, edge, and corner anchors
 
-If the selected cubie's coordinate on the perpendicular axis is `0`, the turn targets the middle slice.
+All 26 visible cubies can start a gesture.
 
-Only the four edge cubies participate. Centers remain fixed.
+For an outer layer:
 
-## 8. Diagonal drags
+```text
+9 cubies
+```
 
-Diagonal input is projected onto the sticker plane. The perpendicular layer axis is then snapped to the nearest cube axis.
+For a middle slice:
 
-This avoids any Front-based classification.
+```text
+4 edge cubies
++
+4 center cubies
+=
+8 cubies
+```
 
-## 9. 54-sticker tracking
+Center cubies are therefore movable. A center sticker can change face-position slot after a turn.
 
-Every commit updates the permanent sticker registry.
+## 6. Sticker identity model
+
+There are exactly 54 permanent sticker identities.
+
+Examples:
+
+```text
+red:
+rc1 rc2 rc3 rc4
+re1 re2 re3 re4
+rc
+
+orange:
+oc1 ... oe4 oc
+
+yellow:
+yc1 ... ye4 yc
+
+white:
+wc1 ... we4 wc
+
+green:
+gc1 ... ge4 gc
+
+blue:
+bc1 ... be4 bc
+```
+
+The code never changes.
+
+## 7. Position model
+
+There are exactly 54 permanent physical sticker slots:
+
+```text
+p01 ... p54
+```
+
+In the solved state, each sticker has one initial slot.
 
 Example:
+
+```text
+rc1 → p01
+re1 → p02
+rc  → p05
+```
+
+After a committed turn:
 
 ```text
 rc1: p01 → p37
 ```
 
-The sticker remains `rc1`; only its current position changes.
+Only the position changes.
 
-## 10. Architecture
+## 8. History
 
-```text
-Camera = viewer/reference
-CubeOrientation = visual object orientation
-CubeState = logical cubie + sticker state
-StickerRegistry = permanent 54 identities + 54 positions
+`StickerHistory` records every changed sticker for every committed turn:
 
-sticker drag
-  ↓
-drag-move-resolver
-  ↓
-generic turn {axis, layer, quarterTurns}
-  ↓
-CubeTurnRuntime
-  ↓
-FaceTurnRenderAdapter
-  ↓
-CubeState.applyTurn()
-  ↓
-StickerHistory
+```js
+{
+  code: 'rc1',
+  from: 'p01',
+  to: 'p37'
+}
 ```
 
-## 11. Picking
+Per-sticker history can reconstruct the sticker's complete path:
 
-Picking still exposes:
+```text
+rc1
+p01 → p37
+p37 → p39
+p39 → p10
+...
+```
+
+The six center stickers use exactly the same mechanism.
+
+## 9. Rendering rule
+
+Sticker material color is derived from the sticker's permanent color identity.
+
+It is never inferred from the local face it currently occupies.
+
+This allows a red sticker to occupy a position that was originally orange, yellow, green, blue, or white.
+
+## 10. Animation and commit
+
+The interaction pipeline is:
+
+```text
+pointerdown
+  ↓
+pick sticker
+  ↓
+freeze gesture geometry
+  ↓
+resolveDragTurn()
+  ↓
+generic turn
+  ↓
+CubeTurnRuntime.beginInteractive()
+  ↓
+TurnRenderAdapter
+  ↓
+live preview
+  ↓
+pointerup
+  ├─ commit → CubeState.applyTurn() → StickerHistory
+  └─ cancel → restore preview
+```
+
+`CubeState` is not mutated during the preview.
+
+## 11. Picking contract
+
+Picking returns:
 
 ```js
 {
@@ -153,35 +238,60 @@ Picking still exposes:
 }
 ```
 
-The `face` field is a local geometric surface label, not a movement command.
+`face` is a local geometric surface label only. It is not a movement notation.
 
-## 12. Files
+## 12. Active implementation
 
-- `src/interaction/drag-move-resolver.js`
-- `src/interaction/manual-controller.js`
-- `src/interaction/cube-orientation-state.js`
-- `src/interaction/cube-orientation-controller.js`
-- `src/core/turn.js`
-- `src/core/sticker-map.js`
-- `src/core/cube.js`
-- `src/animation/cube-turn-runtime.js`
-- `src/animation/face-turn-animator.js`
-- `src/render/face-turn-renderer.js`
-- `tests/drag-move-resolver.test.js`
-- `tests/sticker-history.test.js`
+```text
+src/core/cube.js
+src/core/turn.js
+src/core/sticker-map.js
 
-## 13. Acceptance
+src/interaction/gesture.js
+src/interaction/drag-move-resolver.js
+src/interaction/manual-controller.js
+src/interaction/cube-orientation-state.js
+src/interaction/cube-orientation-controller.js
 
-- [x] No Front-based move resolution.
+src/animation/turn-animator.js
+src/animation/cube-turn-runtime.js
+
+src/render/cube-render-model.js
+src/render/cube-renderer.js
+src/render/turn-renderer.js
+
+index.html
+styles.css
+```
+
+## 13. Cleanup decisions
+
+The final Phase 5 architecture removes:
+
+- `pov-move-resolver.js`;
+- virtual Front/Back/Up/Down/Left/Right movement mapping;
+- notation-based movement APIs;
+- obsolete Phase 3/4/5 preview HTML pages;
+- duplicated generic animation/render adapter naming;
+- legacy move-history containers that are not used by the sticker-position model.
+
+Historical documentation may still mention earlier architectures because the Fix Log is intentionally immutable history.
+
+## 14. Acceptance
+
+- [x] No Front-based movement resolution.
+- [x] No notation dependency.
 - [x] All visible sticker faces use one geometric rule.
 - [x] Direction follows drag geometry.
 - [x] Diagonal drag supported.
 - [x] Cube quaternion included in resolver.
 - [x] Empty-space drag rotates the cube object.
 - [x] Camera pointer orbit disabled for Phase 5.
-- [x] Generic turn descriptor replaces notation in Phase 5 runtime.
+- [x] Generic turn descriptor is the movement command.
 - [x] 54 permanent sticker codes exist.
 - [x] 54 permanent position IDs `p01..p54` exist.
-- [x] Committed turns record sticker `from → to` transitions.
-- [x] Renderer displays sticker color by sticker identity, not current face.
-- [x] Full regression suite: **72 passed, 0 failed**.
+- [x] Center stickers move with middle slices.
+- [x] StickerHistory records `code: from → to`.
+- [x] Renderer color follows sticker identity.
+- [x] One production HTML entry point remains: `index.html`.
+- [x] Full regression suite passes after cleanup.

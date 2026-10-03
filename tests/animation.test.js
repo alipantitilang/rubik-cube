@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createSolvedCube } from '../src/core/cube.js';
-import { FaceTurnAnimator, easeInOutCubic, getLayerCubieIds, moveAngleRadians } from '../src/animation/face-turn-animator.js';
+import { TurnAnimator, easeInOutCubic, getLayerCubieIds, moveAngleRadians } from '../src/animation/turn-animator.js';
 import { CubeTurnRuntime } from '../src/animation/cube-turn-runtime.js';
 
 test('easing starts at 0, ends at 1, and remains bounded', () => {
@@ -20,7 +20,7 @@ test('each outer layer turn selects exactly 9 cubies', () => {
 });
 
 test('animator queues generic turns and completes exactly once', () => {
-  const animator = new FaceTurnAnimator({ durationMs: 100 });
+  const animator = new TurnAnimator({ durationMs: 100 });
   animator.enqueue({ axis: 'x', layer: 1, quarterTurns: 1 }, { axis: 'y', layer: -1, quarterTurns: -1 });
   assert.equal(animator.queuedCount, 2);
   assert.equal(animator.tick(50).active.progress, 0.5);
@@ -31,7 +31,7 @@ test('animator queues generic turns and completes exactly once', () => {
 
 test('runtime does not mutate CubeState before animation completion', () => {
   const cube = createSolvedCube();
-  const runtime = new CubeTurnRuntime({ cubeState: cube, animator: new FaceTurnAnimator({ durationMs: 100 }) });
+  const runtime = new CubeTurnRuntime({ cubeState: cube, animator: new TurnAnimator({ durationMs: 100 }) });
   const solvedSignature = cube.signature();
   runtime.enqueue({ axis: 'x', layer: 1, quarterTurns: 1 });
   runtime.tick(99); assert.equal(runtime.cubeState.signature(), solvedSignature);
@@ -41,7 +41,7 @@ test('runtime does not mutate CubeState before animation completion', () => {
 });
 
 test('runtime commits a generic turn and its inverse back to solved', () => {
-  const runtime = new CubeTurnRuntime({ animator: new FaceTurnAnimator({ durationMs: 10 }) });
+  const runtime = new CubeTurnRuntime({ animator: new TurnAnimator({ durationMs: 10 }) });
   runtime.enqueue({ axis: 'x', layer: 1, quarterTurns: 1 }, { axis: 'x', layer: 1, quarterTurns: -1 });
   runtime.tick(10); runtime.tick(10);
   assert.equal(runtime.cubeState.isSolved(), true);
@@ -51,7 +51,7 @@ test('runtime commits a generic turn and its inverse back to solved', () => {
 test('runtime cancel discards active and queued turns without mutating logical state', () => {
   const calls = [];
   const cubeState = createSolvedCube();
-  const runtime = new CubeTurnRuntime({ cubeState, animator: new FaceTurnAnimator({ durationMs: 100 }), adapter: { finish() { calls.push('finish'); }, begin() {}, update() {} }, renderer: { renderCube(state) { calls.push(['render', state.signature()]); } } });
+  const runtime = new CubeTurnRuntime({ cubeState, animator: new TurnAnimator({ durationMs: 100 }), adapter: { finish() { calls.push('finish'); }, begin() {}, update() {} }, renderer: { renderCube(state) { calls.push(['render', state.signature()]); } } });
   runtime.enqueue({ axis: 'x', layer: 1, quarterTurns: 1 }, { axis: 'y', layer: 1, quarterTurns: 1 });
   runtime.tick(25);
   const before = cubeState.signature();

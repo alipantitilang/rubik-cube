@@ -116,7 +116,7 @@ Desktop:
 - camera drag
 - wheel zoom
 - sticker picking
-- POV dominant-face selection restricted to red/green/orange/blue
+- direct geometric layer resolution with no movement Front/Back/Up/Down/Left/Right dependency
 - canonical color orientation and fixed F/R/B/L adjacency
 - exact tie determinism for front-face selection
 - center identities move correctly during M/E/S and remain unique across the 54 position registry
@@ -132,7 +132,7 @@ Mobile:
 
 - camera drag
 - touch sticker drag
-- POV-relative direction
+- drag direction follows sticker geometry
 - center/edge/corner coverage
 - live snap/cancel
 - UI tap isolation

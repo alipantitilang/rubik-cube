@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { classifyDragAxis, dragProgress } from '../src/interaction/gesture.js';
 
-test('small movement remains below the face-turn threshold', () => {
+test('small movement remains below the layer-turn threshold', () => {
   assert.equal(classifyDragAxis(3, 4).type, 'undetermined');
 });
 

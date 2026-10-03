@@ -1,9 +1,11 @@
 /**
  * Logical Rubik 3×3×3 engine.
  *
- * The public interaction model is generic layer turns: { axis, layer, quarterTurns }.
- * Classic R/L/U/D/F/B notation is retained only as a legacy compatibility adapter
- * for older tests/tools; Phase 5 interaction does not produce or consume notation.
+ * The authoritative movement model is a generic layer turn:
+ * { axis, layer, quarterTurns }.
+ *
+ * Sticker identities and physical position IDs are independent from movement.
+ * No face-move notation is required by the engine.
  */
 
 import {
@@ -16,7 +18,6 @@ import { createTurn } from './turn.js';
 
 export const FACES = Object.freeze(['U', 'D', 'R', 'L', 'F', 'B']);
 export const COLORS = Object.freeze({ U: 'yellow', D: 'white', R: 'green', L: 'blue', F: 'red', B: 'orange' });
-export const COLOR_TO_FACE = Object.freeze(Object.fromEntries(Object.entries(COLORS).map(([face, color]) => [color, face])));
 const NORMALS = Object.freeze({
   U: [0, 1, 0], D: [0, -1, 0], R: [1, 0, 0], L: [-1, 0, 0], F: [0, 0, 1], B: [0, 0, -1]
 });
@@ -27,12 +28,6 @@ for (const x of [-1, 0, 1]) for (const y of [-1, 0, 1]) for (const z of [-1, 0, 
 }
 export const CUBIE_IDS = Object.freeze(POSITIONS.map(([x, y, z]) => `cubie_${x}_${y}_${z}`));
 
-const LEGACY_MOVE_DEFS = Object.freeze({
-  R: { axis: 'x', layer: 1, quarterTurns: -1 }, L: { axis: 'x', layer: -1, quarterTurns: 1 },
-  U: { axis: 'y', layer: 1, quarterTurns: 1 }, D: { axis: 'y', layer: -1, quarterTurns: -1 },
-  F: { axis: 'z', layer: 1, quarterTurns: -1 }, B: { axis: 'z', layer: -1, quarterTurns: 1 },
-  M: { axis: 'x', layer: 0, quarterTurns: 1 }, E: { axis: 'y', layer: 0, quarterTurns: -1 }, S: { axis: 'z', layer: 0, quarterTurns: -1 }
-});
 
 function cloneVector(v) { return [...v]; }
 
@@ -88,36 +83,8 @@ function assertIntegerPosition(position) {
 }
 
 function normalizeTurn(turn) {
-  if (typeof turn === 'string') return parseMove(turn);
   return createTurn(turn);
 }
-
-export function parseMove(notation) {
-  if (typeof notation !== 'string') throw new TypeError('Move notation must be a string');
-  const value = notation.trim();
-  const match = /^([UDRLFBMES])([2']?)$/.exec(value);
-  if (!match) throw new Error(`Invalid move notation: ${notation}`);
-  const face = match[1];
-  const modifier = match[2];
-  const base = LEGACY_MOVE_DEFS[face];
-  const quarterTurns = modifier === '2' ? 2 : modifier === "'" ? -base.quarterTurns : base.quarterTurns;
-  return Object.freeze({ notation: value, face, axis: base.axis, layer: base.layer, quarterTurns });
-}
-
-export function turnFromMoveNotation(notation) {
-  const parsed = parseMove(notation);
-  return createTurn(parsed);
-}
-
-export function invertMove(move) {
-  const parsed = typeof move === 'string' ? parseMove(move) : move;
-  const inverseTurns = parsed.quarterTurns === 2 ? 2 : -parsed.quarterTurns;
-  const base = LEGACY_MOVE_DEFS[parsed.face].quarterTurns;
-  const modifier = inverseTurns === 2 ? '2' : inverseTurns === base ? '' : "'";
-  return parseMove(`${parsed.face}${modifier}`);
-}
-
-export function invertSequence(sequence) { return [...sequence].reverse().map(invertMove); }
 
 export class CubeState {
   constructor(cubies = null) {
@@ -259,24 +226,4 @@ export class StickerHistory {
   snapshot(cubeState) { return cubeState.getStickerPositions(); }
 }
 
-/** Legacy compatibility containers; new history is StickerHistory. */
-export class MoveHistory {
-  constructor() { this.moves = []; }
-  push(move) { this.moves.push(typeof move === 'string' ? parseMove(move) : move); }
-  undo() { return this.moves.pop() ?? null; }
-  clear() { this.moves.length = 0; }
-  get length() { return this.moves.length; }
-  toNotation() { return this.moves.map(m => m.notation).join(' '); }
-}
-
-export class MoveQueue {
-  constructor() { this.items = []; }
-  enqueue(...moves) { this.items.push(...moves.map(m => normalizeTurn(m))); return this; }
-  dequeue() { return this.items.shift() ?? null; }
-  clear() { this.items.length = 0; }
-  get length() { return this.items.length; }
-  get empty() { return this.items.length === 0; }
-}
-
 export function createSolvedCube() { return new CubeState(); }
-export function getMoveDefinitions() { return Object.freeze(Object.fromEntries(Object.entries(LEGACY_MOVE_DEFS).map(([k, v]) => [k, Object.freeze({...v})]))); }

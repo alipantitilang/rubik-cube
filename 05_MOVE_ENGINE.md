@@ -102,6 +102,6 @@ For a half turn:
 T2 × T2 = identity
 ```
 
-## Legacy notation
+## Movement naming
 
-`parseMove()` remains only as a compatibility adapter for older project code/tests. Phase 5 manual interaction, runtime turns, animation, shuffle generation, and sticker history use generic turn descriptors.
+The engine intentionally has no R/L/U/D/F/B/M/E/S notation API. All active systems exchange the generic turn descriptor directly.

@@ -2,51 +2,60 @@
 
 ## Cube engine
 
-- [ ] 26 visible cubies
-- [ ] empty internal center position
-- [ ] six face centers
-- [ ] legal face moves
-- [ ] legal slice moves M/E/S with standard direction conventions
-- [ ] correct cubie orientation
-- [ ] inverse moves
-- [ ] double turns
-- [ ] solved detection
-- [ ] deterministic tests
+- [x] 26 visible cubies
+- [x] empty internal center position
+- [x] six face centers
+- [x] generic legal layer turns
+- [x] correct cubie/sticker orientation
+- [x] solved detection
+- [x] deterministic tests
 
-## Shuffle
+## Sticker model
 
-- [ ] legal scramble
-- [ ] configurable length
-- [ ] no invalid states
-- [ ] smooth sequential animation
-- [ ] manual input locked during scramble
-- [ ] player history starts empty after scramble
+- [x] 54 permanent sticker identities
+- [x] 54 permanent position IDs `p01..p54`
+- [x] center stickers can move between positions
+- [x] sticker history records `code → from → to`
+- [x] renderer follows sticker color identity
 
-## Interaction
+## Manual interaction
 
-- [ ] camera orbit
-- [ ] mouse wheel zoom
-- [ ] touch pinch zoom
-- [ ] face/sticker drag from center, edge, and corner
-- [ ] POV dominant-face resolution restricted to F/R/B/L
-- [ ] canonical color orientation: U yellow, D white, F red, R green, B orange, L blue
-- [ ] exact F/R/B/L adjacency table
-- [ ] center sticker identities move with their intersecting middle slice and remain uniquely addressable
-- [ ] front corner/edge mapping
-- [ ] side F/B/S mapping
-- [ ] live drag progress and snap/cancel
-- [ ] correct move direction
-- [ ] input conflict prevention
+- [x] sticker picking
+- [x] center, edge, and corner drag anchors
+- [x] direct geometric layer resolution
+- [x] no Front/Back/Up/Down/Left/Right movement reference
+- [x] diagonal drag support
+- [x] live drag progress
+- [x] commit/cancel threshold
+- [x] object rotation on empty-space drag
+- [x] camera pointer orbit disabled for Phase 5 ownership
+- [x] zoom remains camera-owned
+- [x] input conflict prevention
+
+## Animation
+
+- [x] generic axis/layer animation
+- [x] quarter and half turns
+- [x] exact logical commit at animation completion
+- [x] no accumulated transform drift
+- [x] middle slice animates 4 edges + 4 centers
+
+## Shuffle / Play
+
+- [x] legal generic scramble generator
+- [x] configurable length
+- [x] deterministic seed support
+- [x] input lock during scramble
+- [ ] complete production Play UI flow
+- [ ] player history lifecycle finalized
 
 ## UI
 
-- [ ] Play
-- [ ] Reshuffle
-- [ ] rotate buttons
-- [ ] zoom slider
-- [ ] history
-- [ ] information
-- [ ] Congratulations
+- [ ] polished control panel
+- [ ] history UI
+- [ ] information UI
+- [ ] Congratulations overlay
+- [ ] Reshuffle UI
 
 ## Responsive
 
@@ -68,8 +77,19 @@
 
 ## Quality
 
-- [ ] no decorative cube animations
-- [ ] no state/render mismatch
-- [ ] no floating-point drift
-- [ ] no accidental double moves
-- [ ] no broken layout at supported sizes
+- [x] no decorative cube animations
+- [x] no state/render mismatch in tested paths
+- [x] no floating-point drift in tested turns
+- [x] no accidental double moves in tested paths
+- [ ] final product QA across supported devices
+
+## Phase 5 Final gate
+
+Phase 5 is complete when the direct-geometric interaction model, sticker-position model, center movement, cleanup, and regression suite all pass.
+
+Current cleanup regression:
+
+```text
+69 passed
+0 failed
+```

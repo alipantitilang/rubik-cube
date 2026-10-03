@@ -2,7 +2,7 @@ import { GESTURE_CONFIG } from './gesture.js';
 import { resolveDragTurn, getDragStickerContext } from './drag-move-resolver.js';
 
 /**
- * Phase 5 POV interaction owner.
+ * Phase 5 direct-geometric interaction owner.
  * A pointer that starts on a sticker is interpreted directly from screen-space
  * drag geometry. There is no Front face or virtual POV frame. Empty space rotates the cube.
  */

@@ -46,7 +46,7 @@ No application code is included yet.
 
 ## 2026-10-04 — Phase 5 POV Front-Face Redesign
 
-- Replaced the previous face-plane gesture mapping with a camera-relative POV front-face method (`FIX-508`).
+- Replaced the previous face-plane gesture mapping with a view-independent POV front-face method (`FIX-508`).
 - Added standard slice moves `M`, `E`, and `S` to the logical move engine (`FIX-509`).
 - Picking now exposes logical cubie position and cubie type (`FIX-510`).
 - Removed the previous duplicate face gesture mapping contract (`FIX-511`).
@@ -59,7 +59,7 @@ No application code is included yet.
 - Established the canonical solved orientation: U yellow, D white, F red, R green, B orange, L blue.
 - Restricted POV front-face authority to F/R/B/L; U/D never become virtual front.
 - Replaced camera-roll-derived side mapping with fixed color adjacency for all four eligible front faces.
-- Corrected M/E/S semantics so center cubies remain fixed and only the four middle-slice edge cubies rotate.
+- Updated generic slice semantics so M/E/S-style middle slices rotate 8 visible cubies: four edges plus four face centers, allowing center sticker identities to move between face-position slots.
 - Added `21_COLOR_ORIENTATION_AND_POV.md` as the canonical orientation contract.
 - Expanded POV and slice regression coverage; suite now passes 65/65.
 
@@ -85,7 +85,7 @@ No application code is included yet.
 - Red/F keeps the established vertical behavior.
 - Green/R, Orange/B, and Blue/L now use rotated vertical notation so top-row drag-down and bottom-row drag-up preserve the user's visual direction.
 - Added exhaustive four-front vertical corner/edge regression coverage.
-- Regression suite: **70 passed, 0 failed**.
+- Regression suite: **69 passed, 0 failed**.
 
 
 ### 2026-10-04 — Active POV side-face F/F' correction
@@ -95,3 +95,66 @@ No application code is included yet.
 - Back-facing counterparts use the active POV Back notation.
 - Preserved front-face mappings, side-edge S/S' mapping, and POV frame locking.
 - Regression suite: **71 passed, 0 failed**.
+
+
+### 2026-10-04 — Six-face view-independent POV + 360° orbit
+
+- Replaced the F/R/B/L-only POV authority with all six physical faces U/D/R/L/F/B.
+- Replaced fixed color adjacency with a view-independent right/up frame derived from screen basis vectors.
+- Yellow and White can now become Front through normal camera orbit; no special fallback path is required.
+- Manual controller now freezes the complete view-independent frame at pointer-down and passes camera world-right/world-up into the resolver.
+- Virtual gesture notation is converted to physical face/slice notation after the frame is resolved.
+- Camera yaw remains continuous through 360°; pitch now approaches ±90° so U/D can become Front.
+- Added six-front regression coverage and updated Phase 5 canonical documentation.
+- Full regression suite: **67 passed, 0 failed**.
+
+
+### 2026-10-04 — Object-relative Rubik orientation
+
+- Added quaternion-based `CubeOrientationController`; the Rubik object is now the thing users rotate.
+- Phase 5 no longer uses empty-space drag to orbit the camera.
+- `resolvePovFrame()` derives Front/Back/Up/Down/Left/Right from transformed cube face normals relative to the fixed camera.
+- Yellow and White can become Front without moving the camera above/below the cube.
+- Cube orientation can pass through 360° without a yaw wrap.
+- Face-turn animation remains in cube-local axes under the rotated `cubeGroup`.
+- Regression suite: **73 passed, 0 failed**.
+
+## 2026-10-04 — FIX-521: View-independent drag geometry
+
+Manual interaction Phase 5 dipindahkan dari virtual Front/Back/Up/Down mapping ke direct geometric drag resolution.
+
+- `pov-move-resolver.js` diganti menjadi `drag-move-resolver.js`.
+- Tidak ada lagi Front sebagai referensi wajib.
+- Drag screen ditransformasikan ke cube-local space.
+- Layer axis ditentukan dari `cross(stickerNormal, dragTangent)`.
+- Posisi cubie pada axis menentukan outer layer atau middle slice.
+- Arah drag menentukan base/inverse move.
+- Diagonal drag didukung.
+- Cube quaternion diperhitungkan tanpa membuat POV frame baru.
+- Regression suite: 69/69 passed.
+
+### 2026-10-04 — Generic layer turns + 54-sticker position history
+
+Phase 5 mengalami perubahan arsitektur lanjutan:
+
+- Tidak ada lagi Front/Back/Up/Down/Left/Right sebagai referensi gerakan.
+- `resolveDragTurn()` menghasilkan `{ axis, layer, quarterTurns }` langsung dari geometri drag.
+- Animator, runtime, dan render adapter memakai generic turn descriptor.
+- Shuffle generation tidak lagi menghasilkan notation string.
+- Ditambahkan 54 sticker identities permanen: `rc1`, `re1`, `rc`, dan padanan lima warna lainnya.
+- Ditambahkan 54 position IDs permanen: `p01..p54`.
+- `StickerHistory` mencatat perubahan setiap sticker sebagai `code: from → to`.
+- Renderer sekarang mengambil warna dari identitas sticker, sehingga warna tetap benar ketika sticker berpindah face.
+- `parseMove()` dipertahankan hanya sebagai compatibility adapter lama; Phase 5 tidak menggunakannya.
+
+Validasi:
+
+```text
+71 tests passed
+0 failed
+```
+
+
+## FIX-521 — Center sticker movement
+
+The generic sticker-position model no longer treats centers as fixed during middle-slice turns. Each middle slice carries four edge cubies and four face-center cubies. Center sticker identities therefore move between `p01..p54` and are captured by StickerHistory like every other sticker.

@@ -119,7 +119,7 @@ Desktop:
 - POV dominant-face selection restricted to red/green/orange/blue
 - canonical color orientation and fixed F/R/B/L adjacency
 - exact tie determinism for front-face selection
-- center identity remains fixed during M/E/S
+- center identities move correctly during M/E/S and remain unique across the 54 position registry
 - front corner mapping
 - front edge M/E mapping
 - right/left side F/B/S mapping

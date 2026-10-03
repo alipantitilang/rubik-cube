@@ -1,88 +1,46 @@
-# Phase 5 — POV Interaction Audit
+# PHASE 05 AUDIT
 
 ## Result
 
-**PASS — redesigned and revalidated.**
+**PASS — direct geometric interaction + 54-sticker position history**
 
-The previous Phase 5 gesture model was replaced because it treated the picked sticker face as a permanent local coordinate system. That did not match the desired physical Rubik interaction after camera rotation and could not express the M/E/S slice rules cleanly.
+### Verified
 
-## Major structural changes
+- No Front/Back/Up/Down movement frame exists in the active resolver.
+- Sticker drag resolves to `{ axis, layer, quarterTurns }`.
+- Cube orientation quaternion is part of the geometric calculation.
+- Empty-space drag rotates the cube object, not the camera.
+- Camera pointer orbit is disabled during Phase 5.
+- Middle-slice turns affect 4 edge cubies + 4 face centers; center sticker identities can move between faces.
+- All 26 visible cubies remain valid interaction anchors.
+- 54 sticker identities are stable and unique.
+- 54 slot IDs `p01..p54` are stable and unique.
+- Sticker history records changed sticker code + old slot + new slot.
+- Renderer color follows sticker color identity after turns.
 
-### 1. Single POV resolver
-
-Added:
-
-`src/interaction/pov-move-resolver.js`
-
-Responsibilities:
-
-- determine dominant physical front face from camera position, restricted to F/R/B/L;
-- derive relative R/L/U/D/B faces from the fixed color adjacency table;
-- freeze the POV frame for a gesture;
-- resolve center/edge/corner anchors;
-- map the specified front and side rules to legal notation.
-
-### 2. Removed duplicate gesture-to-face mapping
-
-The old `FACE_BASES` / `gestureToMove()` contract was removed from the active interaction architecture. `gesture.js` now only owns generic threshold/progress helpers.
-
-### 3. Logical engine extension
-
-`src/core/cube.js` now supports:
+### Regression
 
 ```text
-M M' M2
-E E' E2
-S S' S2
-```
-
-with the required conventions:
-
-```text
-M follows L
-E follows D
-S follows F
-```
-
-### 4. Renderer picking context
-
-Picking now exposes:
-
-- `cubieType`
-- `logicalPosition`
-
-so interaction does not have to reconstruct state from render transforms.
-
-## Validation
-
-```text
-71 tests passed
+72 passed
 0 failed
 ```
 
-The suite includes:
+## Architectural contract
 
-- canonical color orientation and fixed F/R/B/L front eligibility;
+```text
+Camera = viewer
+CubeOrientation = object orientation
+CubeState = logical puzzle state
+Sticker IDs = permanent identity
+Position IDs = current physical slot
 
-- logical face and slice move invariants;
-- POV dominant-face selection;
-- every specified front corner mapping;
-- every specified front edge mapping;
-- front horizontal direction consistency for all four eligible fronts (F/R/B/L);
-- front vertical direction consistency for all four eligible fronts (F/R/B/L), including top/bottom corners and edges;
-- every specified right/left corner mapping;
-- every specified right/left edge mapping;
-- center interaction, including U/D center fallback without front-face authority;
-- live runtime commit/cancel;
-- pointer ownership;
-- camera isolation;
-- existing Phase 1–6 regression tests.
+screen drag
+  ↓
+local geometric layer turn
+  ↓
+CubeState
+  ↓
+StickerHistory
+```
 
-## Decision
-
-Phase 5 is considered complete under the new POV interaction contract, including the four-front horizontal and vertical direction contracts and gesture-time POV frame lock. Phase 6 may build on the finalized move notation and runtime without reintroducing the previous face-plane gesture system.
-
-
-### FIX-518 — Side-face F/F' family
-
-PASS — right/left side corner vertical interaction now resolves the active POV front/back notation rather than literal physical F/B. Red→F/F', Green→R/R', Orange→B/B', Blue→L/L'.
+Legacy R/L/U/D/F/B notation remains only as a compatibility adapter and is not part of Phase 5 interaction semantics.

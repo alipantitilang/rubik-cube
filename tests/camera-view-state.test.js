@@ -29,7 +29,9 @@ test('orbit clamps pitch and changes yaw', () => {
   const yaw = s.yaw;
   orbit(s, 1, 100);
   assert.equal(s.yaw, yaw + 1);
-  assert.ok(s.pitch <= Math.PI * 0.495);
+  assert.ok(s.pitch < Math.PI / 2);
+  orbit(s, Math.PI * 2, 0);
+  assert.equal(s.yaw, yaw + 1 + Math.PI * 2);
 });
 
 test('camera position follows spherical orbit state', () => {

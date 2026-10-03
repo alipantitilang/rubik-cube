@@ -6,7 +6,7 @@ The Rubik itself has only one type of animation:
 
 > physical layer movement.
 
-This includes outer face turns and the middle slice turns `M`, `E`, and `S`. Outer face turns contain 9 visible cubies; standard middle-slice turns animate 4 edge cubies while the four center cubies remain fixed.
+This includes outer face turns and the middle slice turns `M`, `E`, and `S`. Outer face turns contain 9 visible cubies; middle-slice turns animate 8 visible cubies: 4 edge cubies plus the 4 face-center cubies intersecting the slice.
 
 Everything else is UI animation.
 

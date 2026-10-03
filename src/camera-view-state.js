@@ -28,7 +28,7 @@ export function setDistance(state, distance) {
   return state;
 }
 
-export function orbit(state, deltaYaw, deltaPitch, pitchLimit = Math.PI * 0.495) {
+export function orbit(state, deltaYaw, deltaPitch, pitchLimit = Math.PI * 0.499) {
   state.yaw += deltaYaw;
   state.pitch = clamp(state.pitch + deltaPitch, -pitchLimit, pitchLimit);
   return state;

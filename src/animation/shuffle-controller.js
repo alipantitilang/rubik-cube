@@ -4,7 +4,7 @@
  * This controller owns the shuffle/play lifecycle but does not mutate
  * CubeState itself. CubeTurnRuntime remains the only move commit path.
  */
-import { DEFAULT_SCRAMBLE_LENGTH, generateScramble, scrambleNotation } from '../core/shuffle.js';
+import { DEFAULT_SCRAMBLE_LENGTH, generateScramble, scrambleSummary } from '../core/shuffle.js';
 
 export const SHUFFLE_STATES = Object.freeze({
   IDLE: 'idle',
@@ -45,7 +45,7 @@ export class ShuffleController {
 
   get busy() { return this.state === SHUFFLE_STATES.SCRAMBLING || this.runtime.busy; }
   get canPlay() { return this.state !== SHUFFLE_STATES.SCRAMBLING && !this.runtime.busy; }
-  get scrambleText() { return scrambleNotation(this.scramble); }
+  get scrambleText() { return scrambleSummary(this.scramble); }
 
   play({ length = this.length, seed } = {}) {
     if (!this.canPlay) return false;

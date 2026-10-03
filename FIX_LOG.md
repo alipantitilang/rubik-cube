@@ -476,7 +476,7 @@ Sebelum fase ditandai `COMPLETE`:
 - **Ringkasan:** Vertical front-face drag masih menggunakan notasi `L/R/M` yang benar untuk Red/F tetapi tidak ikut berputar ketika Front menjadi Green/R, Orange/B, atau Blue/L.
 - **Perubahan:** Menambahkan canonical vertical mapping per Front. Green/R menggunakan `F/F'/B/B'/S'/S`, Orange/B menggunakan `R/R'/L/L'/M'/M`, dan Blue/L menggunakan `B/B'/F/F'/S/S'`, sehingga top-row drag-down dan bottom-row drag-up tetap mengikuti arah visual.
 - **Scope:** Hanya front-face vertical corner/edge mapping. Horizontal, side-face F/B/S, front selection, dan gesture-time POV lock tidak diubah.
-- **Acceptance:** 4 Front × 4 corner directions + 2 edge directions diuji; regression suite 70/70 lulus.
+- **Acceptance:** 4 Front × 4 corner directions + 2 edge directions diuji; regression suite 69/69 lulus.
 
 
 ### FIX-518
@@ -487,3 +487,51 @@ Sebelum fase ditandai `COMPLETE`:
 - **Perubahan:** Side-face corner vertical mapping sekarang menggunakan `frame.front` dan `frame.back` sebagai notasi aktif. Dengan demikian sisi yang menghadap Front aktif memakai `F/F'` saat Red, `R/R'` saat Green, `B/B'` saat Orange, dan `L/L'` saat Blue; sisi belakang memakai inverse yang sesuai.
 - **Scope:** Hanya side-face corner vertical F/B-family mapping. Front horizontal/vertical, side-edge S mapping, Front detection, dan gesture-time POV lock dipertahankan.
 - **Acceptance:** Seluruh right/left side corner combinations diuji untuk F/R/B/L; regression suite 71/71 lulus.
+
+
+### FIX-519
+- **Status:** `FIXED`
+- **Tipe:** Interaction / Camera-relative POV Architecture
+- **Tanggal:** 2026-10-04
+- **Ringkasan:** Kontrak POV sebelumnya masih menganggap hanya F/R/B/L yang dapat menjadi Front dan memaksa U/D sebagai Up/Down. Ini tidak sesuai dengan model Rubik bebas-orientasi yang diinginkan.
+- **Perubahan:** Semua enam physical faces U/D/R/L/F/B sekarang dapat menjadi Front. Resolver membentuk frame lengkap dari camera position + camera screen-right + camera screen-up, menjaga pasangan opposite dan handedness. Gesture dipahami dalam virtual frame lalu dikonversi ke physical notation.
+- **Camera:** Manual controller mengirim basis world-right/world-up kamera dan mengunci frame selama gesture. Camera yaw tetap kontinu 360°; pitch diperluas hingga mendekati ±90°.
+- **Dokumentasi:** `21_COLOR_ORIENTATION_AND_POV.md`, `PHASE_05_MANUAL_INTERACTION.md`, `PHASE_05_AUDIT.md`, `PHASE_04_CAMERA_CONTROLS.md`, `17_ROADMAP.md`, `20_CHANGELOG.md`, `README.md`, dan file terkait diperbarui.
+- **Acceptance:** 6 Front × frame invariants × horizontal/vertical front gestures × side-face rules × center interaction diuji; regression suite 67/67 lulus.
+
+
+### FIX-520
+- **Status:** `FIXED`
+- **Tipe:** Interaction / Object Orientation Architecture
+- **Tanggal:** 2026-10-04
+- **Ringkasan:** Camera-relative six-face POV masih membuat U/D terasa seperti Top/Bottom karena kamera menjadi sumber orientasi utama. Ini tidak sesuai dengan konsep Rubik sebagai item void yang dapat diputar bebas.
+- **Perubahan:** Menambahkan `CubeOrientationController` + quaternion state. Empty-space drag sekarang memutar `cubeGroup`; camera pointer orbit dinonaktifkan pada Phase 5. `resolvePovFrame()` menggunakan face normals setelah transform quaternion cube terhadap camera reference.
+- **Kontrak:** Tidak ada warna yang menjadi Front/Back/Top/Bottom permanen. Yellow/White dapat menjadi Front hanya dengan memutar cube. Rotasi dapat melewati 360° tanpa wrapping.
+- **Acceptance:** Object-relative Yellow/White Front, empty-space cube rotation, frozen gesture frame, dan regression face-turn integration lulus; suite 73/73.
+
+## FIX-521 — Remove Front-POV dependency from manual move resolution
+- **Status:** FIXED
+- **Phase:** 5
+- **Masalah:** Mapping sebelumnya masih bergantung pada virtual Front/Back/Up/Down. Pada orientasi tertentu, gerakan layer menjadi tidak konsisten atau salah arah.
+- **Keputusan:** Move resolver sekarang memakai geometri langsung: sticker normal + screen drag + cube quaternion + cubie logical position.
+- **Implementasi:** `src/interaction/drag-move-resolver.js` menggantikan `pov-move-resolver.js`. Layer axis diperoleh dari `cross(stickerNormal, dragTangent)`, kemudian di-snap ke cube axis X/Y/Z. Layer coordinate menentukan outer face atau middle slice.
+- **Dampak:** Tidak ada lagi Front sebagai patokan interaksi. Semua view menggunakan aturan geometris yang sama, termasuk diagonal drag dan cube orientation bebas.
+- **Validasi:** 69/69 tests passed.
+
+### FIX-522
+- **Status:** `FIXED`
+- **Tipe:** Core Model / History / Renderer
+- **Tanggal:** 2026-10-04
+- **Ringkasan:** Mengganti history berbasis notation menjadi identity/position tracking untuk 54 sticker.
+- **Perubahan:** Menambahkan `sticker-map.js`, 54 kode permanen (`rc1`, `re1`, `rc`, dst.), 54 slot (`p01..p54`), `StickerHistory`, dan `CubeState.getStickerPositions()`. Sticker identity ikut berputar tanpa berganti kode.
+- **Renderer:** Warna sticker sekarang mengikuti identitas warna sticker, bukan face yang sedang ditempati.
+- **Acceptance:** 54 kode unik, 54 slot unik, transisi `code: from → to`, renderer color identity, dan full regression suite lulus.
+
+### FIX-523
+- **Status:** `FIXED`
+- **Tipe:** Core / Animation / Interaction / Shuffle
+- **Tanggal:** 2026-10-04
+- **Ringkasan:** Menghapus ketergantungan runtime Phase 5 pada notation `R/R'/L/...`.
+- **Perubahan:** Menambahkan generic turn `{axis, layer, quarterTurns}` dan mengalirkannya dari drag resolver → runtime → animator → render adapter → CubeState.
+- **Dampak:** Tidak ada lagi Front-based move conversion. Shuffle juga menghasilkan generic layer turns.
+- **Acceptance:** Full regression suite **71/71 passed**.

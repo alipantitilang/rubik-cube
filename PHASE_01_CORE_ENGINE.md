@@ -2,7 +2,7 @@
 
 ## Status
 
-**COMPLETE** — the logical engine is authoritative and now includes standard face and slice notation required by the finalized Phase 5 interaction model.
+**COMPLETE** — the logical engine is authoritative. Generic layer turns are the current Phase 5 model; legacy face/slice notation remains only as a compatibility adapter.
 
 ## Objective
 
@@ -13,34 +13,30 @@ Build the mathematical model of the 3×3×3 Rubik before renderer and interactio
 - 26 visible cubies.
 - Empty internal `(0,0,0)` position.
 - Stable cubie IDs.
-- Face moves `U D R L F B`.
-- Slice moves `M E S`.
-- Inverse and half-turn modifiers.
+- Stable 54-sticker identities.
+- Generic layer turns `{ axis, layer, quarterTurns }`.
+- Legacy face/slice notation adapter for compatibility only.
 - Integer position rotation.
 - Sticker orientation rotation.
 - Solved detection.
 - Move inversion and sequence inversion.
 - Move history and FIFO queue containers.
 
-## Slice conventions
+## Generic layer convention
 
-```text
-M follows L
-E follows D
-S follows F
-```
+A turn selects one of X/Y/Z axes and one layer coordinate `-1`, `0`, or `+1`.
 
-Slice layers are the zero coordinate of their axis. Standard `M/E/S` rotates the four middle-slice edge cubies; center cubies remain fixed to the core.
+For layer `0`, all 8 visible cubies in the middle plane rotate: four middle-slice edges plus four face centers. The internal core at `(0,0,0)` remains empty.
 
 ## Acceptance
 
 - [x] 26 visible cubies.
 - [x] 8 corners / 12 edges / 6 centers.
 - [x] No cubie at `(0,0,0)`.
-- [x] Face moves remain legal.
-- [x] M/E/S parse and apply correctly.
+- [x] Generic outer and middle layer turns remain legal.
+- [x] Legacy notation adapter parses older move strings without being used by Phase 5.
 - [x] Face turns select 9 visible cubies.
-- [x] Slice turns select 4 middle-slice edge cubies and keep centers fixed.
+- [x] Slice turns select 8 visible middle-plane cubies, including four centers, and keep the internal core empty.
 - [x] Move/inverse identity holds for face and slice moves.
 - [x] Four-turn identity holds for face and slice moves.
 - [x] State remains integer/discrete.

@@ -20,6 +20,15 @@ export const CUBE_COLORS = Object.freeze({
 
 export const FACE_ORDER = Object.freeze(['U', 'D', 'R', 'L', 'F', 'B']);
 
+export const COLOR_HEX = Object.freeze({
+  yellow: CUBE_COLORS.U,
+  white: CUBE_COLORS.D,
+  green: CUBE_COLORS.R,
+  blue: CUBE_COLORS.L,
+  red: CUBE_COLORS.F,
+  orange: CUBE_COLORS.B
+});
+
 export function cubieType(cubie) {
   const count = cubie.position.filter(v => v !== 0).length;
   if (count === 3) return 'corner';
@@ -36,6 +45,7 @@ export function stickerDescriptors(cubie) {
   return Object.entries(cubie.stickers).map(([face, color]) => ({
     face,
     color,
+    id: cubie.stickerIds?.[face] ?? null,
     normal: [...FACE_NORMALS[face]]
   }));
 }

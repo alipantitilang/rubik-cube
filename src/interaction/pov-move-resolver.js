@@ -1,57 +1,94 @@
 import { parseMove } from '../core/cube.js';
 import { FACE_NORMALS } from '../render/cube-render-model.js';
 
-const FRAME_BY_FRONT = Object.freeze({
-  F: Object.freeze({ front: 'F', back: 'B', right: 'R', left: 'L', up: 'U', down: 'D' }),
-  R: Object.freeze({ front: 'R', back: 'L', right: 'B', left: 'F', up: 'U', down: 'D' }),
-  B: Object.freeze({ front: 'B', back: 'F', right: 'L', left: 'R', up: 'U', down: 'D' }),
-  L: Object.freeze({ front: 'L', back: 'R', right: 'F', left: 'B', up: 'U', down: 'D' })
-});
-
-// Only these four physical faces may become the virtual POV front face.
-// With the project color scheme they are: F=red, R=green, B=orange, L=blue.
-export const POV_FRONT_FACES = Object.freeze(['F', 'R', 'B', 'L']);
+const FACE_NAMES = Object.freeze(['U', 'D', 'R', 'L', 'F', 'B']);
+export const POV_FRONT_FACES = FACE_NAMES;
+const OPPOSITE = Object.freeze({ U: 'D', D: 'U', R: 'L', L: 'R', F: 'B', B: 'F' });
+const SLICE_BASE_TURNS = Object.freeze({ M: 1, E: -1, S: -1 });
 
 function dot(a, b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
-function normalize(v) {
-  const n = Math.hypot(v[0], v[1], v[2]);
-  return n ? v.map(x => x / n) : [0, 0, 0];
-}
 function sub(a, b) { return [a[0] - b[0], a[1] - b[1], a[2] - b[2]]; }
-
-function dominantFrontFace(cameraPosition, target = [0, 0, 0]) {
-  const view = normalize(sub(cameraPosition, target));
-  // U/D never receive front-face authority. Ignore vertical camera component.
-  const horizontal = normalize([view[0], 0, view[2]]);
-  if (horizontal[0] === 0 && horizontal[2] === 0) return 'F';
-
-  let best = 'F';
-  let bestScore = -Infinity;
-  for (const face of POV_FRONT_FACES) {
-    const score = dot(horizontal, FACE_NORMALS[face]);
-    // Stable priority F > R > B > L resolves an exact diagonal deterministically.
-    if (score > bestScore + 1e-9) {
-      best = face;
-      bestScore = score;
-    }
+function cross(a, b) { return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]; }
+function scale(a, s) { return a.map(v => v * s); }
+function normalize(v) { const n = Math.hypot(...v); return n > 1e-9 ? v.map(x => x / n) : [0, 0, 0]; }
+function magnitude(v) { return Math.hypot(...v); }
+function opposite(face) { return OPPOSITE[face]; }
+function faceForNormal(v) {
+  let best = 'F'; let score = -Infinity;
+  for (const face of FACE_NAMES) {
+    const s = dot(v, FACE_NORMALS[face]);
+    if (s > score + 1e-9) { best = face; score = s; }
+  }
+  return best;
+}
+function bestRemainingFace(v, excluded, normals = FACE_NORMALS) {
+  let best = null; let score = -Infinity;
+  for (const face of FACE_NAMES) {
+    if (excluded.includes(face)) continue;
+    const s = dot(v, normals[face]);
+    if (s > score + 1e-9) { best = face; score = s; }
   }
   return best;
 }
 
+function rotateByQuaternion(v, q) {
+  const [qx, qy, qz, qw] = q;
+  const [x, y, z] = v;
+  const tx = 2 * (qy * z - qz * y);
+  const ty = 2 * (qz * x - qx * z);
+  const tz = 2 * (qx * y - qy * x);
+  return [
+    x + qw * tx + (qy * tz - qz * ty),
+    y + qw * ty + (qz * tx - qx * tz),
+    z + qw * tz + (qx * ty - qy * tx)
+  ];
+}
+
 /**
- * Resolve the fixed Rubik color orientation into the player's POV frame.
- * Only F/R/B/L can become virtual front. U and D are always virtual up/down.
- * The right/left side is defined by the fixed color adjacency, not by camera roll.
+ * Build a complete player-relative frame from the camera orientation.
+ * All six physical faces may become Front. No color is permanently Up/Down.
+ * The camera's screen-right and screen-up choose the remaining orientation.
  */
-export function resolvePovFrame({ cameraPosition, target = [0, 0, 0] }) {
-  const front = dominantFrontFace(cameraPosition, target);
-  const mapping = FRAME_BY_FRONT[front];
+export function resolvePovFrame({
+  cameraPosition,
+  target = [0, 0, 0],
+  cameraRight = null,
+  cameraUp = null,
+  cubeQuaternion = null,
+  worldFaceNormals = null
+}) {
+  const worldNormals = worldFaceNormals ?? Object.fromEntries(
+    FACE_NAMES.map(face => [face, cubeQuaternion ? rotateByQuaternion(FACE_NORMALS[face], cubeQuaternion) : [...FACE_NORMALS[face]]])
+  );
+  const outward = normalize(sub(cameraPosition, target));
+  const front = FACE_NAMES.reduce((best, face) =>
+    dot(worldNormals[face], outward) > dot(worldNormals[best], outward) + 1e-9 ? face : best, FACE_NAMES[0]);
+  const back = opposite(front);
+
+  let rightVector = cameraRight ? normalize(cameraRight) : normalize(cross(scale(outward, -1), [0, 1, 0]));
+  if (magnitude(rightVector) < 1e-9) rightVector = [1, 0, 0];
+  let upVector = cameraUp ? normalize(cameraUp) : normalize(cross(rightVector, scale(outward, -1)));
+  if (magnitude(upVector) < 1e-9) upVector = [0, 1, 0];
+
+  let right = bestRemainingFace(rightVector, [front, back], worldNormals);
+  let up = bestRemainingFace(upVector, [front, back, right, opposite(right)], worldNormals);
+
+  if (dot(cross(worldNormals[right], worldNormals[up]), worldNormals[front]) < 0) {
+    right = opposite(right);
+    up = opposite(up);
+  }
+
   return Object.freeze({
-    ...mapping,
+    front,
+    back,
+    right,
+    left: opposite(right),
+    up,
+    down: opposite(up),
     axes: Object.freeze({
-      right: [...FACE_NORMALS[mapping.right]],
-      up: [...FACE_NORMALS[mapping.up]],
-      front: [...FACE_NORMALS[mapping.front]]
+      right: [...worldNormals[right]],
+      up: [...worldNormals[up]],
+      front: [...worldNormals[front]]
     })
   });
 }
@@ -63,112 +100,63 @@ export function virtualFace(frame, physicalFace) {
   return null;
 }
 
-function move(face, inverse = false) {
-  return parseMove(`${face}${inverse ? "'" : ''}`);
-}
-
 function normalizeDirection(dragX, dragY) {
   return Math.abs(dragX) >= Math.abs(dragY) ? 'horizontal' : 'vertical';
 }
 
-const VERTICAL_FRONT_CORNER_MOVES = Object.freeze({
-  F: Object.freeze({ topLeftDown: 'L', topRightDown: "R'", bottomLeftUp: "L'", bottomRightUp: 'R' }),
-  R: Object.freeze({ topLeftDown: 'F', topRightDown: "B'", bottomLeftUp: "F'", bottomRightUp: 'B' }),
-  B: Object.freeze({ topLeftDown: 'R', topRightDown: "L'", bottomLeftUp: "R'", bottomRightUp: 'L' }),
-  L: Object.freeze({ topLeftDown: 'B', topRightDown: "F'", bottomLeftUp: "B'", bottomRightUp: 'F' })
-});
-
-const VERTICAL_FRONT_EDGE_MOVES = Object.freeze({
-  F: Object.freeze({ topDown: 'M', bottomUp: "M'" }),
-  R: Object.freeze({ topDown: "S'", bottomUp: 'S' }),
-  B: Object.freeze({ topDown: "M'", bottomUp: 'M' }),
-  L: Object.freeze({ topDown: 'S', bottomUp: "S'" })
-});
-
-function resolveFrontCorner({ front, x, y, dragX, dragY }) {
-  const axis = normalizeDirection(dragX, dragY);
-  if (axis === 'horizontal') {
-    if (x < 0 && y > 0 && dragX > 0) return "U'";
-    if (x > 0 && y > 0 && dragX < 0) return 'U';
-    if (x < 0 && y < 0 && dragX > 0) return "D'";
-    if (x > 0 && y < 0 && dragX < 0) return 'D';
-  } else {
-    const moves = VERTICAL_FRONT_CORNER_MOVES[front];
-    if (x < 0 && y > 0 && dragY > 0) return moves.topLeftDown;
-    if (x > 0 && y > 0 && dragY > 0) return moves.topRightDown;
-    if (x < 0 && y < 0 && dragY < 0) return moves.bottomLeftUp;
-    if (x > 0 && y < 0 && dragY < 0) return moves.bottomRightUp;
-  }
-  return null;
+function virtualPosition(cubiePosition, frame) {
+  return {
+    x: Math.sign(dot(cubiePosition, FACE_NORMALS[frame.right])),
+    y: Math.sign(dot(cubiePosition, FACE_NORMALS[frame.up])),
+    z: Math.sign(dot(cubiePosition, FACE_NORMALS[frame.front]))
+  };
 }
 
-function resolveFrontEdge({ front, x, y, dragX, dragY }) {
+// Canonical gesture rules are expressed in a temporary virtual cube whose
+// F=red, R=green, U=yellow orientation is the familiar baseline. The result
+// is then rotated into the physical notation of the active POV frame.
+function resolveCanonicalMove({ selectedVirtualFace, cubieType, x, y, z, dragX, dragY }) {
   const axis = normalizeDirection(dragX, dragY);
-  if (axis === 'vertical') {
-    const moves = VERTICAL_FRONT_EDGE_MOVES[front];
-    if (x === 0 && y > 0 && dragY > 0) return moves.topDown;
-    if (x === 0 && y < 0 && dragY < 0) return moves.bottomUp;
-  }
-  if (axis === 'horizontal' && x < 0 && y === 0 && dragX > 0) return 'E';
-  if (axis === 'horizontal' && x > 0 && y === 0 && dragX < 0) return "E'";
-  return null;
-}
-
-/**
- * Resolve manual interaction from the user-defined POV table.
- * The selected sticker may be on virtual F, R, or L. U/D are not front-authority faces.
- * Reverse drags resolve to the inverse of the listed move.
- */
-export function resolvePovMove({ frame, physicalStickerFace, cubieType, cubiePosition, dragX, dragY }) {
-  const selectedVirtualFace = virtualFace(frame, physicalStickerFace);
-  if (!selectedVirtualFace) return null;
-
-  const front = frame.front;
-  const frontNormal = FACE_NORMALS[frame.front];
-  const rightNormal = FACE_NORMALS[frame.right];
-  const upNormal = FACE_NORMALS[frame.up];
-  const x = Math.sign(dot(cubiePosition, rightNormal));
-  const y = Math.sign(dot(cubiePosition, upNormal));
 
   if (selectedVirtualFace === 'front') {
     if (cubieType === 'corner') {
-      // Horizontal front-face movement follows the user's visual grab direction
-      // for every eligible POV front, not only red/F.
-      if (Math.abs(dragX) >= Math.abs(dragY)) {
+      if (axis === 'horizontal') {
         if (x < 0 && dragX > 0) return y > 0 ? 'U' : "D'";
         if (x > 0 && dragX < 0) return y > 0 ? "U'" : 'D';
+      } else {
+        if (x < 0 && y > 0 && dragY > 0) return 'L';
+        if (x > 0 && y > 0 && dragY > 0) return "R'";
+        if (x < 0 && y < 0 && dragY < 0) return "L'";
+        if (x > 0 && y < 0 && dragY < 0) return 'R';
       }
-      return resolveFrontCorner({ front: frame.front, x, y, dragX, dragY });
     }
     if (cubieType === 'edge') {
-      // The same visual-direction contract applies to the front left/right
-      // middle edges in every F/R/B/L POV frame.
-      if (Math.abs(dragX) >= Math.abs(dragY)) {
+      if (axis === 'vertical') {
+        if (x === 0 && y > 0 && dragY > 0) return 'M';
+        if (x === 0 && y < 0 && dragY < 0) return "M'";
+      } else {
         if (x < 0 && dragX > 0) return "E'";
         if (x > 0 && dragX < 0) return 'E';
       }
-      return resolveFrontEdge({ front: frame.front, x, y, dragX, dragY });
     }
     if (cubieType === 'center') {
-      if (Math.abs(dragX) >= Math.abs(dragY)) return dragX > 0 ? `${frame.front}'` : frame.front;
-      return dragY < 0 ? `${frame.front}'` : frame.front;
+      if (axis === 'horizontal') return dragX > 0 ? "F'" : 'F';
+      return dragY < 0 ? "F'" : 'F';
     }
   }
 
   if (selectedVirtualFace === 'right' && cubieType === 'corner' && y !== 0 && dragY !== 0) {
-    const z = Math.sign(dot(cubiePosition, frontNormal));
-    if (y > 0 && dragY > 0) return z > 0 ? front : `${frame.back}'`;
-    if (y < 0 && dragY < 0) return z > 0 ? `${front}'` : frame.back;
-    if (y > 0 && dragY < 0) return z > 0 ? `${front}'` : frame.back;
-    if (y < 0 && dragY > 0) return z > 0 ? front : `${frame.back}'`;
+    if (y > 0 && dragY > 0) return z > 0 ? 'F' : "B'";
+    if (y < 0 && dragY < 0) return z > 0 ? "F'" : 'B';
+    if (y > 0 && dragY < 0) return z > 0 ? "F'" : 'B';
+    if (y < 0 && dragY > 0) return z > 0 ? 'F' : "B'";
   }
 
   if (selectedVirtualFace === 'left' && cubieType === 'corner' && y !== 0 && dragY !== 0) {
-    const z = Math.sign(dot(cubiePosition, frontNormal));
-    if (y > 0 && dragY > 0) return z > 0 ? `${front}'` : frame.back;
-    if (y < 0 && dragY < 0) return z > 0 ? front : `${frame.back}'`;
-    if (y > 0 && dragY < 0) return z > 0 ? front : frame.back;
-    if (y < 0 && dragY > 0) return z > 0 ? `${front}'` : frame.back;
+    if (y > 0 && dragY > 0) return z > 0 ? "F'" : 'B';
+    if (y < 0 && dragY < 0) return z > 0 ? 'F' : "B'";
+    if (y > 0 && dragY < 0) return z > 0 ? 'F' : 'B';
+    if (y < 0 && dragY > 0) return z > 0 ? "F'" : "B'";
   }
 
   if (selectedVirtualFace === 'right' && cubieType === 'edge' && y !== 0 && dragY !== 0) {
@@ -185,11 +173,52 @@ export function resolvePovMove({ frame, physicalStickerFace, cubieType, cubiePos
     if (y < 0 && dragY < 0) return "S'";
   }
 
-  // Yellow/White centers are not POV-front faces, but they remain draggable
-  // interaction anchors. Their only unambiguous operation is their own face turn.
-  if ((selectedVirtualFace === 'up' || selectedVirtualFace === 'down') && cubieType === 'center') {
+  return null;
+}
+
+function physicalMoveFromVirtual(frame, notation) {
+  const parsed = parseMove(notation);
+  const axisVector = parsed.axis === 'x' ? frame.axes.right : parsed.axis === 'y' ? frame.axes.up : frame.axes.front;
+  const desiredAxis = scale(axisVector, Math.sign(parsed.quarterTurns));
+  const physicalAxis = Math.abs(desiredAxis[0]) > 0.5 ? 'x' : Math.abs(desiredAxis[1]) > 0.5 ? 'y' : 'z';
+  const index = physicalAxis === 'x' ? 0 : physicalAxis === 'y' ? 1 : 2;
+  const axisSign = Math.sign(desiredAxis[index]);
+
+  if (['M', 'E', 'S'].includes(parsed.face)) {
+    const slice = physicalAxis === 'x' ? 'M' : physicalAxis === 'y' ? 'E' : 'S';
+    const baseTurns = SLICE_BASE_TURNS[slice];
+    const desiredTurns = parsed.quarterTurns * Math.sign(axisVector[index]);
+    if (Math.abs(desiredTurns) === 2) return `${slice}2`;
+    return desiredTurns === baseTurns ? slice : `${slice}'`;
+  }
+
+  const virtualFaceName = parsed.face === 'U' ? 'up' : parsed.face === 'D' ? 'down' : parsed.face === 'R' ? 'right' : parsed.face === 'L' ? 'left' : parsed.face === 'F' ? 'front' : 'back';
+  const face = frame[virtualFaceName];
+  const modifier = notation.endsWith('2') ? '2' : notation.endsWith("'") ? "'" : '';
+  return `${face}${modifier}`;
+}
+
+export function resolvePovMove({ frame, physicalStickerFace, cubieType, cubiePosition, dragX, dragY }) {
+  const selectedVirtualFace = virtualFace(frame, physicalStickerFace);
+  if (!selectedVirtualFace) return null;
+  const p = virtualPosition(cubiePosition, frame);
+  const virtualNotation = resolveCanonicalMove({
+    selectedVirtualFace,
+    cubieType,
+    x: p.x,
+    y: p.y,
+    z: p.z,
+    dragX,
+    dragY
+  });
+
+  if (virtualNotation) return physicalMoveFromVirtual(frame, virtualNotation);
+
+  // A center on any face is a direct face-turn anchor. Its meaning is now
+  // fully relative to the active frame, including U/D when they are Front.
+  if (cubieType === 'center' && selectedVirtualFace !== 'front') {
     const face = frame[selectedVirtualFace];
-    if (Math.abs(dragX) >= Math.abs(dragY)) return dragX < 0 ? face : `${face}'`;
+    if (normalizeDirection(dragX, dragY) === 'horizontal') return dragX < 0 ? face : `${face}'`;
     return dragY > 0 ? face : `${face}'`;
   }
 

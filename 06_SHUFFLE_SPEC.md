@@ -1,162 +1,51 @@
-# Shuffle / Scramble Specification
+# Shuffle Specification
 
-## Goal
+## Objective
 
-Generate a legal scramble, never a random color arrangement.
+Generate legal random layer turns without exposing Rubik face notation.
 
-## 1. Scramble algorithm
+## Turn representation
 
-Start from solved state.
+Each scramble item is:
 
-Repeatedly choose legal moves until target length is reached.
-
-Recommended initial target:
-
-```text
-20–25 moves
+```ts
+{
+  axis: 'x' | 'y' | 'z',
+  layer: -1 | 1,
+  quarterTurns: -1 | 1 | 2
+}
 ```
 
-Make this configurable.
+Scramble generation uses outer layers only. Middle slices are reserved for direct geometric interaction.
 
----
+## Constraints
 
-## 2. Constraints
+Optional `avoidSameAxis` prevents consecutive turns around the same axis.
 
-Avoid:
+Seeded generation is deterministic.
 
-### Immediate inverse
-
-Do not generate:
+## Playback
 
 ```text
-R R'
+generateScramble()
+      ↓
+CubeTurnRuntime.enqueue(...turns)
+      ↓
+animated layer turns
+      ↓
+CubeState commit
+      ↓
+StickerHistory
 ```
 
-or:
+No scramble string such as `R U F2` is generated.
+
+## UI
+
+The UI may display a neutral summary such as:
 
 ```text
-U' U
+20 layer turns
 ```
 
-### Same-face repetition
-
-Prefer not to generate:
-
-```text
-R R R
-```
-
-unless intentionally representing a valid combined sequence.
-
-### Excessive same-axis repetition
-
-Optionally prevent sequences such as:
-
-```text
-R L R L R
-```
-
-from dominating the scramble.
-
-This is a quality rule, not a mathematical solvability requirement.
-
----
-
-## 3. Legal-state guarantee
-
-Because the scramble is produced by legal moves from solved state:
-
-```text
-Solved → legal moves → reachable state
-```
-
-the result is always solvable.
-
-No external solver is required just to guarantee scramble solvability.
-
----
-
-## 4. Randomness
-
-Use a suitable random source.
-
-Allow a deterministic seed in development/testing.
-
-Example:
-
-```text
-seed = "debug-001"
-```
-
-This allows reproducible bugs.
-
----
-
-## 5. Scramble animation
-
-The user should perceive:
-
-- fast movement
-- smooth turns
-- clear direction
-- no skipped visual frames
-
-Recommended behavior:
-
-- moderate turn duration
-- very small inter-move gap
-- sequential queue
-- no overlapping layer turns
-
----
-
-## 6. Input state
-
-During scramble:
-
-```text
-cube interaction = locked
-manual face moves = disabled
-```
-
-Camera interaction may remain available if safe.
-
----
-
-## 7. Post-scramble
-
-After final scramble move:
-
-1. wait for animation completion
-2. set status to `playing`
-3. clear player history
-4. enable manual interaction
-
----
-
-## 8. Reshuffle
-
-Reshuffle always starts a new session.
-
-Required effects:
-
-```text
-new scramble
-history = []
-status = playing after scramble
-completion overlay = hidden
-```
-
----
-
-## 9. Important rule
-
-Never use:
-
-```text
-randomColor(face)
-```
-
-as a scramble implementation.
-
-That can create impossible cube states.
+rather than move notation.

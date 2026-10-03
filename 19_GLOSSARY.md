@@ -50,7 +50,7 @@ M E S
 
 `M` follows `L`, `E` follows `D`, and `S` follows `F`.
 
-The geometric middle plane has 8 visible positions, but standard `M/E/S` rotates only its 4 edge cubies; center cubies remain fixed.
+The geometric middle plane has 8 visible positions: 4 edge cubies and 4 face-center cubies. Generic slice turns rotate all 8 visible cubies, allowing center sticker identities to move between faces.
 
 ## POV front face
 

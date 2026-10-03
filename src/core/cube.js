@@ -1,48 +1,37 @@
 /**
- * Phase 1 — Logical Rubik 3×3×3 engine.
+ * Logical Rubik 3×3×3 engine.
  *
- * The logical cube contains 26 visible cubies. The (0,0,0) position is
- * intentionally absent. CubeState is authoritative; rendering is not.
+ * The public interaction model is generic layer turns: { axis, layer, quarterTurns }.
+ * Classic R/L/U/D/F/B notation is retained only as a legacy compatibility adapter
+ * for older tests/tools; Phase 5 interaction does not produce or consume notation.
  */
 
+import {
+  stickerCodeFromPosition,
+  stickerPositionId,
+  SOLVED_STICKERS,
+  initialPositionForSticker
+} from './sticker-map.js';
+import { createTurn } from './turn.js';
+
 export const FACES = Object.freeze(['U', 'D', 'R', 'L', 'F', 'B']);
-export const SLICE_MOVES = Object.freeze(['M', 'E', 'S']);
-export const MOVE_NOTATIONS = Object.freeze(['U', 'D', 'R', 'L', 'F', 'B', 'M', 'E', 'S']);
 export const COLORS = Object.freeze({ U: 'yellow', D: 'white', R: 'green', L: 'blue', F: 'red', B: 'orange' });
 export const COLOR_TO_FACE = Object.freeze(Object.fromEntries(Object.entries(COLORS).map(([face, color]) => [color, face])));
-
 const NORMALS = Object.freeze({
-  U: [0, 1, 0],
-  D: [0, -1, 0],
-  R: [1, 0, 0],
-  L: [-1, 0, 0],
-  F: [0, 0, 1],
-  B: [0, 0, -1]
+  U: [0, 1, 0], D: [0, -1, 0], R: [1, 0, 0], L: [-1, 0, 0], F: [0, 0, 1], B: [0, 0, -1]
 });
-
 const NORMAL_TO_FACE = new Map(Object.entries(NORMALS).map(([face, v]) => [v.join(','), face]));
 const POSITIONS = [];
-for (const x of [-1, 0, 1]) {
-  for (const y of [-1, 0, 1]) {
-    for (const z of [-1, 0, 1]) {
-      if (x !== 0 || y !== 0 || z !== 0) POSITIONS.push([x, y, z]);
-    }
-  }
+for (const x of [-1, 0, 1]) for (const y of [-1, 0, 1]) for (const z of [-1, 0, 1]) {
+  if (x !== 0 || y !== 0 || z !== 0) POSITIONS.push([x, y, z]);
 }
-
 export const CUBIE_IDS = Object.freeze(POSITIONS.map(([x, y, z]) => `cubie_${x}_${y}_${z}`));
 
-const MOVE_DEFS = Object.freeze({
-  R: { axis: 'x', layer: 1, quarterTurns: -1 },
-  L: { axis: 'x', layer: -1, quarterTurns: 1 },
-  U: { axis: 'y', layer: 1, quarterTurns: 1 },
-  D: { axis: 'y', layer: -1, quarterTurns: -1 },
-  F: { axis: 'z', layer: 1, quarterTurns: -1 },
-  B: { axis: 'z', layer: -1, quarterTurns: 1 },
-  // Standard slice notation: M follows L, E follows D, S follows F.
-  M: { axis: 'x', layer: 0, quarterTurns: 1 },
-  E: { axis: 'y', layer: 0, quarterTurns: -1 },
-  S: { axis: 'z', layer: 0, quarterTurns: -1 }
+const LEGACY_MOVE_DEFS = Object.freeze({
+  R: { axis: 'x', layer: 1, quarterTurns: -1 }, L: { axis: 'x', layer: -1, quarterTurns: 1 },
+  U: { axis: 'y', layer: 1, quarterTurns: 1 }, D: { axis: 'y', layer: -1, quarterTurns: -1 },
+  F: { axis: 'z', layer: 1, quarterTurns: -1 }, B: { axis: 'z', layer: -1, quarterTurns: 1 },
+  M: { axis: 'x', layer: 0, quarterTurns: 1 }, E: { axis: 'y', layer: 0, quarterTurns: -1 }, S: { axis: 'z', layer: 0, quarterTurns: -1 }
 });
 
 function cloneVector(v) { return [...v]; }
@@ -60,8 +49,7 @@ function rotateVector([x, y, z], axis, quarterTurns) {
 }
 
 function rotateFace(face, axis, quarterTurns) {
-  const normal = NORMALS[face];
-  const rotated = rotateVector(normal, axis, quarterTurns);
+  const rotated = rotateVector(NORMALS[face], axis, quarterTurns);
   const result = NORMAL_TO_FACE.get(rotated.join(','));
   if (!result) throw new Error(`Invalid rotated face vector: ${rotated.join(',')}`);
   return result;
@@ -71,26 +59,37 @@ function cloneCubie(cubie) {
   return {
     id: cubie.id,
     position: cloneVector(cubie.position),
-    stickers: Object.fromEntries(Object.entries(cubie.stickers))
+    stickers: Object.fromEntries(Object.entries(cubie.stickers)),
+    stickerIds: Object.fromEntries(Object.entries(cubie.stickerIds))
   };
 }
 
 function makeCubie([x, y, z]) {
   const id = `cubie_${x}_${y}_${z}`;
   const stickers = {};
-  if (y === 1) stickers.U = COLORS.U;
-  if (y === -1) stickers.D = COLORS.D;
-  if (x === 1) stickers.R = COLORS.R;
-  if (x === -1) stickers.L = COLORS.L;
-  if (z === 1) stickers.F = COLORS.F;
-  if (z === -1) stickers.B = COLORS.B;
-  return { id, position: [x, y, z], stickers };
+  const stickerIds = {};
+  const add = (face, color) => {
+    stickers[face] = color;
+    stickerIds[face] = stickerCodeFromPosition(face, [x, y, z]);
+  };
+  if (y === 1) add('U', COLORS.U);
+  if (y === -1) add('D', COLORS.D);
+  if (x === 1) add('R', COLORS.R);
+  if (x === -1) add('L', COLORS.L);
+  if (z === 1) add('F', COLORS.F);
+  if (z === -1) add('B', COLORS.B);
+  return { id, position: [x, y, z], stickers, stickerIds };
 }
 
 function assertIntegerPosition(position) {
   if (!position.every(Number.isInteger) || position.some(v => v < -1 || v > 1) || position.every(v => v === 0)) {
     throw new Error(`Invalid cubie position: ${position.join(',')}`);
   }
+}
+
+function normalizeTurn(turn) {
+  if (typeof turn === 'string') return parseMove(turn);
+  return createTurn(turn);
 }
 
 export function parseMove(notation) {
@@ -100,29 +99,25 @@ export function parseMove(notation) {
   if (!match) throw new Error(`Invalid move notation: ${notation}`);
   const face = match[1];
   const modifier = match[2];
-  const base = MOVE_DEFS[face];
+  const base = LEGACY_MOVE_DEFS[face];
   const quarterTurns = modifier === '2' ? 2 : modifier === "'" ? -base.quarterTurns : base.quarterTurns;
-  return Object.freeze({
-    notation: value,
-    face,
-    axis: base.axis,
-    layer: base.layer,
-    quarterTurns
-  });
+  return Object.freeze({ notation: value, face, axis: base.axis, layer: base.layer, quarterTurns });
+}
+
+export function turnFromMoveNotation(notation) {
+  const parsed = parseMove(notation);
+  return createTurn(parsed);
 }
 
 export function invertMove(move) {
   const parsed = typeof move === 'string' ? parseMove(move) : move;
-  const base = MOVE_DEFS[parsed.face].quarterTurns;
-  const inverseTurns = ((-parsed.quarterTurns % 4) + 4) % 4;
-  const baseTurns = ((base % 4) + 4) % 4;
-  const modifier = inverseTurns === 2 ? '2' : inverseTurns === baseTurns ? '' : "'";
+  const inverseTurns = parsed.quarterTurns === 2 ? 2 : -parsed.quarterTurns;
+  const base = LEGACY_MOVE_DEFS[parsed.face].quarterTurns;
+  const modifier = inverseTurns === 2 ? '2' : inverseTurns === base ? '' : "'";
   return parseMove(`${parsed.face}${modifier}`);
 }
 
-export function invertSequence(sequence) {
-  return [...sequence].reverse().map(invertMove);
-}
+export function invertSequence(sequence) { return [...sequence].reverse().map(invertMove); }
 
 export class CubeState {
   constructor(cubies = null) {
@@ -131,6 +126,7 @@ export class CubeState {
     for (const cubie of source) {
       if (this.cubies.has(cubie.id)) throw new Error(`Duplicate cubie id: ${cubie.id}`);
       assertIntegerPosition(cubie.position);
+      if (!cubie.stickerIds) throw new Error(`Cubie ${cubie.id} is missing sticker identities`);
       this.cubies.set(cubie.id, cloneCubie(cubie));
     }
     this.assertValid();
@@ -150,68 +146,120 @@ export class CubeState {
     return null;
   }
 
-  applyMove(move) {
-    const parsed = typeof move === 'string' ? parseMove(move) : move;
+  applyTurn(turn) {
+    const parsed = normalizeTurn(turn);
     const next = this.clone();
     const axisIndex = { x: 0, y: 1, z: 2 }[parsed.axis];
     for (const cubie of next.cubies.values()) {
       if (cubie.position[axisIndex] !== parsed.layer) continue;
-      // Standard M/E/S turns rotate the four middle-slice edge cubies.
-      // Centers remain fixed to the core and preserve face/color identity.
-      if (SLICE_MOVES.includes(parsed.face) && cubie.position.filter(v => v !== 0).length !== 2) continue;
       cubie.position = rotateVector(cubie.position, parsed.axis, parsed.quarterTurns);
       const rotatedStickers = {};
+      const rotatedStickerIds = {};
       for (const [face, color] of Object.entries(cubie.stickers)) {
-        rotatedStickers[rotateFace(face, parsed.axis, parsed.quarterTurns)] = color;
+        const nextFace = rotateFace(face, parsed.axis, parsed.quarterTurns);
+        rotatedStickers[nextFace] = color;
+        rotatedStickerIds[nextFace] = cubie.stickerIds[face];
       }
       cubie.stickers = rotatedStickers;
+      cubie.stickerIds = rotatedStickerIds;
     }
     next.assertValid();
     return next;
   }
 
-  applySequence(sequence) {
-    return sequence.reduce((state, move) => state.applyMove(move), this);
+  applyMove(move) { return this.applyTurn(normalizeTurn(move)); }
+  applySequence(sequence) { return sequence.reduce((state, move) => state.applyMove(move), this); }
+
+  getStickerPositions() {
+    const result = {};
+    for (const cubie of this.cubies.values()) {
+      for (const [face, code] of Object.entries(cubie.stickerIds)) {
+        result[code] = stickerPositionId(face, cubie.position);
+      }
+    }
+    return Object.freeze(result);
+  }
+
+  getStickerRecords() {
+    return SOLVED_STICKERS.map(solved => {
+      const position = this.getStickerPositions()[solved.code];
+      return Object.freeze({ code: solved.code, color: solved.color, position, initialPosition: solved.position });
+    });
   }
 
   isSolved() {
-    for (const cubie of this.cubies.values()) {
-      const expectedPosition = cubie.id.replace('cubie_', '').split('_').map(Number);
-      if (cubie.position.some((v, i) => v !== expectedPosition[i])) return false;
-      for (const [face, color] of Object.entries(cubie.stickers)) {
-        if (color !== COLORS[face]) return false;
-      }
-    }
-    return true;
+    const positions = this.getStickerPositions();
+    return SOLVED_STICKERS.every(sticker => positions[sticker.code] === sticker.position);
   }
 
   signature() {
-    return [...this.cubies.values()]
-      .sort((a, b) => a.id.localeCompare(b.id))
-      .map(c => `${c.id}@${c.position.join(',')}[${Object.entries(c.stickers).sort().map(([f, col]) => `${f}:${col}`).join('|')}]`)
-      .join(';');
+    return [...this.cubies.values()].sort((a, b) => a.id.localeCompare(b.id)).map(c =>
+      `${c.id}@${c.position.join(',')}[${Object.entries(c.stickerIds).sort().map(([f, id]) => `${f}:${id}`).join('|')}]`
+    ).join(';');
   }
 
   assertValid() {
     if (this.cubies.size !== 26) throw new Error(`Cube must contain 26 cubies, got ${this.cubies.size}`);
     const positions = new Set();
+    const stickerCodes = new Set();
     for (const cubie of this.cubies.values()) {
       assertIntegerPosition(cubie.position);
       const key = cubie.position.join(',');
       if (positions.has(key)) throw new Error(`Two cubies occupy ${key}`);
       positions.add(key);
-      for (const face of Object.keys(cubie.stickers)) {
+      const faces = Object.keys(cubie.stickers);
+      if (faces.length !== Object.keys(cubie.stickerIds).length) throw new Error(`Cubie ${cubie.id} has mismatched sticker metadata`);
+      for (const face of faces) {
         if (!FACES.includes(face)) throw new Error(`Invalid sticker face: ${face}`);
+        const code = cubie.stickerIds[face];
+        if (stickerCodes.has(code)) throw new Error(`Duplicate sticker code: ${code}`);
+        stickerCodes.add(code);
+        if (cubie.stickers[face] === undefined) throw new Error(`Sticker ${code} has no color`);
+        if (initialPositionForSticker(code) === undefined) throw new Error(`Unknown sticker code: ${code}`);
       }
-      const stickerCount = Object.keys(cubie.stickers).length;
+      const stickerCount = faces.length;
       const expectedCount = cubie.position.filter(v => v !== 0).length;
       if (stickerCount !== expectedCount) throw new Error(`Cubie ${cubie.id} has invalid sticker count`);
     }
     if (positions.has('0,0,0')) throw new Error('The internal core position must remain empty');
+    if (stickerCodes.size !== 54) throw new Error(`Cube must contain 54 stickers, got ${stickerCodes.size}`);
     return true;
   }
 }
 
+export class StickerHistory {
+  constructor() {
+    this.events = [];
+    this.bySticker = new Map(SOLVED_STICKERS.map(sticker => [sticker.code, []]));
+  }
+
+  record(beforeCube, afterCube, turn) {
+    const before = beforeCube.getStickerPositions();
+    const after = afterCube.getStickerPositions();
+    const changes = SOLVED_STICKERS
+      .map(sticker => ({ code: sticker.code, from: before[sticker.code], to: after[sticker.code] }))
+      .filter(change => change.from !== change.to)
+      .map(change => Object.freeze(change));
+    const event = Object.freeze({ index: this.events.length + 1, turn: Object.freeze({ ...createTurn(turn) }), changes: Object.freeze(changes) });
+    this.events.push(event);
+    for (const change of changes) this.bySticker.get(change.code).push(Object.freeze({ event: event.index, from: change.from, to: change.to }));
+    return event;
+  }
+
+  get length() { return this.events.length; }
+  clear() { this.events.length = 0; for (const list of this.bySticker.values()) list.length = 0; }
+  getAll() { return Object.freeze([...this.events]); }
+  getStickerHistory(code) {
+    if (!this.bySticker.has(code)) throw new Error(`Unknown sticker code: ${code}`);
+    return Object.freeze(this.bySticker.get(code).map(change => {
+      const event = this.events[change.event - 1];
+      return Object.freeze({ event: change.event, turn: event.turn, from: change.from, to: change.to });
+    }));
+  }
+  snapshot(cubeState) { return cubeState.getStickerPositions(); }
+}
+
+/** Legacy compatibility containers; new history is StickerHistory. */
 export class MoveHistory {
   constructor() { this.moves = []; }
   push(move) { this.moves.push(typeof move === 'string' ? parseMove(move) : move); }
@@ -223,7 +271,7 @@ export class MoveHistory {
 
 export class MoveQueue {
   constructor() { this.items = []; }
-  enqueue(...moves) { this.items.push(...moves.map(m => typeof m === 'string' ? parseMove(m) : m)); }
+  enqueue(...moves) { this.items.push(...moves.map(m => normalizeTurn(m))); return this; }
   dequeue() { return this.items.shift() ?? null; }
   clear() { this.items.length = 0; }
   get length() { return this.items.length; }
@@ -231,4 +279,4 @@ export class MoveQueue {
 }
 
 export function createSolvedCube() { return new CubeState(); }
-export function getMoveDefinitions() { return Object.freeze(Object.fromEntries(Object.entries(MOVE_DEFS).map(([k, v]) => [k, Object.freeze({...v})]))); }
+export function getMoveDefinitions() { return Object.freeze(Object.fromEntries(Object.entries(LEGACY_MOVE_DEFS).map(([k, v]) => [k, Object.freeze({...v})]))); }

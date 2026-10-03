@@ -449,7 +449,7 @@ Setiap fase dapat menghasilkan bug fix, koreksi spesifikasi, tambahan requiremen
 | Phase 2 | `FIX-200` FIXED; phase complete |
 | Phase 3 | `FIX-300` FIXED; phase complete |
 | Phase 4 | `FIX-400` FIXED; phase complete |
-| Phase 5 | `FIX-500`–`FIX-518` FIXED; POV front-face interaction, canonical color orientation, four-front horizontal/vertical direction contracts, M/E/S slices, live drag, all cubie types, and audited |
+| Phase 5 | `FIX-500`–`FIX-523` FIXED; direct geometric layer interaction, generic turns, 54 sticker identities, 54 position slots, object rotation, live drag, all cubie types, and sticker transition history |
 | Phase 6 | `FIX-504` FIXED; core shuffle work present, product flow still pending
 | Phase 7–10 | No fixes recorded yet |
 
@@ -504,38 +504,44 @@ Perubahan selama Phase 2 dicatat di [`FIX_LOG.md`](FIX_LOG.md), termasuk `FIX-20
 
 ## Phase 5 Implementation
 
-Phase 5 sekarang menggunakan **POV front-face method** dan telah diintegrasikan langsung dengan renderer, camera controller, move engine, dan turn runtime.
+Phase 5 now uses **direct geometric layer interaction**. There is no virtual Front/Back/Up/Down movement frame and no notation dependency.
 
 Files utama:
 
 - `src/interaction/gesture.js`
-- `src/interaction/pov-move-resolver.js`
+- `src/interaction/drag-move-resolver.js`
 - `src/interaction/manual-controller.js`
-- `src/interaction/index.js`
-- `src/render/cube-renderer.js`
-- `src/render/face-turn-renderer.js`
+- `src/interaction/cube-orientation-state.js`
+- `src/interaction/cube-orientation-controller.js`
+- `src/core/turn.js`
+- `src/core/sticker-map.js`
 - `src/core/cube.js`
+- `src/animation/face-turn-animator.js`
 - `src/animation/cube-turn-runtime.js`
+- `src/render/face-turn-renderer.js`
+- `src/render/cube-renderer.js`
 - `public/phase5.html`
-- `tests/interaction.test.js`
-- `tests/manual-controller.test.js`
-- `tests/interactive-drag.test.js`
-- `tests/pov-move-resolver.test.js`
+- `tests/drag-move-resolver.test.js`
+- `tests/sticker-history.test.js`
 - `PHASE_05_MANUAL_INTERACTION.md`
 - `PHASE_05_AUDIT.md`
-- `21_COLOR_ORIENTATION_AND_POV.md`
 
 ### Final interaction contract
 
-- canonical solved orientation: U yellow, D white, F red, R green, B orange, L blue;
-- only physical F/R/B/L may become virtual `F`;
-- fixed color adjacency determines virtual R/L/U/D/B;
+- no Front is used as a movement reference;
+- sticker normal + drag direction determine the perpendicular layer axis;
+- cube orientation quaternion is included in the geometry;
+- the result is `{ axis, layer, quarterTurns }`;
+- empty-space drag rotates the cube itself;
+- camera pointer orbit is disabled during Phase 5;
 - all 26 visible cubies can be interaction anchors;
-- center, edge, and corner rules are resolved from cubie type/position;
-- `M/E/S` are legal logical moves;
-- live drag follows pointer displacement;
-- release snaps or cancels;
-- logical state changes only on commit.
+- middle layers affect eight visible cubies (four edges + four centers) and allow center sticker identities to move;
+- live drag follows pointer displacement and snaps/cancels on release;
+- `CubeState` changes only on commit;
+- 54 sticker identities are permanent;
+- 54 physical sticker slots are `p01..p54`;
+- history records sticker `code: from → to`;
+- renderer color follows sticker identity, not current face.
 
 Validasi terakhir:
 
@@ -544,7 +550,7 @@ Validasi terakhir:
 0 failed
 ```
 
-Perubahan selama Phase 5 dicatat di [`FIX_LOG.md`](FIX_LOG.md), termasuk `FIX-508`–`FIX-511`.
+Perubahan selama Phase 5 dicatat di [`FIX_LOG.md`](FIX_LOG.md), termasuk `FIX-521`–`FIX-523`.
 
 ## Phase 4 Documentation
 
@@ -554,23 +560,56 @@ Perubahan selama Phase 5 dicatat di [`FIX_LOG.md`](FIX_LOG.md), termasuk `FIX-50
 - `FIX-400` — Camera state/controller dipisahkan dari CubeState; pointer orbit, wheel zoom, preset rotation, dan reset view telah diverifikasi.
 
 
-### Latest Phase 5 Fix
-- `FIX-511` — Contract gesture lama dihapus; POV resolver menjadi single source of truth.
-- `FIX-517` — Vertical front-face drag direction now follows the visual grab direction for all four eligible fronts; Red/F behavior is preserved and Green/R, Orange/B, Blue/L use the rotated notation table.
-- `FIX-518` — Side-face corner vertical F/B-family turns now follow the active POV Front/Back face: F/F' for Red, R/R' for Green, B/B' for Orange, L/L' for Blue.
-- `FIX-516` — Horizontal front-face drag direction now follows the visual grab direction for all four eligible fronts; POV frame is frozen per gesture.
-- `FIX-510` — Picking mengekspos `cubieType` dan `logicalPosition`.
-- `FIX-509` — Move engine menambahkan `M/E/S` dengan konvensi standar proyek.
-- `FIX-508` — Manual interaction dirombak menjadi POV front-face method.
-- `FIX-507` — Diagonal drag mengikuti dominant axis.
-- `FIX-506` — Center, edge, dan corner tercakup.
-- `FIX-505` — Live drag dan snap/cancel.
-- `FIX-503` — Mapping lama disatukan sebelum kemudian digantikan penuh oleh POV resolver.
-- `FIX-502` — Runtime cancellation aman.
-- `FIX-501` — FaceTurnRenderAdapter terhubung pada entry point.
-- `FIX-500` — Pointer ownership manual interaction.
+### Latest Phase 5 Fixes
 
+- `FIX-523` — Phase 5 runtime/animation now uses generic `{ axis, layer, quarterTurns }` turns.
+- `FIX-522` — Added 54 permanent sticker identities, 54 position slots, sticker transition history, and identity-based renderer colors.
+- `FIX-521` — Removed Front-based drag resolution; sticker geometry directly determines the layer and direction.
+- `FIX-520` — Empty-space drag rotates the Rubik object through quaternion orientation; camera remains the viewer.
+- `FIX-509` — Middle-layer geometry preserves center cubies.
+- `FIX-510` — Picking exposes `cubieType` and `logicalPosition`.
+- `FIX-505` — Live drag and snap/cancel.
+- `FIX-500` — Pointer ownership for manual interaction.
 
-### Latest interaction correction
+## Latest Phase 5 interaction contract
 
-`FIX-515` established the red/F horizontal direction correction. `FIX-516` generalizes that same visual-direction contract to green/R, orange/B, and blue/L while preserving the existing vertical and side-face mappings. The active POV frame is frozen for each gesture.
+```text
+sticker normal + screen drag + cube quaternion
+                ↓
+        cube-local drag tangent
+                ↓
+      perpendicular layer axis
+                ↓
+      X/Y/Z + layer coordinate
+                ↓
+   { axis, layer, quarterTurns }
+                ↓
+          CubeTurnRuntime
+                ↓
+            CubeState
+                ↓
+          StickerHistory
+```
+
+Empty-space drag rotates the cube itself. Camera pointer orbit remains disabled for Phase 5.
+
+Latest regression: **71/71 tests passed**.
+
+## 54-sticker identity contract
+
+```text
+rc1 ... rc4 + rc + re1 ... re4
+oc1 ...
+yc1 ...
+wc1 ...
+gc1 ...
+bc1 ...
+```
+
+Each sticker has a stable current slot in `p01..p54`. Example:
+
+```text
+rc1: p01 → p37
+```
+
+The sticker code never changes.

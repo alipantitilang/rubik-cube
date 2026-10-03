@@ -49,3 +49,12 @@ test('cubieType classifies the 26 positions without a core', () => {
   assert.equal(cubieType(cube.getCubieAt([1,0,0])), 'center');
   assert.equal(cube.getCubieAt([0,0,0]), null);
 });
+
+test('sticker render color follows sticker identity after a turn', () => {
+  const moved = createSolvedCube().applyTurn({ axis: 'y', layer: 1, quarterTurns: 1 });
+  const model = buildRenderModel(moved);
+  const cubie = model.cubies.find(c => c.logicalPosition.join(',') === '1,1,1');
+  const redSticker = cubie.stickers.find(s => s.id === 'rc1');
+  assert.ok(redSticker);
+  assert.equal(redSticker.color, 'red');
+});

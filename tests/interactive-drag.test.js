@@ -2,27 +2,24 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createSolvedCube } from '../src/core/cube.js';
 import { CubeTurnRuntime } from '../src/animation/cube-turn-runtime.js';
-import { resolvePovMove } from '../src/interaction/pov-move-resolver.js';
-
-const frame = {
-  front: 'F', back: 'B', right: 'R', left: 'L', up: 'U', down: 'D',
-  axes: { right: [1,0,0], up: [0,1,0], front: [0,0,1] }
-};
+import { resolveDragMove } from '../src/interaction/drag-move-resolver.js';
 
 function makeAdapter() {
   return { begin() {}, update() {}, finish() {} };
 }
 
 test('a POV drag command can be previewed and committed through CubeTurnRuntime', () => {
-  const move = resolvePovMove({
-    frame,
+  const move = resolveDragMove({
     physicalStickerFace: 'F',
+    cameraRight: [1,0,0],
+    cameraUp: [0,1,0],
+    cubeQuaternion: [0,0,0,1],
     cubieType: 'corner',
     cubiePosition: [-1, 1, 1],
     dragX: 100,
     dragY: 0
   });
-  assert.equal(move, 'U');
+  assert.deepEqual(move, { axis: 'y', layer: 1, quarterTurns: 1 });
 
   const runtime = new CubeTurnRuntime({ cubeState: createSolvedCube(), adapter: makeAdapter() });
   const before = runtime.cubeState.signature();

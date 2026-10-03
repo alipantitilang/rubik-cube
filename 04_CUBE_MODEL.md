@@ -1,91 +1,90 @@
 # Cube Model Specification
 
-## 1. Coordinate system
+## 1. Logical geometry
 
-Use a right-handed logical coordinate system.
-
-```text
-          +Y (U)
-           ↑
-           |
--LX ←------0------→ +X (R)
-          /
-        +Z (F)
-```
-
-The exact renderer coordinate system may differ, but a single conversion layer must exist.
-
----
-
-## 2. Positions
-
-All combinations of:
+The cube uses a right-handed 3D coordinate system. Valid visible cubie positions are all combinations of `x/y/z ∈ {-1,0,1}` except `(0,0,0)`.
 
 ```text
-x ∈ {-1,0,1}
-y ∈ {-1,0,1}
-z ∈ {-1,0,1}
-```
-
-except:
-
-```text
-(0,0,0)
-```
-
-are valid visible cubie positions.
-
-Total:
-
-```text
-3 × 3 × 3 - 1 = 26
-```
-
----
-
-## 3. Cubie classification
-
-A cubie has:
-
-```text
-number of non-zero coordinates
+3 × 3 × 3 - 1 = 26 visible cubies
 ```
 
 Classification:
+- 3 non-zero coordinates → 8 corners
+- 2 non-zero coordinates → 12 edges
+- 1 non-zero coordinate → 6 centers
+- `(0,0,0)` → empty internal core/reference only
 
-- 3 non-zero coordinates → corner
-- 2 non-zero coordinates → edge
-- 1 non-zero coordinate → center
-- 0 → internal core / empty position
+## 2. Sticker identity is separate from face orientation
 
-Counts:
+There are exactly **54 visible color stickers**. A sticker has a permanent identity code; its current face and position can change.
 
-- corners: 8
-- edges: 12
-- centers: 6
+Examples:
 
----
+```text
+rc1 = red corner 1
+re1 = red edge 1
+rc  = red center
+oc1 = orange corner 1
+...
+```
 
-## 4. Sticker identity
+The code never changes when the cube turns.
 
-A sticker is not just a color.
+## 3. Position slots
 
-It should have a stable identity tied to the original cubie.
+The solved cube has exactly 54 stable position slots:
 
-Conceptually:
+```text
+p01 ... p54
+```
+
+Slots are grouped by solved color only for identity/indexing:
+
+| Slots | Solved color |
+|---|---|
+| p01–p09 | red |
+| p10–p18 | orange |
+| p19–p27 | yellow |
+| p28–p36 | white |
+| p37–p45 | green |
+| p46–p54 | blue |
+
+This grouping is **not** a movement reference. It does not define Front, Back, Top, Bottom, Left, or Right.
+
+Within every nine-slot face grid:
+
+```text
+c1  e1  c2
+ e4  c  e2
+c4  e3  c3
+```
+
+Therefore the red solved face starts as:
+
+```text
+rc1→p01  re1→p02  rc2→p03
+re4→p04  rc →p05  re2→p06
+rc4→p07  re3→p08  rc3→p09
+```
+
+## 4. Permanent vs current data
+
+For every sticker:
 
 ```ts
-type Sticker = {
-  face: Face
-  color: ColorId
+{
+  code: 'rc1',
+  color: 'red',
+  initialPosition: 'p01',
+  currentPosition: 'p37'
 }
 ```
 
-This makes orientation changes traceable.
+`code`, `color`, and `initialPosition` are stable. `currentPosition` changes after turns.
 
----
+## 5. Internal face labels
 
-## 5. Face definitions
+The renderer and geometric math still need local surface normals:
 
 ```text
 U = +Y
@@ -96,7 +95,9 @@ F = +Z
 B = -Z
 ```
 
-Canonical solved colors:
+These are **local geometric labels**, not user-facing movement commands and not permanent world directions.
+
+Canonical solved colors remain:
 
 ```text
 U = yellow
@@ -107,133 +108,17 @@ F = red
 B = orange
 ```
 
-The four side faces F/R/B/L are the only faces eligible for POV-front authority.
+## 6. Orientation principle
 
-Each face contains 9 sticker positions conceptually.
+The Rubik is a free object. There is no permanent Front/Back/Up/Down/Left/Right in the interaction model.
 
-The renderer should calculate visible sticker placement from cubie state.
+`CubeOrientationController` stores visual object orientation separately from `CubeState`.
 
----
+## 7. Source of truth
 
-## 6. Move notation
+- `CubeState` → cubie/sticker logical state
+- sticker registry → 54 permanent sticker identities and 54 slot IDs
+- `CubeOrientation` → visual object orientation
+- renderer → projection only
 
-Face moves:
-
-```text
-U D L R F B
-```
-
-Slice moves:
-
-```text
-M E S
-```
-
-Modifiers:
-
-```text
-'   inverse
-2   half turn
-```
-
-Slice conventions:
-
-```text
-M follows L
-E follows D
-S follows F
-```
-
-The logical core is absent, but standard `M/E/S` rotates only the four middle-slice edge cubies. The four center cubies in the geometric plane remain fixed.
-
----
-
-## 7. Move metadata
-
-Each move should define:
-
-- face
-- axis
-- layer coordinate
-- direction
-- duration
-- notation
-
-Example concept:
-
-```ts
-{
-  face: 'R',
-  axis: 'x',
-  layer: +1,
-  quarterTurns: 1,
-  notation: 'R'
-}
-```
-
----
-
-## 8. Mathematical invariant
-
-For a normal 3×3 cube:
-
-- corner permutation remains valid
-- edge permutation remains valid
-- corner orientation sum remains valid
-- edge orientation parity remains valid
-
-The implementation must never manually mutate individual stickers in a way that violates these invariants.
-
----
-
-## 9. Four-turn invariant
-
-For every quarter turn:
-
-```text
-M × M × M × M = identity
-```
-
-Therefore:
-
-```text
-R R R R
-```
-
-must return to the exact previous logical state.
-
-The same must hold for every face.
-
----
-
-## 10. Inverse invariant
-
-For every move:
-
-```text
-M M' = identity
-```
-
-Examples:
-
-```text
-U U'
-F F'
-R R'
-```
-
----
-
-## 11. Double-turn invariant
-
-```text
-M2 M2 = identity
-```
-
----
-
-## 12. Solved state
-
-The solved state is the canonical initial state.
-
-Do not use approximate transforms to identify solved status.
+No renderer transform is allowed to become logical state.

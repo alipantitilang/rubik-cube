@@ -2,109 +2,106 @@
 
 ## Objective
 
-Implement a reliable Rubik move engine before UI polish. The engine is authoritative and independent of rendering and pointer interaction.
+Implement layer rotation without depending on Rubik notation such as `R`, `R'`, `L`, `U`, `F`, etc.
 
-## Supported move notation
+## Generic turn descriptor
 
-Face moves:
+Every turn is represented as:
 
-```text
-U D R L F B
+```ts
+{
+  axis: 'x' | 'y' | 'z',
+  layer: -1 | 0 | 1,
+  quarterTurns: -1 | 1 | 2
+}
 ```
 
-Slice moves:
+Meaning:
+
+- `axis` = local cube rotation axis
+- `layer` = selected layer coordinate
+- `quarterTurns` = direction and amount of 90° turns
+
+This descriptor has no Front/Back/Up/Down/Left/Right semantics.
+
+## Layer selection
 
 ```text
-M E S
+axis X, layer +1 → one outer layer
+axis X, layer  0 → middle X slice
+axis X, layer -1 → opposite outer layer
+
+axis Y, layer +1 → one outer layer
+axis Y, layer  0 → middle Y slice
+axis Y, layer -1 → opposite outer layer
+
+axis Z, layer +1 → one outer layer
+axis Z, layer  0 → middle Z slice
+axis Z, layer -1 → opposite outer layer
 ```
 
-Modifiers:
+Outer layer turns affect 9 cubies.
+
+A middle-layer turn affects 8 visible cubies in that slice: 4 edges plus 4 face centers. Center sticker identities move between face-position slots and are recorded by StickerHistory.
+
+## Turn transaction
 
 ```text
-'   inverse
-2   half turn
-```
-
-Examples:
-
-```text
-R R' R2
-M M' M2
-```
-
-## Slice conventions
-
-The project follows the standard conventions required by the manual POV interaction:
-
-| Slice | Axis | Layer | Direction convention |
-|---|---|---:|---|
-| `M` | X | `0` | follows `L` |
-| `E` | Y | `0` | follows `D` |
-| `S` | Z | `0` | follows `F` |
-
-The internal core `(0,0,0)` remains absent, but standard `M/E/S` turns rotate only the **4 middle-slice edge cubies**. Center cubies remain fixed to preserve face identity.
-
-## Move transaction
-
-```text
-Move request
+Generic turn
    ↓
-Parse / validate
+validate
    ↓
-Animation preview
+preview animation
    ↓
-Commit
+commit
    ↓
-CubeState.applyMove()
+CubeState.applyTurn()
+   ↓
+sticker history record
 ```
 
-`CubeState` is never mutated by pointer or renderer code.
+`CubeState` changes only when the turn commits.
 
-## Face layer selection
+## Sticker movement
+
+When a turn is committed:
+
+1. cubie position rotates;
+2. each sticker's local face rotates;
+3. sticker code stays unchanged;
+4. current slot is recalculated as `p01..p54`;
+5. history records `code: from → to`.
+
+Example:
 
 ```text
-R → x = +1
-L → x = -1
-U → y = +1
-D → y = -1
-F → z = +1
-B → z = -1
+rc1: p01 → p37
 ```
 
-Face turns affect 9 visible cubies.
+## Direction
 
-Slice selection:
-
-```text
-M → x = 0
-E → y = 0
-S → z = 0
-```
-
-The geometric middle plane contains 8 visible positions, but standard `M/E/S` excludes the four center cubies. Each logical slice move therefore affects 4 visible edge cubies.
-
-## Orientation
-
-Position and sticker orientation rotate together using the same integer 90° transform.
-
-This guarantees that a committed move changes the actual sticker colors visible on the resulting faces rather than merely changing a render transform.
+The interaction resolver determines `quarterTurns` from the actual drag vector. It never converts the result into a face notation string.
 
 ## Invariants
 
-For every supported quarter-turn move:
+For every valid quarter turn:
 
 ```text
-M × M × M × M = identity
-M × M' = identity
-M2 × M2 = identity
+T × T × T × T = identity
 ```
 
-This applies to both face and slice moves.
-
-## Interaction boundary
-
-The interaction system may request any supported notation, but it does not implement the move mathematics itself.
+For every non-half turn:
 
 ```text
-POV resolver → notation → CubeTurnRuntime → CubeState
+T × inverse(T) = identity
 ```
+
+For a half turn:
+
+```text
+T2 × T2 = identity
+```
+
+## Legacy notation
+
+`parseMove()` remains only as a compatibility adapter for older project code/tests. Phase 5 manual interaction, runtime turns, animation, shuffle generation, and sticker history use generic turn descriptors.

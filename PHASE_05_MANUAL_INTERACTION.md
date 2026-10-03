@@ -2,62 +2,145 @@
 
 ## Status
 
-**COMPLETE — canonical POV Front-Face Method**
+**COMPLETE — direct geometric layer interaction**
 
-Phase 5 converts direct pointer/touch manipulation into standard Rubik notation using a frozen POV frame and the project's canonical color orientation.
+## 1. New interaction contract
 
-## 1. Canonical solved orientation
+Phase 5 no longer uses Front/Back/Up/Down/Left/Right as movement references.
 
-```text
-U = Yellow
-D = White
-F = Red
-R = Green
-B = Orange
-L = Blue
-```
-
-Only the four horizontal color faces may become the virtual POV front:
+The user drags a visible sticker. The system determines the layer and rotation direction directly from geometry:
 
 ```text
-Red    → F
-Green  → R
-Orange → B
-Blue   → L
+sticker normal
+     +
+screen drag direction
+     +
+cube orientation
+     ↓
+world drag vector
+     ↓
+cube-local drag tangent
+     ↓
+rotation axis = stickerNormal × tangent
+     ↓
+snap to X/Y/Z
+     ↓
+cubie's coordinate on that axis
+     ↓
+{ axis, layer, quarterTurns }
 ```
 
-Yellow and White never become virtual `F`.
+## 2. No Front concept
 
-The complete color/facing contract lives in `21_COLOR_ORIENTATION_AND_POV.md`.
+There is no active Front face and no virtual Front frame.
 
-## 2. POV frame
+The same algorithm is used whether the user sees red, orange, yellow, white, green, blue, or any combination of faces.
 
-At pointer-down on a sticker:
+## 3. Direction principle
 
-1. Read camera position relative to the cube target.
-2. Ignore vertical camera component for front selection.
-3. Compare horizontal viewing direction against physical `F/R/B/L` normals.
-4. The dominant eligible face becomes virtual `F`.
-5. Load its fixed adjacency:
+Positive rotation is chosen so the selected sticker's normal moves toward the drag tangent.
 
-| Virtual front | Up | Right | Left | Down | Back |
-|---|---|---|---|---|---|
-| `F` (red) | `U` yellow | `R` green | `L` blue | `D` white | `B` orange |
-| `R` (green) | `U` yellow | `B` orange | `F` red | `D` white | `L` blue |
-| `B` (orange) | `U` yellow | `L` blue | `R` green | `D` white | `F` red |
-| `L` (blue) | `U` yellow | `F` red | `B` orange | `D` white | `R` green |
+Therefore the layer visually follows the user's drag instead of depending on a named face.
 
-6. Freeze the frame for the whole pointer gesture.
+## 4. Cube orientation
 
-At an exact horizontal tie the deterministic priority is:
+Empty-space drag rotates the Rubik object through `CubeOrientationController`.
 
 ```text
-F > R > B > L
+empty drag
+   ↓
+CubeOrientationController
+   ↓
+cubeGroup quaternion
 ```
 
-## 3. Picking contract
+Camera pointer orbit remains disabled for Phase 5. Camera zoom remains available.
 
-`RubikRenderer.pickFace(clientX, clientY)` returns:
+## 5. Gesture freeze
+
+At sticker `pointerdown`, the controller captures:
+
+- camera screen-right
+- camera screen-up
+- cube quaternion
+- physical sticker face
+- cubie logical position
+
+The captured geometry remains fixed for the gesture.
+
+## 6. Live turn
+
+After the movement threshold:
+
+```text
+pointer displacement
+      ↓
+resolveDragTurn()
+      ↓
+generic turn descriptor
+      ↓
+CubeTurnRuntime.beginInteractive()
+      ↓
+FaceTurnRenderAdapter
+```
+
+The logical state is unchanged during the preview.
+
+On release:
+
+- progress ≥ commit threshold → commit 90°;
+- progress < commit threshold → cancel preview.
+
+## 7. Middle slices
+
+If the selected cubie's coordinate on the perpendicular axis is `0`, the turn targets the middle slice.
+
+Only the four edge cubies participate. Centers remain fixed.
+
+## 8. Diagonal drags
+
+Diagonal input is projected onto the sticker plane. The perpendicular layer axis is then snapped to the nearest cube axis.
+
+This avoids any Front-based classification.
+
+## 9. 54-sticker tracking
+
+Every commit updates the permanent sticker registry.
+
+Example:
+
+```text
+rc1: p01 → p37
+```
+
+The sticker remains `rc1`; only its current position changes.
+
+## 10. Architecture
+
+```text
+Camera = viewer/reference
+CubeOrientation = visual object orientation
+CubeState = logical cubie + sticker state
+StickerRegistry = permanent 54 identities + 54 positions
+
+sticker drag
+  ↓
+drag-move-resolver
+  ↓
+generic turn {axis, layer, quarterTurns}
+  ↓
+CubeTurnRuntime
+  ↓
+FaceTurnRenderAdapter
+  ↓
+CubeState.applyTurn()
+  ↓
+StickerHistory
+```
+
+## 11. Picking
+
+Picking still exposes:
 
 ```js
 {
@@ -70,248 +153,35 @@ F > R > B > L
 }
 ```
 
-`cubieType` is:
-
-```text
-center | edge | corner
-```
-
-All 26 visible cubies are valid interaction anchors. The internal `(0,0,0)` core does not exist as a visible object.
-
-## 4. Gesture ownership
-
-```text
-pointer down on sticker
-    → manual face interaction
-
-pointer down on empty viewport
-    → camera orbit
-```
-
-Once a pointer starts on a sticker, camera orbit cannot steal that pointer.
-
-## 5. Live drag
-
-After the gesture threshold:
-
-```text
-pointer displacement
-      ↓
-POV move resolver
-      ↓
-standard notation
-      ↓
-interactive layer rotation
-```
-
-The layer follows the pointer continuously.
-
-On release:
-
-- progress `>= 0.5` → snap to 90° and commit;
-- progress `< 0.5` → return to the starting orientation and do not commit.
-
-`CubeState` changes only after commit.
-
-## 6. Standard notation
-
-Supported output:
-
-```text
-R R' L L' U U' D D' F F' B B'
-M M' E E' S S'
-```
-
-Slice conventions:
-
-```text
-M follows L
-E follows D
-S follows F
-```
-
-The logical engine and animation layer share the same slice membership rule: `M/E/S` rotate 4 middle-slice edge cubies. Center cubies remain fixed.
-
-## 7. Front-face corner rules
-
-For the current virtual `F`:
-
-| Selected corner | Drag | Move |
-|---|---|---|
-| left-top | right | `U'` |
-| right-top | left | `U` |
-| left-bottom | right | `D` |
-| right-bottom | left | `D'` |
-| left-top | down | `L` |
-| right-top | down | `R'` |
-| left-bottom | up | `L'` |
-| right-bottom | up | `R` |
-
-Reverse drags resolve to the inverse of the listed move.
-
-## 8. Front-face edge rules
-
-| Selected edge | Drag | Move |
-|---|---|---|
-| top | down | `M` |
-| left | right | `E` |
-| bottom | up | `M'` |
-| right | left | `E'` |
-
-Reverse drags resolve to the inverse.
-
-## 9. Situational right-side rules
-
-When the current front remains dominant and the picked sticker is on virtual right:
-
-### Corner
-
-| Selected corner | Drag | Move |
-|---|---|---|
-| left-top | down | `F` |
-| right-top | down | `B'` |
-| left-bottom | up | `F'` |
-| right-bottom | up | `B` |
-
-### Edge
-
-```text
-top    + down → S
-bottom + up   → S'
-```
-
-Reverse drags resolve to the inverse.
-
-## 10. Situational left-side rules
-
-When the current front remains dominant and the picked sticker is on virtual left:
-
-### Corner
-
-| Selected corner | Drag | Move |
-|---|---|---|
-| left-top | down | `F'` |
-| right-top | down | `B` |
-| left-bottom | up | `F` |
-| right-bottom | up | `B'` |
-
-### Edge
-
-```text
-top    + up   → S'
-bottom + down → S
-```
-
-Reverse drags resolve to the inverse.
-
-## 11. Center interaction
-
-A center sticker is a direct face anchor. For an eligible front/side face, horizontal drag direction determines the face turn and its inverse.
-
-### Four-front horizontal direction contract (`FIX-515` / `FIX-516`)
-
-For every eligible virtual front — `F` (red), `R` (green), `B` (orange), and `L` (blue) — horizontal front-face movement follows the same visual direction as the user's grab. The decision uses the frozen POV frame's local right/left axis.
-
-| Front position | Grab direction | Expected visible row/column motion |
-|---|---|---|
-| Top-left corner | right | right |
-| Top-right corner | left | left |
-| Bottom-left corner | right | right |
-| Bottom-right corner | left | left |
-| Left edge | right | right |
-| Right edge | left | left |
-
-The corresponding standard notation is: top-left → `U`, top-right → `U'`, bottom-left → `D'`, bottom-right → `D`, left edge → `E'`, right edge → `E`.
-
-`FIX-515` established this behavior for red/F. `FIX-516` generalizes the same contract to green/R, orange/B, and blue/L. The POV frame is locked for the entire gesture.
-
-### Four-front vertical direction contract (`FIX-517`)
-
-Vertical front-face interaction must follow the same visual grab direction for every eligible Front:
-
-| Front | Top-left + down | Top-right + down | Bottom-left + up | Bottom-right + up | Top edge + down | Bottom edge + up |
-|---|---|---|---|---|---|---|
-| Red / `F` | `L` | `R'` | `L'` | `R` | `M` | `M'` |
-| Green / `R` | `F` | `B'` | `F'` | `B` | `S'` | `S` |
-| Orange / `B` | `R` | `L'` | `R'` | `L` | `M'` | `M` |
-| Blue / `L` | `B` | `F'` | `B'` | `F` | `S` | `S'` |
-
-This table is the vertical equivalent of the four-front horizontal contract. It is obtained by rotating the canonical red/F front table with the fixed color adjacency. It must not be replaced with the physical `L/R/M` notation from the red/F frame when the active Front is another color.
-
-For the direct user gesture contract:
-
-```text
-top row    + grab down → visual movement down
-bottom row + grab up   → visual movement up
-```
-
-`FIX-517` changes only this front-face vertical mapping. Horizontal mapping, side-face F/B/S mapping, Front selection, and gesture-time frame locking remain unchanged.
-
-Yellow/White centers remain valid visible interaction anchors but do not receive POV-front authority. Their detailed fallback gesture behavior is intentionally not allowed to redefine the canonical front-face table.
-
-### Side-face F/F' direction contract (`FIX-518`)
-
-When the camera is slightly rotated and the user interacts with a corner on the virtual right/left side face, vertical dragging can intentionally resolve to a front/back face turn. The notation must follow the **active POV frame**, not the literal physical letters `F` and `B`.
-
-| Active Front | Front-facing side-corner turn | Back-facing side-corner turn |
-|---|---|---|
-| Red / `F` | `F` / `F'` | `B` / `B'` |
-| Green / `R` | `R` / `R'` | `L` / `L'` |
-| Orange / `B` | `B` / `B'` | `F` / `F'` |
-| Blue / `L` | `L` / `L'` | `R` / `R'` |
-
-The inverse direction is always the inverse notation of the same active face. This preserves the user's visual expectation when a slightly angled camera exposes a neighboring face. For example, with Red as Front, the front-facing side corner uses `F/F'`; after Green becomes Front, the equivalent interaction uses `R/R'` instead.
-
-`FIX-518` changes only the side-face corner vertical F/B-family resolution. The front-face contracts, side-edge `S/S'` mapping, front detection, and gesture-time POV lock remain unchanged.
-
-## 12. Direction interpretation
-
-Diagonal movement is not rejected. The dominant screen axis at the movement threshold determines horizontal versus vertical interpretation, and that axis remains locked for the gesture.
-
-## 13. Data flow
-
-```text
-CameraController
-      ↓
-POVMoveResolver.resolvePovFrame()
-      ↓
-ManualInteractionController
-      ↓
-selected cubie + cubie type + logical position
-      ↓
-POV move table
-      ↓
-R/R'/L/L'/U/U'/D/D'/F/F'/B/B'/M/M'/E/E'/S/S'
-      ↓
-CubeTurnRuntime
-      ↓
-CubeState
-      ↓
-Renderer
-```
-
-Interaction code never edits sticker colors directly.
-
-## 14. Acceptance
-
-- [x] 26 visible cubies remain the interaction domain.
-- [x] Center, edge, and corner anchors are identified from authoritative logical data.
-- [x] Only F/R/B/L can become POV front.
-- [x] Yellow/White never become POV front.
-- [x] Fixed color adjacency is preserved under all four front orientations.
-- [x] Front corner table matches the specified rules.
-- [x] Front edge M/E table matches the specified rules.
-- [x] Right/left side F/B/S table matches the specified rules.
-- [x] M/E/S use standard direction conventions.
-- [x] M/E/S keep center cubies fixed.
-- [x] Live drag follows pointer progress.
-- [x] Release snaps or cancels deterministically.
-- [x] Camera and cube pointer ownership do not conflict.
-- [x] Logical state changes only on commit.
-
-Current automated regression:
-
-```text
-71 tests passed
-0 failed
-```
+The `face` field is a local geometric surface label, not a movement command.
+
+## 12. Files
+
+- `src/interaction/drag-move-resolver.js`
+- `src/interaction/manual-controller.js`
+- `src/interaction/cube-orientation-state.js`
+- `src/interaction/cube-orientation-controller.js`
+- `src/core/turn.js`
+- `src/core/sticker-map.js`
+- `src/core/cube.js`
+- `src/animation/cube-turn-runtime.js`
+- `src/animation/face-turn-animator.js`
+- `src/render/face-turn-renderer.js`
+- `tests/drag-move-resolver.test.js`
+- `tests/sticker-history.test.js`
+
+## 13. Acceptance
+
+- [x] No Front-based move resolution.
+- [x] All visible sticker faces use one geometric rule.
+- [x] Direction follows drag geometry.
+- [x] Diagonal drag supported.
+- [x] Cube quaternion included in resolver.
+- [x] Empty-space drag rotates the cube object.
+- [x] Camera pointer orbit disabled for Phase 5.
+- [x] Generic turn descriptor replaces notation in Phase 5 runtime.
+- [x] 54 permanent sticker codes exist.
+- [x] 54 permanent position IDs `p01..p54` exist.
+- [x] Committed turns record sticker `from → to` transitions.
+- [x] Renderer displays sticker color by sticker identity, not current face.
+- [x] Full regression suite: **72 passed, 0 failed**.

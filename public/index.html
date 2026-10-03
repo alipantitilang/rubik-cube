@@ -34,9 +34,9 @@
     <div id="cube" class="cube-viewport"></div>
     <aside class="phase5-panel">
       <strong>Phase 5 — Manual Interaction</strong>
-      <span>Drag any center, edge, or corner sticker; the layer follows the drag.</span>
-      <span>Release to snap the turn or return if the drag is too short.</span>
-      <span>Drag empty space to orbit the camera.</span>
+      <span>Drag any center, edge, or corner sticker; the selected layer follows the drag direction from the current view.</span>
+      <span>Release to snap the layer turn or return if the drag is too short.</span>
+      <span>Drag empty space to rotate the Rubik itself.</span>
       <span>Wheel / touchpad = zoom.</span>
       <span id="status" class="status">Ready</span>
     </aside>
@@ -64,6 +64,7 @@
     const interaction = new ManualInteractionController({
       domElement: renderer.renderer.domElement,
       cameraController: renderer.cameraController,
+      cubeOrientationController: renderer.cubeOrientationController,
       pickFace: (x, y) => renderer.pickFace(x, y),
       beginInteractive: move => runtime.beginInteractive(move),
       updateInteractive: progress => runtime.updateInteractive(progress),
@@ -71,9 +72,9 @@
       isInputLocked: () => runtime.busy,
       onGesture: event => {
         if (event.type === 'face-drag') {
-          status.textContent = `Drag: ${event.move} • ${Math.round(event.progress * 90)}°`;
-        } else if (event.type === 'camera-orbit') {
-          status.textContent = 'Camera orbit';
+          status.textContent = `Drag: ${event.turn.axis.toUpperCase()}${event.turn.layer > 0 ? '+' : event.turn.layer < 0 ? '-' : '0'} • ${Math.round(event.progress * 90)}°`;
+        } else if (event.type === 'cube-rotate') {
+          status.textContent = 'Cube rotation';
         }
       }
     });
@@ -84,7 +85,7 @@
       previous = now;
       const result = runtime.tick(delta);
       if (result.completed) {
-        status.textContent = `Move complete: ${result.completed}`;
+        status.textContent = result.completed ? `Turn complete: ${result.completed.axis.toUpperCase()}${result.completed.layer > 0 ? '+' : result.completed.layer < 0 ? '-' : '0'}` : 'Ready';
       } else if (!runtime.busy) {
         status.textContent = 'Ready';
       }

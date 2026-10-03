@@ -1,186 +1,78 @@
-# Color Orientation & POV Front-Face Contract
+# Color Orientation & Object-Relative Interaction Contract
 
-## Status
+## 1. Colors are identities, not movement directions
 
-**ACTIVE — canonical orientation contract for manual interaction**
-
-This document is the single source of truth for the solved color orientation and the rule that determines which physical face may become the POV front face.
-
-## 1. Canonical solved orientation
-
-The cube starts in this orientation:
+Solved colors remain:
 
 ```text
-           U = Yellow
-              ↑
-L = Blue  ←  F = Red  →  R = Green
-              ↓
-           D = White
-
-           B = Orange
+U = yellow
+D = white
+R = green
+L = blue
+F = red
+B = orange
 ```
 
-Logical face-to-color mapping:
+These labels describe the solved cube's local geometry only.
 
-| Face code | Color | Coordinate normal |
-|---|---|---|
-| `U` | Yellow | +Y |
-| `D` | White | -Y |
-| `F` | Red | +Z |
-| `B` | Orange | -Z |
-| `R` | Green | +X |
-| `L` | Blue | -X |
+No color is permanently Front, Back, Top, Bottom, Left, or Right in the user interaction model.
 
-These identities are stable. Face turns do not exchange center identities.
-
-## 2. POV front-face eligibility
-
-Only these four physical faces can become the virtual POV front:
+## 2. Cube is the object being rotated
 
 ```text
-Red    = F
-Green  = R
-Orange = B
-Blue   = L
+Camera = viewer/reference
+CubeOrientation = actual visual object orientation
 ```
 
-Yellow (`U`) and White (`D`) never become virtual `F`.
+Dragging empty space rotates `cubeGroup` with a quaternion. The camera remains a viewer and is not the source of Rubik orientation.
 
-When the camera is elevated or lowered, the vertical camera component is ignored for front-face selection. The horizontal camera direction is compared against the four side-face normals.
+## 3. Sticker interaction has no POV frame
 
-This means the player may view the cube from any pitch, but the front-face authority always comes from one of the four horizontal color faces.
-
-## 3. Fixed adjacency for every allowed front
-
-### Red front (`F`)
+A sticker drag uses:
 
 ```text
-       Yellow / U
-Blue / L  Red / F  Green / R
-       White / D
-       Orange / B
+sticker local normal
++ screen drag vector
++ camera screen basis
++ cube quaternion
++ cubie logical position
 ```
 
-### Green front (`R`)
+The result is a generic layer turn:
+
+```ts
+{ axis, layer, quarterTurns }
+```
+
+## 4. 360° orientation
+
+Cube orientation is quaternion-based and may pass through multiple full rotations. There is no yaw wrap and no color preset.
+
+## 5. 54 sticker identities
+
+Each visible sticker has a permanent code such as:
 
 ```text
-       Yellow / U
-Red / F  Green / R  Orange / B
-       White / D
-       Blue / L
+rc1, rc2, rc3, rc4, rc
+re1, re2, re3, re4
 ```
 
-### Orange front (`B`)
+with equivalent codes for all six colors.
+
+Each current physical slot has an ID `p01..p54`.
+
+## 6. Position history
+
+A turn records transitions such as:
 
 ```text
-       Yellow / U
-Green / R  Orange / B  Blue / L
-       White / D
-       Red / F
+rc1: p01 → p37
 ```
 
-### Blue front (`L`)
+The code does not change. Only its current slot changes.
 
-```text
-       Yellow / U
-Orange / B  Blue / L  Red / F
-       White / D
-       Green / R
-```
+## 7. Renderer rule
 
-The right/left relationship is fixed by cube orientation, not by camera roll.
+Sticker material color comes from the sticker's permanent color identity. It must not be inferred from the face it currently occupies.
 
-## 4. Dominant-face rule
-
-At the beginning of each sticker gesture:
-
-1. Read the camera position relative to the cube target.
-2. Project the viewing direction onto the horizontal XZ plane.
-3. Compare it with `F/R/B/L` normals.
-4. The highest-scoring eligible face becomes virtual `F`.
-5. Load the fixed adjacency table for that face.
-6. Freeze the resulting POV frame for the entire gesture.
-
-At an exact tie, a deterministic priority is used so the resolver cannot oscillate between two frames:
-
-```text
-F > R > B > L
-```
-
-## 5. Why centers remain fixed
-
-The center cubies carry the permanent face/color identity. They are visible interaction anchors, but their identity must not migrate to another face.
-
-Therefore:
-
-- `M`, `E`, and `S` do not move center cubies;
-- they rotate the four middle-slice edge cubies;
-- outer face turns rotate 9 cubies;
-- the cube still contains exactly 26 visible cubies.
-
-## 6. Interaction meaning
-
-The POV frame is only an interpretation layer.
-
-```text
-camera + color orientation
-        ↓
-virtual POV frame
-        ↓
-selected cubie / sticker
-        ↓
-user drag
-        ↓
-standard notation
-        ↓
-CubeTurnRuntime
-        ↓
-CubeState
-```
-
-The resolver never edits colors directly.
-
-## 7. Horizontal direction invariant
-
-For every eligible front (`F` red, `R` green, `B` orange, `L` blue), front-face horizontal interaction follows the user's visual grab direction: left-column drag-right moves right; right-column drag-left moves left. The corresponding legal notation is `U`, `U'`, `D'`, `D`, `E'`, and `E` according to the cubie's row/column.
-
-The POV frame is captured at sticker `pointerdown` and remains frozen until `pointerup` or `pointercancel`. Camera movement during a gesture therefore cannot change the active front or remap the gesture.
-
-## 8. Vertical direction invariant
-
-For every eligible Front, the visible vertical gesture direction is preserved:
-
-```text
-top row    + drag down → movement down
-bottom row + drag up   → movement up
-```
-
-The physical notation changes with the active Front according to the canonical table:
-
-| Front | Top-left ↓ | Top-right ↓ | Bottom-left ↑ | Bottom-right ↑ | Top edge ↓ | Bottom edge ↑ |
-|---|---|---|---|---|---|---|
-| `F` / Red | `L` | `R'` | `L'` | `R` | `M` | `M'` |
-| `R` / Green | `F` | `B'` | `F'` | `B` | `S'` | `S` |
-| `B` / Orange | `R` | `L'` | `R'` | `L` | `M'` | `M` |
-| `L` / Blue | `B` | `F'` | `B'` | `F` | `S` | `S'` |
-
-This is a POV-relative contract. It prevents a correct red/F vertical gesture from becoming inverted when the camera changes Front.
-
-## 9. Required consistency
-
-Any future change to solved color orientation must update, at minimum:
-
-- `src/core/cube.js`
-- `src/render/cube-render-model.js`
-- `src/interaction/pov-move-resolver.js`
-- renderer color tests
-- POV interaction tests
-- this document
-- `README.md`
-- `FIX_LOG.md`
-- relevant phase specifications
-
-
-## Side-face F/F' family rule (`FIX-518`)
-
-When a slight camera angle exposes a neighboring right/left face and a vertical corner drag resolves to the front/back family, use the active POV frame's `front`/`back` identities rather than literal F/B notation. Therefore Red→F/F', Green→R/R', Orange→B/B', Blue→L/L'. The opposite visible face uses the corresponding active `back` identity.
+This is essential after a turn because a red sticker may temporarily occupy a green/orange/etc. local face.

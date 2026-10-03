@@ -27,31 +27,45 @@ function makeCamera() {
     rotateByDegrees(yaw, pitch) { this.lastOrbit = [yaw, pitch]; }
   };
 }
-
-test('sticker drag resolves against the frozen POV frame and never orbits camera', () => {
+function makeCubeOrientation() {
+  return {
+    state: { quaternion: [0,0,0,1] },
+    rotateByScreenDelta(dx, dy) { this.lastRotation = [dx, dy]; }
+  };
+}
+function makeController({ pickFace = () => null, enqueueMove = () => {}, isInputLocked = () => false } = {}) {
   const el = makeElement();
   const camera = makeCamera();
-  const moves = [];
+  const cube = makeCubeOrientation();
   const controller = new ManualInteractionController({
     domElement: el,
     cameraController: camera,
+    cubeOrientationController: cube,
+    pickFace,
+    enqueueMove,
+    isInputLocked
+  });
+  return { el, camera, cube, controller };
+}
+
+test('sticker drag resolves against the frozen view geometry and never rotates cube', () => {
+  const moves = [];
+  const { el, camera, cube, controller } = makeController({
     pickFace: () => ({ face: 'F', normal: [0, 0, 1], cubieId: 'c', cubieType: 'corner', logicalPosition: [-1, 1, 1] }),
     enqueueMove: move => moves.push(move)
   });
   el.emit('pointerdown', makeEvent());
   el.emit('pointermove', makeEvent({ clientX: 140, clientY: 100 }));
   el.emit('pointerup', makeEvent({ clientX: 140, clientY: 100 }));
-  assert.deepEqual(moves, ['U']);
+  assert.deepEqual(moves, [{ axis: 'y', layer: 1, quarterTurns: 1 }]);
   assert.equal(camera.lastOrbit, undefined);
+  assert.equal(cube.lastRotation, undefined);
   controller.dispose();
 });
 
-test('camera movement during a sticker drag cannot change the frozen POV front', () => {
-  const el = makeElement();
-  const camera = makeCamera();
+test('camera movement during a sticker drag cannot change the frozen view geometry', () => {
   const moves = [];
-  const controller = new ManualInteractionController({
-    domElement: el, cameraController: camera,
+  const { el, camera, controller } = makeController({
     pickFace: () => ({ face: 'F', normal: [0,0,1], cubieId: 'c', cubieType: 'corner', logicalPosition: [-1,1,1] }),
     enqueueMove: move => moves.push(move)
   });
@@ -60,45 +74,42 @@ test('camera movement during a sticker drag cannot change the frozen POV front',
   camera.camera.position.z = 0;
   el.emit('pointermove', makeEvent({ clientX: 140, clientY: 100 }));
   el.emit('pointerup', makeEvent({ clientX: 140, clientY: 100 }));
-  assert.deepEqual(moves, ['U']);
+  assert.deepEqual(moves, [{ axis: 'y', layer: 1, quarterTurns: 1 }]);
   controller.dispose();
 });
 
 test('tap on sticker does not enqueue a move', () => {
-  const el = makeElement();
-  const camera = makeCamera();
+  const { el, controller } = makeController({
+    pickFace: () => ({ face: 'F', normal: [0,0,1], cubieId: 'c', cubieType: 'center', logicalPosition: [0,0,1] })
+  });
   const moves = [];
-  const controller = new ManualInteractionController({
-    domElement: el, cameraController: camera,
+  // Replace the controller callback with a no-op test path through a second controller.
+  controller.dispose();
+  const ctx = makeController({
     pickFace: () => ({ face: 'F', normal: [0,0,1], cubieId: 'c', cubieType: 'center', logicalPosition: [0,0,1] }),
     enqueueMove: move => moves.push(move)
   });
-  el.emit('pointerdown', makeEvent());
-  el.emit('pointerup', makeEvent({ clientX: 104, clientY: 103 }));
+  ctx.el.emit('pointerdown', makeEvent());
+  ctx.el.emit('pointerup', makeEvent({ clientX: 104, clientY: 103 }));
   assert.deepEqual(moves, []);
-  controller.dispose();
+  ctx.controller.dispose();
 });
 
-test('empty-scene drag orbits camera', () => {
-  const el = makeElement();
-  const camera = makeCamera();
-  const controller = new ManualInteractionController({
-    domElement: el, cameraController: camera, pickFace: () => null, enqueueMove: () => {}
-  });
+test('empty-scene drag rotates cube instead of camera', () => {
+  const { el, camera, cube, controller } = makeController();
   el.emit('pointerdown', makeEvent());
   el.emit('pointermove', makeEvent({ clientX: 120, clientY: 110 }));
-  assert.ok(Array.isArray(camera.lastOrbit));
+  assert.deepEqual(cube.lastRotation, [20, 10]);
+  assert.equal(camera.lastOrbit, undefined);
   controller.dispose();
 });
 
 test('input lock prevents gesture ownership', () => {
-  const el = makeElement();
-  const camera = makeCamera();
   const moves = [];
-  const controller = new ManualInteractionController({
-    domElement: el, cameraController: camera,
+  const { el, camera, controller } = makeController({
     pickFace: () => ({ face: 'F', normal: [0,0,1], cubieId: 'c', cubieType: 'center', logicalPosition: [0,0,1] }),
-    enqueueMove: move => moves.push(move), isInputLocked: () => true
+    enqueueMove: move => moves.push(move),
+    isInputLocked: () => true
   });
   el.emit('pointerdown', makeEvent());
   el.emit('pointermove', makeEvent({ clientX: 140, clientY: 100 }));

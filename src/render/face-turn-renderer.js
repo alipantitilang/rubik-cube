@@ -3,7 +3,7 @@
  * RubikRenderer. It never mutates CubeState while a turn is in progress.
  */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
-import { parseMove, } from '../core/cube.js';
+import { createTurn } from '../core/turn.js';
 import { getLayerCubieIds, moveAngleRadians } from '../animation/face-turn-animator.js';
 
 const AXIS = {
@@ -26,7 +26,7 @@ export class FaceTurnRenderAdapter {
 
   begin(cubeState, move) {
     if (this.activeMove) throw new Error('A face turn is already active');
-    const parsed = typeof move === 'string' ? parseMove(move) : move;
+    const parsed = createTurn(move);
     this.activeMove = parsed;
     this.activeIds = getLayerCubieIds(cubeState, parsed);
     this.axis = AXIS[parsed.axis];

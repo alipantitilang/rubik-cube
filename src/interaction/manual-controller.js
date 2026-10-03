@@ -1,15 +1,16 @@
 import { GESTURE_CONFIG } from './gesture.js';
-import { resolvePovFrame, resolvePovMove, getPovStickerContext } from './pov-move-resolver.js';
+import { resolveDragTurn, getDragStickerContext } from './drag-move-resolver.js';
 
 /**
  * Phase 5 POV interaction owner.
- * A pointer that starts on a sticker is interpreted in a frozen camera-relative
- * Rubik frame. A pointer that starts on empty space belongs to camera orbit.
+ * A pointer that starts on a sticker is interpreted directly from screen-space
+ * drag geometry. There is no Front face or virtual POV frame. Empty space rotates the cube.
  */
 export class ManualInteractionController {
   constructor({
     domElement,
     cameraController,
+    cubeOrientationController,
     pickFace,
     beginInteractive = null,
     updateInteractive = null,
@@ -21,6 +22,7 @@ export class ManualInteractionController {
   } = {}) {
     if (!domElement) throw new Error('ManualInteractionController requires domElement.');
     if (!cameraController) throw new Error('ManualInteractionController requires cameraController.');
+    if (!cubeOrientationController) throw new Error('ManualInteractionController requires cubeOrientationController.');
     if (typeof pickFace !== 'function') throw new Error('ManualInteractionController requires pickFace().');
     if (!beginInteractive && typeof enqueueMove !== 'function') {
       throw new Error('ManualInteractionController requires beginInteractive() or enqueueMove().');
@@ -28,6 +30,7 @@ export class ManualInteractionController {
 
     this.domElement = domElement;
     this.cameraController = cameraController;
+    this.cubeOrientationController = cubeOrientationController;
     this.pickFace = pickFace;
     this.beginInteractive = beginInteractive;
     this.updateInteractive = updateInteractive;
@@ -64,19 +67,13 @@ export class ManualInteractionController {
     el.removeEventListener('pointermove', this._onPointerMove);
     el.removeEventListener('pointerup', this._onPointerUp);
     el.removeEventListener('pointercancel', this._onPointerCancel);
-    this.cameraController.setPointerOrbitEnabled?.(true);
+    this.cameraController.setPointerOrbitEnabled?.(false);
   }
 
   _onPointerDown(event) {
     if (!this.enabled || event.button !== 0 || this.isInputLocked()) return;
     const hit = this.pickFace(event.clientX, event.clientY);
-    const camera = this.cameraController.camera;
-    const frame = hit
-      ? resolvePovFrame({
-          cameraPosition: [camera.position.x, camera.position.y, camera.position.z],
-          target: this.cameraController.state?.target ?? [0, 0, 0]
-        })
-      : null;
+    const gestureView = hit ? this._getViewContext() : null;
 
     this._pointer = {
       id: event.pointerId,
@@ -84,10 +81,10 @@ export class ManualInteractionController {
       startY: event.clientY,
       lastX: event.clientX,
       lastY: event.clientY,
-      mode: hit ? 'face-pending' : 'camera',
+      mode: hit ? 'face-pending' : 'cube',
       hit,
-      frame,
-      move: null,
+      gestureView,
+      turn: null,
       axis: null,
       progress: 0
     };
@@ -110,32 +107,34 @@ export class ManualInteractionController {
           return;
         }
 
-        const move = resolvePovMove({
-          frame: pointer.frame,
+        const view = pointer.gestureView ?? this._getViewContext();
+        const turn = resolveDragTurn({
           physicalStickerFace: pointer.hit.face,
-          cubieType: pointer.hit.cubieType,
           cubiePosition: pointer.hit.logicalPosition,
           dragX: dx,
-          dragY: dy
+          dragY: dy,
+          cameraRight: view.cameraRight,
+          cameraUp: view.cameraUp,
+          cubeQuaternion: view.cubeQuaternion
         });
-        if (!move) {
+        if (!turn) {
           event.stopPropagation();
           return;
         }
 
         pointer.axis = Math.abs(dx) >= Math.abs(dy) ? 'horizontal' : 'vertical';
-        pointer.move = move;
+        pointer.turn = turn;
         pointer.progress = Math.min(1, Math.abs(pointer.axis === 'horizontal' ? dx : dy) / this.gestureConfig.pixelsPerQuarterTurn);
 
         if (this.beginInteractive) {
-          const started = this.beginInteractive(move);
+          const started = this.beginInteractive(turn);
           if (!started) {
             this._cancelPointer(false);
             return;
           }
           this.updateInteractive?.(pointer.progress);
         } else {
-          this.enqueueMove?.(move);
+          this.enqueueMove?.(turn);
         }
         pointer.mode = 'face-drag';
         this._emitFaceGesture(pointer, dx, dy);
@@ -151,18 +150,31 @@ export class ManualInteractionController {
       return;
     }
 
-    if (pointer.mode === 'camera') {
+    if (pointer.mode === 'cube') {
       const stepX = event.clientX - pointer.lastX;
       const stepY = event.clientY - pointer.lastY;
       pointer.lastX = event.clientX;
       pointer.lastY = event.clientY;
-      this.cameraController.rotateByDegrees(
-        -stepX * 0.006 * 180 / Math.PI,
-        -stepY * 0.006 * 180 / Math.PI
-      );
-      this.onGesture?.({ type: 'camera-orbit', dx: stepX, dy: stepY });
+      this.cubeOrientationController.rotateByScreenDelta(stepX, stepY);
+      this.onGesture?.({ type: 'cube-rotate', dx: stepX, dy: stepY });
       event.stopPropagation();
     }
+  }
+
+  _getViewContext() {
+    const camera = this.cameraController.camera;
+    return {
+      cameraPosition: [camera.position.x, camera.position.y, camera.position.z],
+      target: this.cameraController.state?.target ?? [0, 0, 0],
+      cameraRight: [camera.matrixWorld.elements[0], camera.matrixWorld.elements[1], camera.matrixWorld.elements[2]],
+      cameraUp: [camera.matrixWorld.elements[4], camera.matrixWorld.elements[5], camera.matrixWorld.elements[6]],
+      cubeQuaternion: [
+        this.cubeOrientationController.state.quaternion[0],
+        this.cubeOrientationController.state.quaternion[1],
+        this.cubeOrientationController.state.quaternion[2],
+        this.cubeOrientationController.state.quaternion[3]
+      ]
+    };
   }
 
   _onPointerUp(event) {
@@ -192,15 +204,14 @@ export class ManualInteractionController {
   }
 
   _emitFaceGesture(pointer, dx, dy) {
-    const context = getPovStickerContext({
-      frame: pointer.frame,
+    const context = getDragStickerContext({
       physicalStickerFace: pointer.hit.face,
       cubieType: pointer.hit.cubieType,
       cubiePosition: pointer.hit.logicalPosition
     });
     this.onGesture?.({
       type: 'face-drag',
-      move: pointer.move,
+      turn: pointer.turn,
       progress: pointer.progress,
       axis: pointer.axis,
       dx,

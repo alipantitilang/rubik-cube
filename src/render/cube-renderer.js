@@ -2,9 +2,11 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.m
 import {
   FACE_NORMALS,
   CUBE_COLORS,
+  COLOR_HEX,
   buildRenderModel
 } from './cube-render-model.js';
 import { CameraController } from '../camera-controller.js';
+import { CubeOrientationController } from '../interaction/cube-orientation-controller.js';
 
 const FACE_AXES = {
   U: { position: [0, 0.491, 0], rotation: [-Math.PI / 2, 0, 0] },
@@ -52,6 +54,12 @@ export class RubikRenderer {
       camera: this.camera,
       domElement: this.renderer.domElement,
       onChange: () => {}
+    });
+    // The camera is a fixed viewer in Phase 5. The Rubik object itself rotates.
+    this.cameraController.setPointerOrbitEnabled(false);
+    this.cubeOrientationController = new CubeOrientationController({
+      object: this.cubeGroup,
+      camera: this.camera
     });
 
     this._resizeObserver = new ResizeObserver(() => this.resize());
@@ -178,16 +186,18 @@ export class RubikRenderer {
   }
 
   _syncStickers(group, stickers) {
-    const active = new Map(stickers.map(s => [s.face, s.color]));
+    const active = new Map(stickers.map(s => [s.face, s]));
     for (let i = 1; i < group.children.length; i++) {
       const sticker = group.children[i];
       const face = sticker.userData.face;
       const desc = FACE_AXES[face];
-      sticker.visible = active.has(face);
+      const descriptor = active.get(face);
+      sticker.visible = Boolean(descriptor);
       if (!sticker.visible) continue;
       sticker.position.set(...desc.position);
       sticker.rotation.set(...desc.rotation);
-      sticker.material.color.set(CUBE_COLORS[face]);
+      sticker.material.color.set(COLOR_HEX[descriptor.color]);
+      sticker.userData.stickerId = descriptor.id;
     }
   }
 

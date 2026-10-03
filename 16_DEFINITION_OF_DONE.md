@@ -31,7 +31,7 @@
 - [ ] POV dominant-face resolution restricted to F/R/B/L
 - [ ] canonical color orientation: U yellow, D white, F red, R green, B orange, L blue
 - [ ] exact F/R/B/L adjacency table
-- [ ] center identity invariant during M/E/S
+- [ ] center sticker identities move with their intersecting middle slice and remain uniquely addressable
 - [ ] front corner/edge mapping
 - [ ] side F/B/S mapping
 - [ ] live drag progress and snap/cancel

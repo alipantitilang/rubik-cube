@@ -89,11 +89,11 @@ Build:
 
 This is a high-risk interaction phase and needs dedicated testing.
 
-Status: **Complete — redesigned under POV front-face method**
+Status: **Complete — direct geometric layer interaction**
 
-Validation: **69 tests passed, 0 failed**
+Validation: **71 tests passed, 0 failed**
 
-The finalized interaction contract uses the canonical color orientation (U yellow, D white, F red, R green, B orange, L blue), allows only F/R/B/L to become virtual front, uses fixed color adjacency, standard M/E/S slice moves, all 26 visible cubies as anchors, and live drag/snap behavior.
+The finalized interaction contract has no virtual Front frame. A sticker drag is resolved directly from sticker normal, screen drag, cube quaternion, and cubie position into `{ axis, layer, quarterTurns }`. Empty-space drag rotates the Rubik object. All 54 stickers have stable identity codes and all 54 visible slots are `p01..p54`; committed turns record `code: from → to`.
 
 ---
 
@@ -152,3 +152,11 @@ Add:
 Run complete test plan.
 
 Do not release while any move-engine invariant fails.
+
+## Phase 5 Architecture Reset — 2026-10-04
+
+Phase 5 no longer depends on a POV Front frame. The active interaction primitive is a generic layer turn derived from sticker geometry and drag direction.
+
+The project now also treats all 54 visible stickers as permanent identities with stable codes and all 54 visible sticker locations as stable slot IDs `p01..p54`.
+
+Future History/Replay phases must use these identities and positions rather than notation strings.

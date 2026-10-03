@@ -138,7 +138,7 @@ See `21_COLOR_ORIENTATION_AND_POV.md` for the complete adjacency contract.
 
 ## Rule 13 — Center identity is invariant
 
-Center cubies remain fixed to their face identity. Standard `M/E/S` turns rotate middle-slice edge cubies, not center cubies.
+Center stickers are movable identities. A middle-slice turn carries the 4 edge cubies plus the 4 face-center cubies intersecting that slice; center color therefore may move between face-position slots.
 
 Do not hard-code color literals throughout components.
 

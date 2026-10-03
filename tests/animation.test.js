@@ -57,3 +57,31 @@ test('runtime commits an inverse pair back to solved', () => {
   runtime.tick(10);
   assert.equal(runtime.cubeState.isSolved(), true);
 });
+
+
+test('runtime cancel discards active and queued turns without mutating logical state', () => {
+  const calls = [];
+  const cubeState = createSolvedCube();
+  const runtime = new CubeTurnRuntime({
+    cubeState,
+    animator: new FaceTurnAnimator({ durationMs: 100 }),
+    adapter: {
+      finish() { calls.push('finish'); },
+      begin() {},
+      update() {}
+    },
+    renderer: {
+      renderCube(state) { calls.push(['render', state.signature()]); }
+    }
+  });
+
+  runtime.enqueue('R', 'U');
+  runtime.tick(25);
+  const before = cubeState.signature();
+  const result = runtime.cancel();
+
+  assert.equal(result.cancelled, true);
+  assert.equal(runtime.busy, false);
+  assert.equal(runtime.cubeState.signature(), before);
+  assert.deepEqual(calls, ['finish', ['render', before]]);
+});

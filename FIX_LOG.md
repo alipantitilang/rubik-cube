@@ -54,6 +54,7 @@ Setelah dicatat di sini:
 | FIX-000 | Phase 0 | Baseline | FIXED | Sistem Fix Log dibuat sebagai bagian dari dokumentasi proyek. | `README.md`, `FIX_LOG.md` |
 | FIX-200 | Phase 2 | Test | FIXED | Memperbaiki assertion test warna agar membandingkan face-to-color contract, bukan nama warna ke nilai hex. | `tests/render-model.test.js` |
 | FIX-300 | Phase 3 | Animation / Renderer | FIXED | Reset transform cubie setelah face-turn agar rotasi sementara tidak terakumulasi sebagai drift visual. | `src/render/cube-renderer.js`, `PHASE_03_FACE_TURN_ANIMATION.md` |
+| FIX-500 | Phase 5 | Interaction / Architecture | FIXED | Integrasi manual face gesture dengan renderer dan camera Phase 4 agar sticker drag tidak ikut mengorbit kamera. | `src/interaction/gesture.js`, `src/interaction/manual-controller.js`, `src/render/cube-renderer.js`, `src/camera-controller.js`, `PHASE_05_MANUAL_INTERACTION.md` |
 
 ---
 
@@ -158,11 +159,65 @@ Belum ada fix.
 
 ---
 
+
+### FIX-501
+- **Status:** `FIXED`
+- **Tipe:** Integration / Animation
+- **Tanggal:** 2026-10-03
+- **Fase:** Phase 5 — Manual Rubik Interaction
+- **Ringkasan:** Entry point Phase 5 belum memasang `FaceTurnRenderAdapter`, sehingga gesture dapat mengubah logical state setelah runtime selesai tetapi tidak menampilkan face-turn animation.
+- **Masalah / Alasan:** `CubeTurnRuntime` hanya melakukan transform sementara jika adapter disediakan.
+- **Perubahan:** `public/index.html` dan `public/phase5.html` sekarang membuat `FaceTurnRenderAdapter` dan memasukkannya ke `CubeTurnRuntime`.
+- **Acceptance:** Manual sticker drag menghasilkan animasi face-turn sebelum logical state di-commit.
+- **Dokumentasi Terkait:** `PHASE_05_MANUAL_INTERACTION.md`, `public/index.html`, `public/phase5.html`, `tests/integration-contract.test.js`
+
+### FIX-502
+- **Status:** `FIXED`
+- **Tipe:** State / Animation / Cleanup
+- **Tanggal:** 2026-10-03
+- **Fase:** Phase 5 / Phase 6 boundary
+- **Ringkasan:** Pembatalan runtime dari `ShuffleController.reset()` dapat memutus active turn tanpa membersihkan temporary render transform.
+- **Masalah / Alasan:** Mengubah `animator.active` langsung melewati lifecycle adapter dan dapat meninggalkan cubie pada transform visual parsial.
+- **Perubahan:** Menambahkan `CubeTurnRuntime.cancel()` sebagai satu-satunya jalur pembatalan yang membersihkan adapter, queue, dan me-render ulang authoritative `CubeState`. `ShuffleController.reset()` sekarang menggunakan API tersebut.
+- **Acceptance:** Reset saat active turn tidak meninggalkan visual transform parsial dan runtime kembali idle.
+- **Dokumentasi Terkait:** `src/animation/cube-turn-runtime.js`, `src/animation/shuffle-controller.js`, `tests/animation.test.js`, `tests/shuffle-controller.test.js`
+
+### FIX-503
+### FIX-504
+- **Status:** `FIXED`
+- **Tipe:** Robustness / Shuffle
+- **Tanggal:** 2026-10-03
+- **Fase:** Phase 6 — Legal Shuffle / Play Flow
+- **Ringkasan:** Seeded random dan custom random source membutuhkan validasi agar seed `0` tidak diam-diam berubah menjadi seed default dan random output invalid tidak menghasilkan state generator yang rusak.
+- **Masalah / Alasan:** Seed `0` sebelumnya fallback ke default seed, sementara output random di luar `[0,1)` dapat menghasilkan index tidak valid atau perilaku tak terdefinisi.
+- **Perubahan:** Seed `0` sekarang valid dan deterministic; output random divalidasi; generator memiliki batas percobaan agar constraint yang tidak dapat dipenuhi tidak menyebabkan infinite loop.
+- **Acceptance:** Seed `0` reproducible, random invalid ditolak, dan random source patologis berhenti dengan error terkontrol.
+- **Dokumentasi Terkait:** `src/core/shuffle.js`, `tests/shuffle.test.js`
+
+- **Status:** `FIXED`
+- **Tipe:** Refactor / Data Contract
+- **Tanggal:** 2026-10-03
+- **Fase:** Phase 5 — Manual Rubik Interaction
+- **Ringkasan:** Manual controller menduplikasi aturan pemetaan gesture → move yang sudah tersedia di helper gesture.
+- **Masalah / Alasan:** Duplikasi aturan dapat menyebabkan perbedaan behavior antara unit helper dan runtime interaction.
+- **Perubahan:** `_gestureMove()` sekarang menggunakan `gestureToMove()` sebagai single mapping contract.
+- **Acceptance:** Satu sumber aturan gesture-to-move digunakan oleh test helper dan controller runtime.
+- **Dokumentasi Terkait:** `src/interaction/manual-controller.js`, `src/interaction/gesture.js`
+
 # Phase 5 — Manual Rubik Interaction
 
-Belum ada fix.
+### FIX-500
+- **Status:** `FIXED`
+- **Tipe:** Interaction / Architecture
+- **Tanggal:** 2026-10-03
+- **Fase:** Phase 5 — Manual Rubik Interaction
+- **Ringkasan:** Integrasi direct face gesture ke renderer Phase 4 membutuhkan ownership pointer yang jelas agar drag sticker tidak sekaligus menjalankan camera orbit.
+- **Masalah / Alasan:** `CameraController` Phase 4 sebelumnya menangani pointer orbit secara langsung. Tanpa ownership boundary, satu pointer dapat memicu dua mode interaksi.
+- **Perubahan:** `CameraController` mendapat `setPointerOrbitEnabled()`. `ManualInteractionController` menjadi pemilik pointer viewport, melakukan sticker picking, gesture projection, face-turn mapping, dan hanya meneruskan empty-scene drag ke camera.
+- **Acceptance:** Sticker drag hanya menghasilkan satu legal face move; empty-scene drag hanya mengorbit kamera; tap/ambiguous gesture tidak menghasilkan move; input dikunci saat runtime busy.
+- **Dokumentasi Terkait:** `PHASE_05_MANUAL_INTERACTION.md`, `07_INTERACTION_SPEC.md`
 
-> Semua perubahan yang ditemukan selama Phase 5 ditambahkan di bawah bagian ini dengan ID `FIX-5xx`.
+
 
 ---
 
@@ -283,3 +338,5 @@ Sebelum fase ditandai `COMPLETE`:
 | 2026-10-03 | Membuat sistem Fix Log terpusat untuk seluruh fase proyek. |
 | 2026-10-03 | Phase 1: memperbaiki inverse move dan memperbaiki acceptance test layer selection. |
 | 2026-10-03 | Phase 3: menambahkan animation controller, temporary layer pivot, runtime commit, dan transform reset. |
+| 2026-10-03 | Phase 4: menambahkan camera state/controller dengan orbit, zoom, preset rotation, dan reset. |
+| 2026-10-03 | Phase 5: mengintegrasikan sticker picking, gesture projection, manual face turns, camera ownership boundary, input locking, dan memperbaiki adapter animation integration (`FIX-501`), safe cancellation (`FIX-502`), serta single gesture mapping contract (`FIX-503`). |

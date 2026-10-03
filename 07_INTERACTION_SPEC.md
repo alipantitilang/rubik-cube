@@ -227,3 +227,38 @@ If `prefers-reduced-motion` is active:
 - remove nonessential UI transitions
 
 Never disable core interaction.
+
+
+---
+
+## Phase 5 Implementation Notes
+
+The manual interaction contract is implemented in:
+
+- `src/interaction/gesture.js`
+- `src/interaction/manual-controller.js`
+- `src/render/cube-renderer.js`
+
+The renderer performs sticker raycasting and returns the selected logical face plus its world-space normal.
+
+The interaction controller then:
+
+1. reserves the pointer;
+2. projects movement into the selected face plane;
+3. classifies the gesture;
+4. maps it through the shared `gestureToMove()` contract;
+5. sends the move to `CubeTurnRuntime`.
+
+Empty-scene pointer drags are delegated to the existing Phase 4 camera controller.
+
+During an active turn, the viewport is input-locked to prevent conflicting gestures.
+
+The current implementation uses:
+
+```text
+tap <= 8 px
+turn threshold >= 12 px
+dominance ratio = 1.15
+```
+
+These values remain configurable through `GESTURE_CONFIG`.

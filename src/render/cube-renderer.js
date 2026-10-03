@@ -22,6 +22,8 @@ export class RubikRenderer {
     this.cubieSize = options.cubieSize ?? 0.96;
     this.stickerSize = options.stickerSize ?? 0.82;
     this.objects = new Map();
+    this.raycaster = new THREE.Raycaster();
+    this.pointer = new THREE.Vector2();
 
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(options.background ?? '#11151b');
@@ -92,6 +94,38 @@ export class RubikRenderer {
         this.objects.delete(id);
       }
     }
+  }
+
+  /**
+   * Return the visible sticker under a viewport client coordinate.
+   * The logical face is read from the sticker mesh, while the world normal
+   * is calculated from that sticker's current transform.
+   */
+  pickFace(clientX, clientY) {
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    if (!rect.width || !rect.height) return null;
+
+    this.pointer.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+    this.pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+    this.raycaster.setFromCamera(this.pointer, this.camera);
+
+    const intersections = this.raycaster.intersectObjects(this.cubeGroup.children, true);
+    for (const hit of intersections) {
+      const object = hit.object;
+      if (!object.userData?.face || !object.visible) continue;
+      const face = object.userData.face;
+      const normal = new THREE.Vector3(...FACE_NORMALS[face])
+        .applyQuaternion(object.getWorldQuaternion(new THREE.Quaternion()))
+        .normalize();
+
+      return Object.freeze({
+        face,
+        normal: [normal.x, normal.y, normal.z],
+        cubieId: object.parent?.userData?.cubieId ?? null,
+        object
+      });
+    }
+    return null;
   }
 
   resize() {

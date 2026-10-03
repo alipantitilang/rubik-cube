@@ -1,0 +1,106 @@
+/**
+ * Phase 6 — Coordinates legal scramble playback with CubeTurnRuntime.
+ *
+ * This controller owns the shuffle/play lifecycle but does not mutate
+ * CubeState itself. CubeTurnRuntime remains the only move commit path.
+ */
+import { DEFAULT_SCRAMBLE_LENGTH, generateScramble, scrambleNotation } from '../core/shuffle.js';
+
+export const SHUFFLE_STATES = Object.freeze({
+  IDLE: 'idle',
+  SCRAMBLING: 'scrambling',
+  PLAYING: 'playing'
+});
+
+export const DEFAULT_SHUFFLE_DURATION_MS = 90;
+
+export class ShuffleController {
+  constructor({
+    runtime,
+    interaction = null,
+    length = DEFAULT_SCRAMBLE_LENGTH,
+    durationMs = DEFAULT_SHUFFLE_DURATION_MS,
+    avoidSameAxis = false,
+    random = Math.random,
+    onStateChange = null,
+    onProgress = null
+  } = {}) {
+    if (!runtime) throw new Error('ShuffleController requires runtime.');
+    if (!Number.isInteger(length) || length < 1) throw new RangeError('length must be a positive integer');
+    if (!Number.isFinite(durationMs) || durationMs <= 0) throw new RangeError('durationMs must be positive');
+    if (typeof random !== 'function') throw new TypeError('random must be a function');
+
+    this.runtime = runtime;
+    this.interaction = interaction;
+    this.length = length;
+    this.durationMs = durationMs;
+    this.avoidSameAxis = Boolean(avoidSameAxis);
+    this.random = random;
+    this.state = SHUFFLE_STATES.IDLE;
+    this.scramble = Object.freeze([]);
+    this.completedMoves = 0;
+    this.onStateChange = onStateChange;
+    this.onProgress = onProgress;
+  }
+
+  get busy() { return this.state === SHUFFLE_STATES.SCRAMBLING || this.runtime.busy; }
+  get canPlay() { return this.state !== SHUFFLE_STATES.SCRAMBLING && !this.runtime.busy; }
+  get scrambleText() { return scrambleNotation(this.scramble); }
+
+  play({ length = this.length, seed } = {}) {
+    if (!this.canPlay) return false;
+
+    this.scramble = generateScramble({
+      length,
+      seed,
+      random: seed === undefined ? this.random : undefined,
+      avoidSameAxis: this.avoidSameAxis
+    });
+    this.completedMoves = 0;
+    this._setState(SHUFFLE_STATES.SCRAMBLING);
+    this.interaction?.setEnabled?.(false);
+
+    const animator = this.runtime.animator;
+    this._previousDuration = animator.durationMs;
+    animator.durationMs = this.durationMs;
+    this.runtime.enqueue(...this.scramble);
+    this.onProgress?.({ completed: 0, total: this.scramble.length, scramble: this.scramble });
+    return true;
+  }
+
+  handleTick(result) {
+    if (this.state !== SHUFFLE_STATES.SCRAMBLING) return;
+
+    if (result.completed) {
+      this.completedMoves += 1;
+      this.onProgress?.({
+        completed: this.completedMoves,
+        total: this.scramble.length,
+        scramble: this.scramble,
+        move: result.completed
+      });
+    }
+
+    if (this.completedMoves >= this.scramble.length && !this.runtime.busy) {
+      this.runtime.animator.durationMs = this._previousDuration;
+      this._setState(SHUFFLE_STATES.PLAYING);
+      this.interaction?.setEnabled?.(true);
+      this.onProgress?.({ completed: this.scramble.length, total: this.scramble.length, scramble: this.scramble });
+    }
+  }
+
+  reset() {
+    if (this.runtime.busy) this.runtime.cancel();
+    if (this._previousDuration !== undefined) this.runtime.animator.durationMs = this._previousDuration;
+    this.scramble = Object.freeze([]);
+    this.completedMoves = 0;
+    this._setState(SHUFFLE_STATES.IDLE);
+    this.interaction?.setEnabled?.(true);
+  }
+
+  _setState(next) {
+    if (this.state === next) return;
+    this.state = next;
+    this.onStateChange?.(next);
+  }
+}

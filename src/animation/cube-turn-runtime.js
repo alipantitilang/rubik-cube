@@ -15,6 +15,19 @@ export class CubeTurnRuntime {
     return this;
   }
 
+  /**
+   * Cancel the active turn and queued moves without committing a partial move.
+   * The authoritative CubeState remains unchanged; any temporary render
+   * transform is discarded and the renderer is re-synchronized.
+   */
+  cancel() {
+    if (this.adapter) this.adapter.finish();
+    this.animator.clearQueue();
+    this.animator.active = null;
+    if (this.renderer) this.renderer.renderCube(this.cubeState);
+    return { cancelled: true, cubeState: this.cubeState };
+  }
+
   tick(deltaMs) {
     const before = this.animator.active;
     const result = this.animator.tick(deltaMs);

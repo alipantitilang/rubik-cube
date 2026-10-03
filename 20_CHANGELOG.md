@@ -24,3 +24,12 @@ Created the project documentation baseline for:
 - implementation roadmap
 
 No application code is included yet.
+
+
+## 2026-10-03 — Phase 5
+
+- Integrated manual sticker picking with the Phase 4 renderer.
+- Added camera-space gesture projection and face tangent mapping.
+- Added mouse/touch face turns through `CubeTurnRuntime`.
+- Added pointer ownership to prevent camera/face gesture conflicts.
+- Added `FIX-500`.

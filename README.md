@@ -259,7 +259,7 @@ Output:
 
 Status:
 
-**Pending**
+**Complete**
 
 ---
 
@@ -419,7 +419,7 @@ Documentation baseline:
 
 Application implementation:
 
-**Phase 1–2 implemented; Phase 3 onward pending**
+**Phase 1–5 implemented; Phase 6 onward pending**
 
 
 ## Fix / Change Log
@@ -441,7 +441,10 @@ Setiap fase dapat menghasilkan bug fix, koreksi spesifikasi, tambahan requiremen
 | Phase 0 documentation | FIXED |
 | Phase 1 | Phase 1 core fixes recorded; phase complete |
 | Phase 2 | `FIX-200` FIXED; phase complete |
-| Phase 3–10 | No fixes recorded yet |
+| Phase 3 | `FIX-300` FIXED; phase complete |
+| Phase 4 | `FIX-400` FIXED; phase complete |
+| Phase 5 | `FIX-500` FIXED; manual face interaction integrated |
+| Phase 6–10 | No fixes recorded yet |
 
 **Full history:** [`FIX_LOG.md`](FIX_LOG.md)
 
@@ -492,9 +495,38 @@ Validasi terakhir:
 
 Perubahan selama Phase 2 dicatat di [`FIX_LOG.md`](FIX_LOG.md), termasuk `FIX-200`.
 
+## Phase 5 Implementation
+
+Phase 5 telah diintegrasikan langsung dengan renderer dan camera controller Phase 4.
+
+Files utama:
+
+- `src/interaction/gesture.js`
+- `src/interaction/manual-controller.js`
+- `src/interaction/index.js`
+- `src/render/cube-renderer.js`
+- `src/camera-controller.js`
+- `public/phase5.html`
+- `tests/interaction.test.js`
+- `tests/manual-controller.test.js`
+- `PHASE_05_MANUAL_INTERACTION.md`
+
+Validasi terakhir:
+
+```text
+37 tests passed
+0 failed
+```
+
+Perubahan selama Phase 5 dicatat di [`FIX_LOG.md`](FIX_LOG.md), termasuk `FIX-500`.
+
 ## Phase 4 Documentation
 
 - [`PHASE_04_CAMERA_CONTROLS.md`](PHASE_04_CAMERA_CONTROLS.md) — camera state, orbit, zoom, reset, and control contract.
 
 ### Latest Phase 4 Fix
 - `FIX-400` — Camera state/controller dipisahkan dari CubeState; pointer orbit, wheel zoom, preset rotation, dan reset view telah diverifikasi.
+
+
+### Latest Phase 5 Fix
+- `FIX-500` — Manual face interaction mengambil ownership pointer gesture pada sticker, memisahkannya dari camera orbit, dan meneruskan move legal ke `CubeTurnRuntime`.

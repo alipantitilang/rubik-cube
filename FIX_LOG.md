@@ -54,6 +54,7 @@ Setelah dicatat di sini:
 | FIX-000 | Phase 0 | Baseline | FIXED | Sistem Fix Log dibuat sebagai bagian dari dokumentasi proyek. | `README.md`, `FIX_LOG.md` |
 | FIX-200 | Phase 2 | Test | FIXED | Memperbaiki assertion test warna agar membandingkan face-to-color contract, bukan nama warna ke nilai hex. | `tests/render-model.test.js` |
 | FIX-300 | Phase 3 | Animation / Renderer | FIXED | Reset transform cubie setelah face-turn agar rotasi sementara tidak terakumulasi sebagai drift visual. | `src/render/cube-renderer.js`, `PHASE_03_FACE_TURN_ANIMATION.md` |
+| FIX-500 | Phase 5 | Interaction / Architecture | FIXED | Integrasi manual face gesture dengan renderer dan camera Phase 4 agar sticker drag tidak ikut mengorbit kamera. | `src/interaction/gesture.js`, `src/interaction/manual-controller.js`, `src/render/cube-renderer.js`, `src/camera-controller.js`, `PHASE_05_MANUAL_INTERACTION.md` |
 
 ---
 
@@ -160,9 +161,18 @@ Belum ada fix.
 
 # Phase 5 — Manual Rubik Interaction
 
-Belum ada fix.
+### FIX-500
+- **Status:** `FIXED`
+- **Tipe:** Interaction / Architecture
+- **Tanggal:** 2026-10-03
+- **Fase:** Phase 5 — Manual Rubik Interaction
+- **Ringkasan:** Integrasi direct face gesture ke renderer Phase 4 membutuhkan ownership pointer yang jelas agar drag sticker tidak sekaligus menjalankan camera orbit.
+- **Masalah / Alasan:** `CameraController` Phase 4 sebelumnya menangani pointer orbit secara langsung. Tanpa ownership boundary, satu pointer dapat memicu dua mode interaksi.
+- **Perubahan:** `CameraController` mendapat `setPointerOrbitEnabled()`. `ManualInteractionController` menjadi pemilik pointer viewport, melakukan sticker picking, gesture projection, face-turn mapping, dan hanya meneruskan empty-scene drag ke camera.
+- **Acceptance:** Sticker drag hanya menghasilkan satu legal face move; empty-scene drag hanya mengorbit kamera; tap/ambiguous gesture tidak menghasilkan move; input dikunci saat runtime busy.
+- **Dokumentasi Terkait:** `PHASE_05_MANUAL_INTERACTION.md`, `07_INTERACTION_SPEC.md`
 
-> Semua perubahan yang ditemukan selama Phase 5 ditambahkan di bawah bagian ini dengan ID `FIX-5xx`.
+
 
 ---
 
@@ -283,3 +293,5 @@ Sebelum fase ditandai `COMPLETE`:
 | 2026-10-03 | Membuat sistem Fix Log terpusat untuk seluruh fase proyek. |
 | 2026-10-03 | Phase 1: memperbaiki inverse move dan memperbaiki acceptance test layer selection. |
 | 2026-10-03 | Phase 3: menambahkan animation controller, temporary layer pivot, runtime commit, dan transform reset. |
+| 2026-10-03 | Phase 4: menambahkan camera state/controller dengan orbit, zoom, preset rotation, dan reset. |
+| 2026-10-03 | Phase 5: mengintegrasikan sticker picking, gesture projection, manual face turns, camera ownership boundary, dan input locking. |

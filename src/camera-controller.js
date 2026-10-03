@@ -18,6 +18,7 @@ export class CameraController {
     this.state = createCameraViewState(state);
     this.onChange = onChange;
     this.enabled = true;
+    this.pointerOrbitEnabled = true;
     this._drag = null;
     this._touchDistance = null;
 
@@ -69,6 +70,11 @@ export class CameraController {
     if (!this.enabled) this._drag = null;
   }
 
+  setPointerOrbitEnabled(enabled) {
+    this.pointerOrbitEnabled = Boolean(enabled);
+    if (!this.pointerOrbitEnabled) this._drag = null;
+  }
+
   dispose() {
     const el = this.domElement;
     el.removeEventListener('pointerdown', this._onPointerDown);
@@ -80,7 +86,7 @@ export class CameraController {
   }
 
   _onPointerDown(event) {
-    if (!this.enabled || event.button !== 0) return;
+    if (!this.enabled || !this.pointerOrbitEnabled || event.button !== 0) return;
     this._drag = { id: event.pointerId, x: event.clientX, y: event.clientY };
     this.domElement.setPointerCapture?.(event.pointerId);
   }

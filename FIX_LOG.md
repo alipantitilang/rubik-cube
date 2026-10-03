@@ -572,3 +572,13 @@ Sebelum fase ditandai `COMPLETE`:
 
 
 | FIX-526 | Post-Phase 5 | Interaction lifecycle / Source cleanup | FIXED | Mencegah manual interaction tertahan setelah pointer capture hilang atau window kehilangan fokus; konfigurasi gesture dan helper kecil digabung ke `manual-controller.js`, alias resolver lama dihapus, dan regression test untuk release→settle→unlock ditambahkan. Phase 5 tetap COMPLETE. | `src/interaction/manual-controller.js`, `src/interaction/drag-move-resolver.js`, `tests/interactive-drag.test.js`, `index.html`, `package.json`, `README.md`, `PHASE_05_MANUAL_INTERACTION.md` |
+
+### FIX-527
+- **Status:** `FIXED`
+- **Tipe:** Post-Phase 5 / Render Loop Clock Safety
+- **Tanggal:** 2026-10-04
+- **Scope:** Post-Phase 5 fix only. Phase 5 remains **COMPLETE**.
+- **Masalah:** Pada browser/embedded preview tertentu, loop production mencampur `performance.now()` sebagai waktu awal dengan timestamp `requestAnimationFrame()`. Kombinasi ini dapat menghasilkan `deltaMs < 0`, menyebabkan `CubeTurnRuntime.tick()` melempar error dan menghentikan RAF sehingga canvas Rubik tidak pernah dirender.
+- **Perubahan:** `index.html` sekarang memakai timestamp `requestAnimationFrame()` secara konsisten dari frame ke frame. Frame pertama memakai delta `0`; delta berikutnya dibatasi `0..50 ms` sebelum dikirim ke runtime. Ini mempertahankan kontrak `CubeTurnRuntime.tick()` tanpa melemahkan validasi runtime.
+- **Dampak:** Render loop tidak lagi mati karena perbedaan clock source. Initial render, interactive turn, dan frame berikutnya tetap berjalan pada satu RAF loop.
+- **Acceptance:** `deltaMs` tidak pernah negatif pada production RAF loop; runtime contract tetap menolak delta negatif; full regression suite lulus; production entry point tetap satu `index.html`.

@@ -92,9 +92,13 @@
       }
     });
 
-    let previous = performance.now();
+    // Use the requestAnimationFrame timestamp for both sides of the delta.
+    // Mixing performance.now() with the RAF timestamp can produce a negative
+    // delta in browser previews/embedded documents and stop the render loop.
+    let previous = null;
     function frame(now) {
-      const delta = Math.min(50, now - previous);
+      const rawDelta = previous === null ? 0 : now - previous;
+      const delta = Math.min(50, Math.max(0, Number.isFinite(rawDelta) ? rawDelta : 0));
       previous = now;
       const result = runtime.tick(delta);
       renderer.renderFrame();

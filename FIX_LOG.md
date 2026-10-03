@@ -142,7 +142,17 @@ Belum ada fix.
 
 # Phase 4 — Camera & View Controls
 
-Belum ada fix.
+### FIX-400
+- **Status:** `FIXED`
+- **Tipe:** Enhancement / Architecture
+- **Tanggal:** 2026-10-03
+- **Fase:** Phase 4 — Camera & View Controls
+- **Ringkasan:** Menambahkan camera state dan controller terpisah dari CubeState.
+- **Perubahan:** Orbit pointer, wheel zoom, zoom percentage, preset rotation API, pitch clamp, dan reset view.
+- **Acceptance:** Camera controls tidak memodifikasi logical cube state dan seluruh camera state tests lulus.
+- **Dokumentasi Terkait:** `PHASE_04_CAMERA_CONTROLS.md`, `README.md`
+
+
 
 > Semua perubahan yang ditemukan selama Phase 4 ditambahkan di bawah bagian ini dengan ID `FIX-4xx`.
 

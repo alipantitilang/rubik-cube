@@ -4,6 +4,7 @@ import {
   CUBE_COLORS,
   buildRenderModel
 } from './cube-render-model.js';
+import { CameraController } from '../camera-controller.js';
 
 const FACE_AXES = {
   U: { position: [0, 0.491, 0], rotation: [-Math.PI / 2, 0, 0] },
@@ -44,6 +45,12 @@ export class RubikRenderer {
 
     this.cubeGroup = new THREE.Group();
     this.scene.add(this.cubeGroup);
+
+    this.cameraController = new CameraController({
+      camera: this.camera,
+      domElement: this.renderer.domElement,
+      onChange: () => {}
+    });
 
     this._resizeObserver = new ResizeObserver(() => this.resize());
     this._resizeObserver.observe(container);
@@ -98,6 +105,7 @@ export class RubikRenderer {
 
   dispose() {
     this._resizeObserver.disconnect();
+    this.cameraController.dispose();
     this.renderer.dispose();
   }
 

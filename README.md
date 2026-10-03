@@ -491,3 +491,10 @@ Validasi terakhir:
 ```
 
 Perubahan selama Phase 2 dicatat di [`FIX_LOG.md`](FIX_LOG.md), termasuk `FIX-200`.
+
+## Phase 4 Documentation
+
+- [`PHASE_04_CAMERA_CONTROLS.md`](PHASE_04_CAMERA_CONTROLS.md) — camera state, orbit, zoom, reset, and control contract.
+
+### Latest Phase 4 Fix
+- `FIX-400` — Camera state/controller dipisahkan dari CubeState; pointer orbit, wheel zoom, preset rotation, dan reset view telah diverifikasi.

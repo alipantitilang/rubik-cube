@@ -23,6 +23,10 @@
       line-height: 1.4;
     }
     .interaction-panel strong { font-size: 15px; }
+    .interaction-panel .controls { display: flex; gap: 8px; margin-top: 4px; }
+    .interaction-panel button { border: 1px solid rgba(255,255,255,.16); border-radius: 9px; background: rgba(255,255,255,.08); color: inherit; padding: 7px 12px; font: inherit; font-weight: 700; cursor: pointer; }
+    .interaction-panel button:hover:not(:disabled) { background: rgba(255,255,255,.14); }
+    .interaction-panel button:disabled { opacity: .45; cursor: default; }
     .interaction-panel .status { opacity: .82; }
     @media (max-width: 640px) {
       .interaction-panel { left: 12px; top: 12px; }
@@ -38,7 +42,8 @@
       <span>Release after roughly half a turn to snap 90°; release earlier to return.</span>
       <span>Drag empty space to rotate the Rubik itself.</span>
       <span>Wheel / touchpad = zoom.</span>
-      <span id="status" class="status">Ready</span>
+      <div class="controls"><button id="play-button" type="button">Play</button></div>
+      <span id="status" class="status" aria-live="polite">Ready</span>
     </aside>
   </main>
 
@@ -60,6 +65,7 @@
     import { RubikRenderer } from './src/render/cube-renderer.js';
     import { TurnRenderAdapter } from './src/render/turn-renderer.js';
     import { ManualInteractionController } from './src/interaction/manual-controller.js';
+    import { ShuffleController, SHUFFLE_STATES } from './src/animation/shuffle-controller.js';
 
     const renderer = new RubikRenderer(document.querySelector('#cube'));
     window.__rubikBooted = true;
@@ -92,6 +98,34 @@
       }
     });
 
+    const playButton = document.querySelector('#play-button');
+    const shuffle = new ShuffleController({
+      runtime,
+      interaction,
+      onStateChange: state => {
+        if (state === SHUFFLE_STATES.SCRAMBLING) {
+          playButton.disabled = true;
+          playButton.textContent = 'Scrambling…';
+        } else if (state === SHUFFLE_STATES.PLAYING) {
+          playButton.disabled = true;
+          playButton.textContent = 'Playing';
+          status.textContent = 'Ready to solve';
+        } else {
+          playButton.disabled = false;
+          playButton.textContent = 'Play';
+        }
+      },
+      onProgress: ({ completed, total }) => {
+        if (shuffle.state === SHUFFLE_STATES.SCRAMBLING) {
+          status.textContent = `Scrambling ${completed}/${total}`;
+        }
+      }
+    });
+
+    playButton.addEventListener('click', () => {
+      if (!shuffle.play()) return;
+    });
+
     // Use the requestAnimationFrame timestamp for both sides of the delta.
     // Mixing performance.now() with the RAF timestamp can produce a negative
     // delta in browser previews/embedded documents and stop the render loop.
@@ -101,10 +135,13 @@
       const delta = Math.min(50, Math.max(0, Number.isFinite(rawDelta) ? rawDelta : 0));
       previous = now;
       const result = runtime.tick(delta);
+      shuffle.handleTick(result);
       renderer.renderFrame();
-      if (result.completed) {
-        status.textContent = result.completed ? `Turn complete: layer ${result.completed.axis.toUpperCase()}${result.completed.layer > 0 ? '+' : result.completed.layer < 0 ? '-' : '0'}` : 'Ready';
-      } else if (!runtime.busy) {
+      if (shuffle.state === SHUFFLE_STATES.SCRAMBLING) {
+        // ShuffleController owns the progress/status text while scrambling.
+      } else if (result.completed) {
+        status.textContent = `Turn complete: layer ${result.completed.axis.toUpperCase()}${result.completed.layer > 0 ? '+' : result.completed.layer < 0 ? '-' : '0'}`;
+      } else if (shuffle.state === SHUFFLE_STATES.IDLE && !runtime.busy) {
         status.textContent = 'Ready';
       }
       requestAnimationFrame(frame);

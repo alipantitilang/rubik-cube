@@ -10,7 +10,7 @@ Interactive 3D Rubik project with a generic, view-independent layer-turn model a
 - Phase 3 — Generic Turn Animation: **Complete**
 - Phase 4 — Camera/View capability: **Complete as reusable infrastructure**
 - Phase 5 — Manual Rubik Interaction: **FINAL / Complete**
-- Phase 6 — Legal Shuffle / Play Flow: **Core present, product flow pending**
+- Phase 6 — Legal Shuffle / Play Flow: **Complete**
 - Phase 7–10: **Pending**
 
 The overall product is not final until the remaining phases and the Definition of Done are complete.
@@ -224,4 +224,4 @@ Current source modules are intentionally separated by responsibility:
 
 `src/interaction/gesture.js` was removed in FIX-526 because its only production responsibility was small gesture configuration/helper logic now owned by `manual-controller.js`.
 
-The Phase 6 shuffle modules remain even though `index.html` does not wire them yet; they are planned production code, not orphaned leftovers.
+Phase 6 shuffle modules are wired into the single production entry point. The Play control starts a legal animated scramble, locks manual turns during playback, then returns the cube to the playable state.

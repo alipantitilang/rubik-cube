@@ -14,10 +14,11 @@ Menambahkan alur Play yang mengacak Rubik hanya melalui gerakan legal, menganima
 
 File: `src/core/shuffle.js`
 
-- Menghasilkan notasi legal `U D R L F B` dengan modifier kosong, `'`, atau `2`.
+- Menghasilkan generic layer turns tanpa notation wajah.
 - Tidak pernah mengubah sticker atau posisi cubie secara langsung.
 - Panjang scramble dapat dikonfigurasi.
-- Same-face consecutive moves dilarang.
+- Same-axis consecutive moves dilarang secara default.
+- Immediate inverse turn dilarang.
 - Same-axis consecutive moves dapat dilarang melalui `avoidSameAxis`.
 - Mendukung seeded PRNG untuk reproduksi deterministic.
 
@@ -48,9 +49,11 @@ Play:
 
 `idle → scrambling → playing`
 
+Production entry point: `index.html`. Phase 6 adds a minimal Play control to the existing panel; polished control-shell work remains Phase 8.
+
 Selama `scrambling`:
 
-- tombol Play dinonaktifkan;
+- tombol Play dinonaktifkan dan menampilkan `Scrambling…`;
 - drag sticker tidak dapat melakukan move;
 - scramble tetap menggunakan animasi face-turn yang sama;
 - CubeState hanya berubah ketika setiap animasi selesai.
@@ -58,6 +61,7 @@ Selama `scrambling`:
 Setelah scramble selesai:
 
 - state menjadi `playing`;
+- kontrol Play tetap nonaktif karena Reshuffle UI belum menjadi bagian Phase 6;
 - interaksi manual aktif kembali;
 - cube berada pada state yang mathematically reachable dari solved state.
 
@@ -88,6 +92,8 @@ Scramble juga tidak dianggap sebagai player history.
 ## Acceptance Criteria
 
 - [x] Play menghasilkan sequence legal.
+- [x] Immediate inverse turn dilarang.
+- [x] Same-axis consecutive turn dilarang secara default.
 - [x] Scramble tidak mengubah CubeState secara langsung.
 - [x] Scramble dimainkan melalui `CubeTurnRuntime`.
 - [x] Tidak ada face yang sama dua kali berturut-turut.
@@ -114,4 +120,4 @@ Phase 6 menambahkan test untuk:
 - completion and return to playing;
 - reset.
 
-Core shuffle regression is included in the current full suite: **61 passed, 0 failed**. The Play UI/end-to-end product flow remains pending for the dedicated Phase 6 completion pass.
+Core shuffle and Play-flow regression are included in the full suite. Implementation is complete. Final phase closure requires the GitHub Pages smoke test: Play → animated scramble → manual interaction unlocked.

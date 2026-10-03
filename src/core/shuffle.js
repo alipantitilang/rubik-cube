@@ -3,6 +3,7 @@ import { createTurn, TURN_AXES } from './turn.js';
 
 export const DEFAULT_SCRAMBLE_LENGTH = 20;
 export const DEFAULT_SCRAMBLE_SEED = 0x6d2b79f5;
+export const DEFAULT_AVOID_SAME_AXIS = true;
 const LAYERS = Object.freeze([-1, 1]);
 const DIRECTIONS = Object.freeze([-1, 1, 2]);
 const MAX_GENERATION_ATTEMPTS_PER_MOVE = 1000;
@@ -32,7 +33,7 @@ export function generateScramble({
   length = DEFAULT_SCRAMBLE_LENGTH,
   seed,
   random = seed === undefined ? Math.random : createSeededRandom(seed),
-  avoidSameAxis = false
+  avoidSameAxis = DEFAULT_AVOID_SAME_AXIS
 } = {}) {
   const count = normalizeLength(length);
   if (typeof random !== 'function') throw new TypeError('random must be a function');
@@ -46,7 +47,16 @@ export function generateScramble({
     if (avoidSameAxis && axis === previousAxis) continue;
     const layer = LAYERS[randomIndex(random, LAYERS.length)];
     const quarterTurns = DIRECTIONS[randomIndex(random, DIRECTIONS.length)];
-    turns.push(createTurn({ axis, layer, quarterTurns }));
+    const candidate = createTurn({ axis, layer, quarterTurns });
+    const previous = turns[turns.length - 1];
+    const isImmediateInverse = previous
+      && previous.axis === candidate.axis
+      && previous.layer === candidate.layer
+      && previous.quarterTurns !== 2
+      && candidate.quarterTurns !== 2
+      && previous.quarterTurns === -candidate.quarterTurns;
+    if (isImmediateInverse) continue;
+    turns.push(candidate);
     previousAxis = axis;
   }
   return Object.freeze(turns);

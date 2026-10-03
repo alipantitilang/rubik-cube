@@ -85,3 +85,19 @@ test('reset safely cancels an active runtime turn and resynchronizes it', () => 
   assert.equal(interaction.enabled, true);
   assert.deepEqual(calls, ['finish', 'render']);
 });
+
+
+test('play completion preserves the manual animator duration', () => {
+  const runtime = new CubeTurnRuntime({
+    cubeState: createSolvedCube(),
+    animator: new TurnAnimator({ durationMs: 123 })
+  });
+  const controller = new ShuffleController({ runtime, length: 2, durationMs: 2 });
+  controller.play({ seed: 42 });
+  let guard = 0;
+  while (controller.state === SHUFFLE_STATES.SCRAMBLING && guard++ < 100) {
+    controller.handleTick(runtime.tick(5));
+  }
+  assert.equal(controller.state, SHUFFLE_STATES.PLAYING);
+  assert.equal(runtime.animator.durationMs, 123);
+});

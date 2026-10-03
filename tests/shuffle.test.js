@@ -13,9 +13,24 @@ test('generates the requested number of generic outer-layer turns', () => {
   }
 });
 
+test('avoids the same axis consecutively by default', () => {
+  const scramble = generateScramble({ length: 100, seed: 77 });
+  for (let i = 1; i < scramble.length; i++) assert.notEqual(scramble[i].axis, scramble[i - 1].axis);
+});
+
 test('does not repeat the same axis consecutively when requested', () => {
   const scramble = generateScramble({ length: 100, seed: 77, avoidSameAxis: true });
   for (let i = 1; i < scramble.length; i++) assert.notEqual(scramble[i].axis, scramble[i - 1].axis);
+});
+
+test('does not generate an immediate inverse turn', () => {
+  const scramble = generateScramble({ length: 200, seed: 123456 });
+  for (let i = 1; i < scramble.length; i++) {
+    const a = scramble[i - 1];
+    const b = scramble[i];
+    const inverse = a.axis === b.axis && a.layer === b.layer && a.quarterTurns !== 2 && b.quarterTurns !== 2 && a.quarterTurns === -b.quarterTurns;
+    assert.equal(inverse, false);
+  }
 });
 
 test('seeded generation is deterministic', () => {

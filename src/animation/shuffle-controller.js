@@ -63,8 +63,15 @@ export class ShuffleController {
     const animator = this.runtime.animator;
     this._previousDuration = animator.durationMs;
     animator.durationMs = this.durationMs;
-    this.runtime.enqueue(...this.scramble);
     this.onProgress?.({ completed: 0, total: this.scramble.length, scramble: this.scramble });
+    try {
+      this.runtime.enqueue(...this.scramble);
+    } catch (error) {
+      this.runtime.animator.durationMs = this._previousDuration;
+      this._setState(SHUFFLE_STATES.IDLE);
+      this.interaction?.setEnabled?.(true);
+      throw error;
+    }
     return true;
   }
 

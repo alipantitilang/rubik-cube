@@ -96,33 +96,44 @@ Status: **FINAL / Complete**
 
 Phase 5 no longer depends on notation or a virtual Front frame.
 
-## Phase 6 — Shuffle
+## Phase 6 — Legal Shuffle / Play Flow
+
+Status: **Implementation complete — awaiting GitHub Pages smoke validation**
 
 Build:
 
-- legal scramble generator
+- legal generic scramble generator
 - deterministic seed support
-- queue
+- queued playback through `CubeTurnRuntime`
 - fast smooth animation
 - input locking
+- Play state flow `idle → scrambling → playing`
+- minimal production Play control in `index.html`
 
 ---
 
-## Phase 7 — UI
+## Phase 7 — History & Solved Flow
 
 Build:
 
-- Play
-- history
-- information
-- zoom bar
-- rotate controls
-- Congratulations
-- Reshuffle
+- player move history lifecycle
+- solved detection flow after player turns
+- Congratulations state/overlay
+- Reshuffle action contract
+- reset/reshuffle state handling
 
 ---
 
-## Phase 8 — Responsive
+## Phase 8 — UI & Responsive Product Shell
+
+Build:
+
+- polished control panel
+- information panel
+- zoom bar
+- rotate controls
+- history presentation
+- responsive layout
 
 Test and tune:
 
@@ -135,7 +146,7 @@ Test and tune:
 
 ---
 
-## Phase 9 — Accessibility
+## Phase 9 — Accessibility & Performance
 
 Add:
 

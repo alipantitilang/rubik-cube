@@ -12,3 +12,13 @@ test('production entry point wires the generic turn render adapter', () => {
     assert.match(html, /adapter\s*,/);
   }
 });
+
+
+test('production entry point wires the Phase 6 Play flow', () => {
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  assert.match(html, /ShuffleController/);
+  assert.match(html, /SHUFFLE_STATES/);
+  assert.match(html, /id="play-button"/);
+  assert.match(html, /shuffle\.play\(\)/);
+  assert.match(html, /shuffle\.handleTick\(result\)/);
+});

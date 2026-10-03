@@ -46,7 +46,7 @@
 - [x] configurable length
 - [x] deterministic seed support
 - [x] input lock during scramble
-- [ ] complete production Play UI flow
+- [x] complete Phase 6 Play UI flow
 - [ ] player history lifecycle finalized
 
 ## UI

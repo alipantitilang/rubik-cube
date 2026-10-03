@@ -171,3 +171,15 @@ The generic sticker-position model no longer treats centers as fixed during midd
 - Updated the development server to serve the repository root.
 - Active documentation now describes the direct-geometric generic-turn and 54-sticker position architecture.
 - Cleanup regression: **69 passed, 0 failed**.
+
+
+## 2026-10-04 — Phase 6 Legal Shuffle / Play Flow
+
+- Completed generic legal scramble generation without move notation.
+- Default scramble avoids consecutive axes and immediate inverse turns.
+- Added deterministic seeded scramble support and regression coverage.
+- Wired `ShuffleController` into the existing `index.html` entry point.
+- Added minimal Play control: `idle → scrambling → playing`.
+- Manual interaction is locked during automatic scramble and restored after completion.
+- Scramble playback continues through `CubeTurnRuntime`; CubeState remains authoritative.
+- No new phase HTML file was created.

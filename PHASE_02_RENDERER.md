@@ -616,12 +616,12 @@ Three.js scene
 The initial palette is centralized in `src/render/cube-render-model.js`:
 
 ```text
-U = white
-D = yellow
-F = green
-B = blue
-R = red
-L = orange
+U = yellow
+D = white
+F = red
+B = orange
+R = green
+L = blue
 ```
 
 The palette is intentionally configurable so the visual distinction between faces can be tuned later without touching the logical engine.

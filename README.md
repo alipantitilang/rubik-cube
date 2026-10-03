@@ -449,7 +449,7 @@ Setiap fase dapat menghasilkan bug fix, koreksi spesifikasi, tambahan requiremen
 | Phase 2 | `FIX-200` FIXED; phase complete |
 | Phase 3 | `FIX-300` FIXED; phase complete |
 | Phase 4 | `FIX-400` FIXED; phase complete |
-| Phase 5 | `FIX-500`–`FIX-503` FIXED; manual face interaction integrated and audited |
+| Phase 5 | `FIX-500`–`FIX-514` FIXED; POV front-face interaction, canonical color orientation, M/E/S slices, live drag, all cubie types, and audited |
 | Phase 6 | `FIX-504` FIXED; core shuffle work present, product flow still pending
 | Phase 7–10 | No fixes recorded yet |
 
@@ -504,28 +504,47 @@ Perubahan selama Phase 2 dicatat di [`FIX_LOG.md`](FIX_LOG.md), termasuk `FIX-20
 
 ## Phase 5 Implementation
 
-Phase 5 telah diintegrasikan langsung dengan renderer dan camera controller Phase 4.
+Phase 5 sekarang menggunakan **POV front-face method** dan telah diintegrasikan langsung dengan renderer, camera controller, move engine, dan turn runtime.
 
 Files utama:
 
 - `src/interaction/gesture.js`
+- `src/interaction/pov-move-resolver.js`
 - `src/interaction/manual-controller.js`
 - `src/interaction/index.js`
 - `src/render/cube-renderer.js`
-- `src/camera-controller.js`
+- `src/render/face-turn-renderer.js`
+- `src/core/cube.js`
+- `src/animation/cube-turn-runtime.js`
 - `public/phase5.html`
 - `tests/interaction.test.js`
 - `tests/manual-controller.test.js`
+- `tests/interactive-drag.test.js`
+- `tests/pov-move-resolver.test.js`
 - `PHASE_05_MANUAL_INTERACTION.md`
+- `PHASE_05_AUDIT.md`
+- `21_COLOR_ORIENTATION_AND_POV.md`
+
+### Final interaction contract
+
+- canonical solved orientation: U yellow, D white, F red, R green, B orange, L blue;
+- only physical F/R/B/L may become virtual `F`;
+- fixed color adjacency determines virtual R/L/U/D/B;
+- all 26 visible cubies can be interaction anchors;
+- center, edge, and corner rules are resolved from cubie type/position;
+- `M/E/S` are legal logical moves;
+- live drag follows pointer displacement;
+- release snaps or cancels;
+- logical state changes only on commit.
 
 Validasi terakhir:
 
 ```text
-54 tests passed
+68 tests passed
 0 failed
 ```
 
-Perubahan selama Phase 5 dicatat di [`FIX_LOG.md`](FIX_LOG.md), termasuk `FIX-500`.
+Perubahan selama Phase 5 dicatat di [`FIX_LOG.md`](FIX_LOG.md), termasuk `FIX-508`–`FIX-511`.
 
 ## Phase 4 Documentation
 
@@ -536,7 +555,19 @@ Perubahan selama Phase 5 dicatat di [`FIX_LOG.md`](FIX_LOG.md), termasuk `FIX-50
 
 
 ### Latest Phase 5 Fix
-- `FIX-503` — Gesture-to-move mapping disatukan melalui `gestureToMove()` sebagai single contract.
-- `FIX-502` — Runtime cancellation sekarang membersihkan temporary animation state dan menyinkronkan renderer kembali ke `CubeState`.
-- `FIX-501` — Entry point Phase 5 memasang `FaceTurnRenderAdapter` agar manual face turns benar-benar dianimasikan.
-- `FIX-500` — Manual face interaction mengambil ownership pointer gesture pada sticker, memisahkannya dari camera orbit, dan meneruskan move legal ke `CubeTurnRuntime`.
+- `FIX-511` — Contract gesture lama dihapus; POV resolver menjadi single source of truth.
+- `FIX-510` — Picking mengekspos `cubieType` dan `logicalPosition`.
+- `FIX-509` — Move engine menambahkan `M/E/S` dengan konvensi standar proyek.
+- `FIX-508` — Manual interaction dirombak menjadi POV front-face method.
+- `FIX-507` — Diagonal drag mengikuti dominant axis.
+- `FIX-506` — Center, edge, dan corner tercakup.
+- `FIX-505` — Live drag dan snap/cancel.
+- `FIX-503` — Mapping lama disatukan sebelum kemudian digantikan penuh oleh POV resolver.
+- `FIX-502` — Runtime cancellation aman.
+- `FIX-501` — FaceTurnRenderAdapter terhubung pada entry point.
+- `FIX-500` — Pointer ownership manual interaction.
+
+
+### Latest interaction correction
+
+`FIX-515` corrects horizontal drag direction specifically when red/F is the active POV front. Left-column drag-right and right-column drag-left now visually follow the user's grab direction; vertical mapping is unchanged.

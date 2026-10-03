@@ -10,12 +10,12 @@ export const FACE_NORMALS = Object.freeze({
 });
 
 export const CUBE_COLORS = Object.freeze({
-  U: '#f5f5f5',
-  D: '#ffd91a',
-  R: '#d93636',
-  L: '#f28c28',
-  F: '#28a745',
-  B: '#2f63d6'
+  U: '#ffd91a',
+  D: '#f5f5f5',
+  R: '#28a745',
+  L: '#2f63d6',
+  F: '#d93636',
+  B: '#f28c28'
 });
 
 export const FACE_ORDER = Object.freeze(['U', 'D', 'R', 'L', 'F', 'B']);

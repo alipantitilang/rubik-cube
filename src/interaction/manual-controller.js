@@ -1,29 +1,20 @@
-import {
-  FACE_BASES,
-  GESTURE_CONFIG,
-  classifyProjectedGesture,
-  gestureToMove,
-  projectPointerDeltaToFacePlane
-} from './gesture.js';
+import { GESTURE_CONFIG } from './gesture.js';
+import { resolvePovFrame, resolvePovMove, getPovStickerContext } from './pov-move-resolver.js';
 
 /**
- * Owns the pointer gesture lifecycle for the 3D viewport.
- *
- * Responsibilities:
- * - pick a visible sticker on pointer-down;
- * - reserve that pointer for a possible face turn;
- * - classify movement after threshold;
- * - enqueue exactly one legal face move;
- * - otherwise orbit the camera when the pointer began on empty scene;
- *
- * CubeState is never mutated here.
+ * Phase 5 POV interaction owner.
+ * A pointer that starts on a sticker is interpreted in a frozen camera-relative
+ * Rubik frame. A pointer that starts on empty space belongs to camera orbit.
  */
 export class ManualInteractionController {
   constructor({
     domElement,
     cameraController,
     pickFace,
-    enqueueMove,
+    beginInteractive = null,
+    updateInteractive = null,
+    endInteractive = null,
+    enqueueMove = null,
     isInputLocked = () => false,
     gestureConfig = GESTURE_CONFIG,
     onGesture = null
@@ -31,23 +22,24 @@ export class ManualInteractionController {
     if (!domElement) throw new Error('ManualInteractionController requires domElement.');
     if (!cameraController) throw new Error('ManualInteractionController requires cameraController.');
     if (typeof pickFace !== 'function') throw new Error('ManualInteractionController requires pickFace().');
-    if (typeof enqueueMove !== 'function') throw new Error('ManualInteractionController requires enqueueMove().');
+    if (!beginInteractive && typeof enqueueMove !== 'function') {
+      throw new Error('ManualInteractionController requires beginInteractive() or enqueueMove().');
+    }
 
     this.domElement = domElement;
     this.cameraController = cameraController;
     this.pickFace = pickFace;
+    this.beginInteractive = beginInteractive;
+    this.updateInteractive = updateInteractive;
+    this.endInteractive = endInteractive;
     this.enqueueMove = enqueueMove;
     this.isInputLocked = isInputLocked;
     this.gestureConfig = gestureConfig;
     this.onGesture = onGesture;
-
     this.enabled = true;
     this._pointer = null;
 
-    // Phase 4 CameraController no longer owns primary pointer orbit while
-    // manual interaction is active. Wheel zoom remains owned by the camera.
     this.cameraController.setPointerOrbitEnabled?.(false);
-
     this._onPointerDown = this._onPointerDown.bind(this);
     this._onPointerMove = this._onPointerMove.bind(this);
     this._onPointerUp = this._onPointerUp.bind(this);
@@ -62,11 +54,11 @@ export class ManualInteractionController {
 
   setEnabled(enabled) {
     this.enabled = Boolean(enabled);
-    if (!this.enabled) this._cancelPointer();
+    if (!this.enabled) this._cancelPointer(true);
   }
 
   dispose() {
-    this._cancelPointer();
+    this._cancelPointer(true);
     const el = this.domElement;
     el.removeEventListener('pointerdown', this._onPointerDown);
     el.removeEventListener('pointermove', this._onPointerMove);
@@ -77,8 +69,14 @@ export class ManualInteractionController {
 
   _onPointerDown(event) {
     if (!this.enabled || event.button !== 0 || this.isInputLocked()) return;
-
-    const faceHit = this.pickFace(event.clientX, event.clientY);
+    const hit = this.pickFace(event.clientX, event.clientY);
+    const camera = this.cameraController.camera;
+    const frame = hit
+      ? resolvePovFrame({
+          cameraPosition: [camera.position.x, camera.position.y, camera.position.z],
+          target: this.cameraController.state?.target ?? [0, 0, 0]
+        })
+      : null;
 
     this._pointer = {
       id: event.pointerId,
@@ -86,12 +84,13 @@ export class ManualInteractionController {
       startY: event.clientY,
       lastX: event.clientX,
       lastY: event.clientY,
-      face: faceHit?.face ?? null,
-      faceNormal: faceHit?.normal ?? null,
-      mode: faceHit ? 'face-pending' : 'camera',
-      turned: false
+      mode: hit ? 'face-pending' : 'camera',
+      hit,
+      frame,
+      move: null,
+      axis: null,
+      progress: 0
     };
-
     this.domElement.setPointerCapture?.(event.pointerId);
     event.stopPropagation();
   }
@@ -100,62 +99,78 @@ export class ManualInteractionController {
     const pointer = this._pointer;
     if (!this.enabled || !pointer || pointer.id !== event.pointerId) return;
 
-    const dxTotal = event.clientX - pointer.startX;
-    const dyTotal = event.clientY - pointer.startY;
+    const dx = event.clientX - pointer.startX;
+    const dy = event.clientY - pointer.startY;
 
-    if (pointer.mode === 'face-pending') {
-      if (this.isInputLocked()) {
-        this._cancelPointer();
+    if (pointer.mode === 'face-pending' || pointer.mode === 'face-drag') {
+      if (pointer.mode === 'face-pending') {
+        const distance = Math.hypot(dx, dy);
+        if (distance < this.gestureConfig.minDistancePx) {
+          event.stopPropagation();
+          return;
+        }
+
+        const move = resolvePovMove({
+          frame: pointer.frame,
+          physicalStickerFace: pointer.hit.face,
+          cubieType: pointer.hit.cubieType,
+          cubiePosition: pointer.hit.logicalPosition,
+          dragX: dx,
+          dragY: dy
+        });
+        if (!move) {
+          event.stopPropagation();
+          return;
+        }
+
+        pointer.axis = Math.abs(dx) >= Math.abs(dy) ? 'horizontal' : 'vertical';
+        pointer.move = move;
+        pointer.progress = Math.min(1, Math.abs(pointer.axis === 'horizontal' ? dx : dy) / this.gestureConfig.pixelsPerQuarterTurn);
+
+        if (this.beginInteractive) {
+          const started = this.beginInteractive(move);
+          if (!started) {
+            this._cancelPointer(false);
+            return;
+          }
+          this.updateInteractive?.(pointer.progress);
+        } else {
+          this.enqueueMove?.(move);
+        }
+        pointer.mode = 'face-drag';
+        this._emitFaceGesture(pointer, dx, dy);
+        event.stopPropagation();
         return;
       }
 
-      const deltaOnFace = projectPointerDeltaToFacePlane({
-        dx: dxTotal,
-        dy: dyTotal,
-        cameraRight: this._cameraRight(),
-        cameraUp: this._cameraUp(),
-        faceNormal: pointer.faceNormal
-      });
-
-      const gesture = classifyProjectedGesture({
-        deltaOnFace,
-        face: pointer.face,
-        basis: FACE_BASES,
-        config: this.gestureConfig
-      });
-
-      if (gesture.type === 'horizontal' || gesture.type === 'vertical') {
-        const move = this._gestureMove(pointer.face, gesture);
-        if (move) {
-          pointer.turned = true;
-          pointer.mode = 'face';
-          this.enqueueMove(move);
-          this.onGesture?.({ type: 'face-turn', face: pointer.face, move, gesture });
-        }
-      }
-
+      const dominant = pointer.axis === 'horizontal' ? Math.abs(dx) : Math.abs(dy);
+      pointer.progress = Math.min(1, dominant / this.gestureConfig.pixelsPerQuarterTurn);
+      this.updateInteractive?.(pointer.progress);
+      this._emitFaceGesture(pointer, dx, dy);
       event.stopPropagation();
       return;
     }
 
     if (pointer.mode === 'camera') {
-      const dx = event.clientX - pointer.lastX;
-      const dy = event.clientY - pointer.lastY;
+      const stepX = event.clientX - pointer.lastX;
+      const stepY = event.clientY - pointer.lastY;
       pointer.lastX = event.clientX;
       pointer.lastY = event.clientY;
-
-      // Same angular sensitivity as Phase 4 CameraController.
       this.cameraController.rotateByDegrees(
-        -dx * 0.006 * 180 / Math.PI,
-        -dy * 0.006 * 180 / Math.PI
+        -stepX * 0.006 * 180 / Math.PI,
+        -stepY * 0.006 * 180 / Math.PI
       );
-      this.onGesture?.({ type: 'camera-orbit', dx, dy });
+      this.onGesture?.({ type: 'camera-orbit', dx: stepX, dy: stepY });
       event.stopPropagation();
     }
   }
 
   _onPointerUp(event) {
     if (this._pointer?.id !== event.pointerId) return;
+    const pointer = this._pointer;
+    if (pointer.mode === 'face-drag') {
+      this.endInteractive?.({ commit: pointer.progress >= this.gestureConfig.commitProgress });
+    }
     this.domElement.releasePointerCapture?.(event.pointerId);
     this._pointer = null;
     event.stopPropagation();
@@ -163,29 +178,34 @@ export class ManualInteractionController {
 
   _onPointerCancel(event) {
     if (this._pointer?.id !== event.pointerId) return;
+    const pointer = this._pointer;
+    if (pointer.mode === 'face-drag') this.endInteractive?.({ commit: false });
     this.domElement.releasePointerCapture?.(event.pointerId);
     this._pointer = null;
     event.stopPropagation();
   }
 
-  _cancelPointer() {
-    if (this._pointer) {
-      this.domElement.releasePointerCapture?.(this._pointer.id);
-    }
+  _cancelPointer(cancelInteractive) {
+    if (this._pointer?.mode === 'face-drag' && cancelInteractive) this.endInteractive?.({ commit: false, durationMs: 0 });
+    if (this._pointer) this.domElement.releasePointerCapture?.(this._pointer.id);
     this._pointer = null;
   }
 
-  _cameraRight() {
-    const e = this.cameraController.camera.matrixWorld.elements;
-    return [e[0], e[1], e[2]];
-  }
-
-  _cameraUp() {
-    const e = this.cameraController.camera.matrixWorld.elements;
-    return [e[4], e[5], e[6]];
-  }
-
-  _gestureMove(face, gesture) {
-    return gestureToMove(face, gesture);
+  _emitFaceGesture(pointer, dx, dy) {
+    const context = getPovStickerContext({
+      frame: pointer.frame,
+      physicalStickerFace: pointer.hit.face,
+      cubieType: pointer.hit.cubieType,
+      cubiePosition: pointer.hit.logicalPosition
+    });
+    this.onGesture?.({
+      type: 'face-drag',
+      move: pointer.move,
+      progress: pointer.progress,
+      axis: pointer.axis,
+      dx,
+      dy,
+      ...context
+    });
   }
 }

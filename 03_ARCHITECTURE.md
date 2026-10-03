@@ -60,8 +60,9 @@ src/
 │   ├── CameraController
 │   └── Lighting
 ├── interaction/
-│   ├── FaceGestureController
-│   ├── CameraGestureController
+│   ├── POVMoveResolver
+│   ├── ManualInteractionController
+│   ├── GestureHelpers
 │   └── PointerState
 ├── ui/
 │   ├── ControlPanel
@@ -96,7 +97,19 @@ Converts state to visual representation.
 
 ### Interaction Controller
 
-Converts pointer/touch input into commands.
+Converts pointer/touch input into commands. Phase 5 uses a dedicated `POVMoveResolver` whose source of truth is the canonical color orientation and fixed F/R/B/L adjacency table.
+
+```text
+Camera position
+   ↓
+POV front resolver (F/R/B/L only)
+   ↓
+Selected sticker + cubie type + logical position
+   ↓
+POV move table
+   ↓
+Standard notation
+```
 
 ### UI
 

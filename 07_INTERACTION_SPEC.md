@@ -2,263 +2,116 @@
 
 ## 1. Interaction modes
 
-The application has three primary interaction modes:
-
 ```text
 CAMERA
-FACE TURN
+FACE / SLICE TURN
 UI CONTROL
 ```
 
-The system must resolve which mode owns the pointer gesture.
+## 2. Camera ownership
 
----
+Pointer down on empty viewport starts camera orbit.
 
-## 2. Camera orbit
+Pointer down on a sticker starts a possible cube gesture and reserves the pointer for the cube.
 
-### Desktop
+A face gesture cannot fall back to camera orbit after it crosses the movement threshold.
 
-Start:
+## 3. POV front-face method
 
-- pointer down on empty scene area
-
-Continue:
-
-- pointer movement
-
-Result:
-
-- camera orbit
-
-Release:
-
-- stop orbit
-
-### Mobile
-
-One-finger drag on empty scene:
-
-- camera orbit
-
----
-
-## 3. Face-turn gesture
-
-Start:
-
-- pointer down on a visible cubie/sticker
-
-Track:
-
-- starting face
-- starting local coordinate
-- movement vector
-- projected movement inside face plane
-
-When movement exceeds threshold:
+Every new sticker gesture computes a frozen POV frame:
 
 ```text
-gesture becomes FACE TURN
-```
-
-Once classified as a face turn, it must not switch back to camera orbit during the same gesture.
-
----
-
-## 4. Threshold
-
-Use a configurable threshold.
-
-Conceptual:
-
-```text
-threshold = max(physical minimum, viewport-scaled minimum)
-```
-
-Avoid a threshold so small that tiny finger tremors trigger moves.
-
-Avoid a threshold so large that mobile users cannot reliably turn a face.
-
----
-
-## 5. Direction mapping
-
-The selected sticker face provides the plane.
-
-Example:
-
-```text
-F face:
-  horizontal drag → U/D? depending on selected row/column
-  vertical drag → L/R? depending on selected region
-```
-
-The exact mapping must be derived mathematically from:
-
-- face normal
-- face tangent
-- face bitangent
-- pointer displacement
-
-Do not hard-code a separate arbitrary rule for every face if a generic basis can be created.
-
----
-
-## 6. Row/column selection
-
-The starting cubie's position identifies the layer that is turned.
-
-For example:
-
-- starting on F/R/U sticker → choose the appropriate visible layer
-- drag direction determines the face-turn direction
-
-The interaction should emulate a physical cube rather than rotate only the selected cubie.
-
----
-
-## 7. Click
-
-A click/tap without enough movement must not trigger a face turn.
-
-Potential future behavior:
-
-- select/highlight
-- no action
-
-Initial implementation:
-
-```text
-tap = no cube move
-```
-
----
-
-## 8. Gesture priority
-
-Recommended priority:
-
-```text
-UI controls
+camera position
     ↓
-active face-turn gesture
+dominant physical face
     ↓
-camera gesture
+virtual F
+    ↓
+virtual R / L / U / D / B
 ```
 
-A pointer started on a UI element must never leak into the 3D scene.
+The labels are relative to the current view.
 
----
+The camera may be rotated to any orientation between gestures without changing the logical cube state.
 
-## 9. Touch prevention
+## 4. Cubie coverage
 
-Prevent browser gestures only where necessary.
+All visible cubies are valid gesture anchors:
 
-Do not globally disable:
+- 6 centers
+- 12 edges
+- 8 corners
 
-- scrolling
-- pinch zoom
-- browser navigation
+The internal core is never an interaction target.
 
-Use local gesture handling on the 3D viewport.
+## 5. Pointer data
 
----
+Picking must provide:
 
-## 10. Camera controls
+```js
+{
+  face,
+  cubieId,
+  cubieType,
+  logicalPosition,
+  normal
+}
+```
 
-Buttons:
+## 6. Direction resolution
+
+The screen displacement is classified into a dominant horizontal or vertical axis after the movement threshold is crossed.
+
+Diagonal gestures are accepted and resolved by dominant axis.
+
+The selected axis remains fixed for the gesture.
+
+## 7. Move resolution
+
+The selected sticker, cubie type, cubie position, POV frame, and drag direction determine the standard move notation.
+
+Supported outputs:
 
 ```text
-← Rotate
-→ Rotate
-↑ Rotate
-↓ Rotate
-Reset
+R R' L L' U U' D D' F F' B B'
+M M' E E' S S'
 ```
 
-Zoom:
+The exact corner/edge mappings are normative and documented in `PHASE_05_MANUAL_INTERACTION.md`.
+
+## 8. Live drag
+
+Once the gesture starts:
 
 ```text
-−
-slider
-+
-Reset
+progress = dominantPointerDistance / pixelsPerQuarterTurn
 ```
 
----
+The selected layer visually follows that progress continuously.
 
-## 11. Keyboard
-
-Optional but recommended:
+## 9. Release
 
 ```text
-Arrow keys → camera
-+ / -       → zoom
-R U F etc.  → face moves
+progress >= 0.5 → commit 90° move
+progress < 0.5  → cancel / return to start
 ```
 
-Keyboard shortcuts must not trigger when typing into a text field.
+The logical state changes only on commit.
 
----
+## 10. Camera conflict prevention
 
-## 12. Input lock
+The manual interaction controller disables Phase 4 pointer-orbit ownership while installed and explicitly performs camera orbit only for empty-scene gestures.
 
-During active move animation:
+Wheel zoom remains owned by `CameraController`.
 
-- queue or ignore new face gestures according to implementation
-- never partially start two conflicting turns
+## 11. Input lock
 
-Recommended initial behavior:
+While `CubeTurnRuntime.busy` is true, new cube gestures are ignored.
 
-```text
-active turn → ignore new face-turn gesture
-```
+No two interactive turns may be active simultaneously.
 
-This is simpler and safer.
+## 12. Accessibility and touch
 
----
+Pointer Events are used for mouse and touch.
 
-## 13. Reduced motion
-
-If `prefers-reduced-motion` is active:
-
-- keep cube turns functional
-- shorten animation duration
-- remove nonessential UI transitions
-
-Never disable core interaction.
-
-
----
-
-## Phase 5 Implementation Notes
-
-The manual interaction contract is implemented in:
-
-- `src/interaction/gesture.js`
-- `src/interaction/manual-controller.js`
-- `src/render/cube-renderer.js`
-
-The renderer performs sticker raycasting and returns the selected logical face plus its world-space normal.
-
-The interaction controller then:
-
-1. reserves the pointer;
-2. projects movement into the selected face plane;
-3. classifies the gesture;
-4. maps it through the shared `gestureToMove()` contract;
-5. sends the move to `CubeTurnRuntime`.
-
-Empty-scene pointer drags are delegated to the existing Phase 4 camera controller.
-
-During an active turn, the viewport is input-locked to prevent conflicting gestures.
-
-The current implementation uses:
-
-```text
-tap <= 8 px
-turn threshold >= 12 px
-dominance ratio = 1.15
-```
-
-These values remain configurable through `GESTURE_CONFIG`.
+The viewport uses local custom gesture handling. UI controls remain separate from the cube interaction layer.

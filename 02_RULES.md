@@ -48,6 +48,14 @@ The renderer displays a move.
 
 The move engine decides whether and how that move changes state.
 
+The supported move domain includes:
+
+```text
+U D R L F B M E S
+```
+
+with inverse (`'`) and half-turn (`2`) modifiers.
+
 ---
 
 ## Rule 6 — One move at a time
@@ -110,6 +118,27 @@ They must never modify cube coordinates or cubie orientation.
 ## Rule 11 — Face colors are configuration
 
 Color values must be centralized.
+
+## Rule 12 — Canonical color orientation is fixed
+
+The solved orientation is:
+
+```text
+U = yellow
+D = white
+F = red
+R = green
+B = orange
+L = blue
+```
+
+Only `F/R/B/L` may become the POV front face. `U/D` never receive front-face authority.
+
+See `21_COLOR_ORIENTATION_AND_POV.md` for the complete adjacency contract.
+
+## Rule 13 — Center identity is invariant
+
+Center cubies remain fixed to their face identity. Standard `M/E/S` turns rotate middle-slice edge cubies, not center cubies.
 
 Do not hard-code color literals throughout components.
 

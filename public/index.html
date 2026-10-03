@@ -34,7 +34,8 @@
     <div id="cube" class="cube-viewport"></div>
     <aside class="phase5-panel">
       <strong>Phase 5 — Manual Interaction</strong>
-      <span>Drag a sticker to turn its face.</span>
+      <span>Drag any center, edge, or corner sticker; the layer follows the drag.</span>
+      <span>Release to snap the turn or return if the drag is too short.</span>
       <span>Drag empty space to orbit the camera.</span>
       <span>Wheel / touchpad = zoom.</span>
       <span id="status" class="status">Ready</span>
@@ -64,11 +65,13 @@
       domElement: renderer.renderer.domElement,
       cameraController: renderer.cameraController,
       pickFace: (x, y) => renderer.pickFace(x, y),
-      enqueueMove: move => runtime.enqueue(move),
+      beginInteractive: move => runtime.beginInteractive(move),
+      updateInteractive: progress => runtime.updateInteractive(progress),
+      endInteractive: options => runtime.endInteractive(options),
       isInputLocked: () => runtime.busy,
       onGesture: event => {
-        if (event.type === 'face-turn') {
-          status.textContent = `Move: ${event.move} • animating`;
+        if (event.type === 'face-drag') {
+          status.textContent = `Drag: ${event.move} • ${Math.round(event.progress * 90)}°`;
         } else if (event.type === 'camera-orbit') {
           status.textContent = 'Camera orbit';
         }

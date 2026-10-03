@@ -28,7 +28,7 @@ test('solved stickers map to configured face colors', () => {
   const model = buildRenderModel(createSolvedCube());
   for (const cubie of model.cubies) {
     for (const sticker of cubie.stickers) {
-      const expected = { U: 'white', D: 'yellow', R: 'red', L: 'orange', F: 'green', B: 'blue' }[sticker.face];
+      const expected = { U: 'yellow', D: 'white', R: 'green', L: 'blue', F: 'red', B: 'orange' }[sticker.face];
       assert.equal(sticker.color, expected);
       assert.ok(CUBE_COLORS[sticker.face]);
       assert.deepEqual(sticker.normal, FACE_NORMALS[sticker.face]);

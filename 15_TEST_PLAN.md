@@ -115,15 +115,27 @@ Desktop:
 
 - camera drag
 - wheel zoom
-- face drag
-- UI click
+- sticker picking
+- POV dominant-face selection restricted to red/green/orange/blue
+- canonical color orientation and fixed F/R/B/L adjacency
+- exact tie determinism for front-face selection
+- center identity remains fixed during M/E/S
+- front corner mapping
+- front edge M/E mapping
+- right/left side F/B/S mapping
+- center drag
+- live drag progress
+- commit/cancel threshold
+- UI click isolation
 
 Mobile:
 
 - camera drag
-- pinch
-- face drag
-- UI tap
+- touch sticker drag
+- POV-relative direction
+- center/edge/corner coverage
+- live snap/cancel
+- UI tap isolation
 
 ---
 

@@ -96,6 +96,19 @@ F = +Z
 B = -Z
 ```
 
+Canonical solved colors:
+
+```text
+U = yellow
+D = white
+R = green
+L = blue
+F = red
+B = orange
+```
+
+The four side faces F/R/B/L are the only faces eligible for POV-front authority.
+
 Each face contains 9 sticker positions conceptually.
 
 The renderer should calculate visible sticker placement from cubie state.
@@ -104,26 +117,34 @@ The renderer should calculate visible sticker placement from cubie state.
 
 ## 6. Move notation
 
-Support:
+Face moves:
 
 ```text
 U D L R F B
 ```
 
+Slice moves:
+
+```text
+M E S
+```
+
 Modifiers:
 
 ```text
-'   inverse / counter-clockwise
+'   inverse
 2   half turn
 ```
 
-Examples:
+Slice conventions:
 
 ```text
-R
-R'
-R2
+M follows L
+E follows D
+S follows F
 ```
+
+The logical core is absent, but standard `M/E/S` rotates only the four middle-slice edge cubies. The four center cubies in the geometric plane remain fixed.
 
 ---
 

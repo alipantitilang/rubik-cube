@@ -7,6 +7,8 @@ A responsive interactive 3D Rubik's Cube web experience.
 The cube behaves like a physical 3×3 Rubik:
 
 - six colored faces
+
+Canonical solved color orientation is fixed as U=yellow, D=white, F=red, R=green, B=orange, L=blue. Only F/R/B/L can become the manual-interaction POV front.
 - 26 visible cubies
 - center internal position empty
 - legal face turns
@@ -155,40 +157,40 @@ Mouse:
 
 - Left drag on empty scene area → orbit camera.
 - Wheel → zoom.
-- Optional right/middle drag → alternative orbit depending on implementation.
 
 Touch:
 
 - One-finger drag on empty scene → orbit.
 - Pinch → zoom.
-- Two-finger drag may optionally pan.
 
-### Cube face
+### Cube interaction
 
-A drag beginning on a cubie/sticker should be interpreted as a potential Rubik face move.
+A drag beginning on any visible sticker is a potential Rubik move. All 26 visible cubies are valid anchors:
 
-The system must distinguish:
+- center
+- edge
+- corner
 
-- camera drag
-- face-turn drag
-- click/tap
+The interaction uses a POV front-face method:
 
-The gesture should not randomly choose between these modes.
+1. Determine the physical face most directly facing the camera.
+2. Treat that face as virtual `F`.
+3. Derive virtual `R/L/U/D/B` from camera-relative directions.
+4. Freeze that frame for the pointer gesture.
+5. Use the picked cubie type/position and drag direction to resolve legal notation.
 
-### Face turn
+Supported notation includes:
 
-A valid gesture:
+```text
+R R' L L' U U' D D' F F' B B'
+M M' E E' S S'
+```
 
-1. Pointer/touch starts on a visible sticker.
-2. Movement exceeds a configurable threshold.
-3. Drag direction is projected into the selected face plane.
-4. The dominant direction determines clockwise/counter-clockwise turn.
-5. The affected layer is determined by the starting sticker/cubie's face.
-6. The turn is committed to the cube state.
+A live turn follows pointer displacement. On release it snaps to 90° when the commit threshold is reached, otherwise it returns to its starting orientation.
 
-A turn should behave like a physical Rubik, not like arbitrary object rotation.
+The logical cube state is changed only on commit.
 
----
+The exact POV corner/edge mapping is normative in `PHASE_05_MANUAL_INTERACTION.md`.
 
 ## 7. Buttons
 

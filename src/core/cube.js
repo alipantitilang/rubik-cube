@@ -6,7 +6,10 @@
  */
 
 export const FACES = Object.freeze(['U', 'D', 'R', 'L', 'F', 'B']);
-export const COLORS = Object.freeze({ U: 'white', D: 'yellow', R: 'red', L: 'orange', F: 'green', B: 'blue' });
+export const SLICE_MOVES = Object.freeze(['M', 'E', 'S']);
+export const MOVE_NOTATIONS = Object.freeze(['U', 'D', 'R', 'L', 'F', 'B', 'M', 'E', 'S']);
+export const COLORS = Object.freeze({ U: 'yellow', D: 'white', R: 'green', L: 'blue', F: 'red', B: 'orange' });
+export const COLOR_TO_FACE = Object.freeze(Object.fromEntries(Object.entries(COLORS).map(([face, color]) => [color, face])));
 
 const NORMALS = Object.freeze({
   U: [0, 1, 0],
@@ -35,7 +38,11 @@ const MOVE_DEFS = Object.freeze({
   U: { axis: 'y', layer: 1, quarterTurns: 1 },
   D: { axis: 'y', layer: -1, quarterTurns: -1 },
   F: { axis: 'z', layer: 1, quarterTurns: -1 },
-  B: { axis: 'z', layer: -1, quarterTurns: 1 }
+  B: { axis: 'z', layer: -1, quarterTurns: 1 },
+  // Standard slice notation: M follows L, E follows D, S follows F.
+  M: { axis: 'x', layer: 0, quarterTurns: 1 },
+  E: { axis: 'y', layer: 0, quarterTurns: -1 },
+  S: { axis: 'z', layer: 0, quarterTurns: -1 }
 });
 
 function cloneVector(v) { return [...v]; }
@@ -89,7 +96,7 @@ function assertIntegerPosition(position) {
 export function parseMove(notation) {
   if (typeof notation !== 'string') throw new TypeError('Move notation must be a string');
   const value = notation.trim();
-  const match = /^([UDRLFB])([2']?)$/.exec(value);
+  const match = /^([UDRLFBMES])([2']?)$/.exec(value);
   if (!match) throw new Error(`Invalid move notation: ${notation}`);
   const face = match[1];
   const modifier = match[2];
@@ -149,6 +156,9 @@ export class CubeState {
     const axisIndex = { x: 0, y: 1, z: 2 }[parsed.axis];
     for (const cubie of next.cubies.values()) {
       if (cubie.position[axisIndex] !== parsed.layer) continue;
+      // Standard M/E/S turns rotate the four middle-slice edge cubies.
+      // Centers remain fixed to the core and preserve face/color identity.
+      if (SLICE_MOVES.includes(parsed.face) && cubie.position.filter(v => v !== 0).length !== 2) continue;
       cubie.position = rotateVector(cubie.position, parsed.axis, parsed.quarterTurns);
       const rotatedStickers = {};
       for (const [face, color] of Object.entries(cubie.stickers)) {

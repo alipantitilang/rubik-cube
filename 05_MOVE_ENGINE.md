@@ -2,29 +2,65 @@
 
 ## Objective
 
-Implement a reliable Rubik move engine before polishing the UI.
+Implement a reliable Rubik move engine before UI polish. The engine is authoritative and independent of rendering and pointer interaction.
 
-## 1. Command flow
+## Supported move notation
+
+Face moves:
 
 ```text
-Move Request
-    ↓
-Validate
-    ↓
-Create Move
-    ↓
-Animate
-    ↓
-Commit State
-    ↓
-Update History
-    ↓
-Check Solved
+U D R L F B
 ```
 
-## 2. Face layer selection
+Slice moves:
 
-Example:
+```text
+M E S
+```
+
+Modifiers:
+
+```text
+'   inverse
+2   half turn
+```
+
+Examples:
+
+```text
+R R' R2
+M M' M2
+```
+
+## Slice conventions
+
+The project follows the standard conventions required by the manual POV interaction:
+
+| Slice | Axis | Layer | Direction convention |
+|---|---|---:|---|
+| `M` | X | `0` | follows `L` |
+| `E` | Y | `0` | follows `D` |
+| `S` | Z | `0` | follows `F` |
+
+The internal core `(0,0,0)` remains absent, but standard `M/E/S` turns rotate only the **4 middle-slice edge cubies**. Center cubies remain fixed to preserve face identity.
+
+## Move transaction
+
+```text
+Move request
+   ↓
+Parse / validate
+   ↓
+Animation preview
+   ↓
+Commit
+   ↓
+CubeState.applyMove()
+```
+
+`CubeState` is never mutated by pointer or renderer code.
+
+## Face layer selection
 
 ```text
 R → x = +1
@@ -35,132 +71,40 @@ F → z = +1
 B → z = -1
 ```
 
-Only cubies on the selected layer participate in that move.
+Face turns affect 9 visible cubies.
 
-A face turn therefore affects exactly 9 cubies.
-
----
-
-## 3. Position rotation
-
-For a quarter turn around an axis, rotate the integer position coordinates by 90 degrees.
-
-Do not use floating point logical coordinates.
-
-Logical coordinates must remain exactly:
+Slice selection:
 
 ```text
--1, 0, +1
+M → x = 0
+E → y = 0
+S → z = 0
 ```
 
-after every committed move.
+The geometric middle plane contains 8 visible positions, but standard `M/E/S` excludes the four center cubies. Each logical slice move therefore affects 4 visible edge cubies.
 
----
+## Orientation
 
-## 4. Orientation
+Position and sticker orientation rotate together using the same integer 90° transform.
 
-Position rotation alone is not sufficient.
+This guarantees that a committed move changes the actual sticker colors visible on the resulting faces rather than merely changing a render transform.
 
-The cubie's sticker orientation must rotate with the cubie.
+## Invariants
 
-A cubie originally having:
+For every supported quarter-turn move:
 
 ```text
-U + F + R
+M × M × M × M = identity
+M × M' = identity
+M2 × M2 = identity
 ```
 
-must become correctly oriented after a turn.
+This applies to both face and slice moves.
 
----
+## Interaction boundary
 
-## 5. Rendering transform
-
-Logical transform:
+The interaction system may request any supported notation, but it does not implement the move mathematics itself.
 
 ```text
-integer position + discrete orientation
+POV resolver → notation → CubeTurnRuntime → CubeState
 ```
-
-Renderer transform:
-
-```text
-world-space position + world-space quaternion
-```
-
-The conversion belongs to the renderer.
-
----
-
-## 6. Move transaction
-
-A move transaction should contain:
-
-```ts
-{
-  move,
-  affectedCubies,
-  startState,
-  animationProgress,
-  committed
-}
-```
-
-Only `committed = true` may modify the authoritative state.
-
----
-
-## 7. Cancellation
-
-For initial version:
-
-> Do not cancel an active face turn.
-
-Finish the current turn, then accept the next input.
-
-This avoids partially committed states.
-
----
-
-## 8. Queue
-
-Automatic scramble uses:
-
-```text
-MoveQueue
-```
-
-Example:
-
-```text
-[R, U, R', U', F, ...]
-```
-
-The queue processes one animation at a time.
-
----
-
-## 9. History
-
-History stores committed player moves.
-
-A queued automatic scramble should not be treated as player history by default.
-
----
-
-## 10. Testing requirements
-
-For every face:
-
-- move × 4 = identity
-- move + inverse = identity
-- move2 × move2 = identity
-
-For sequences:
-
-```text
-R U R' U'
-```
-
-must be deterministic.
-
-Applying a sequence and then its exact inverse sequence must restore the original state.

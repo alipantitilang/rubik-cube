@@ -77,6 +77,8 @@ export class RubikRenderer {
         this.objects.set(cubie.id, group);
         this.cubeGroup.add(group);
       }
+      group.userData.logicalPosition = [...cubie.logicalPosition];
+      group.userData.cubieType = cubie.type;
       group.position.set(...cubie.renderPosition);
       group.rotation.set(0, 0, 0);
       group.scale.set(1, 1, 1);
@@ -122,6 +124,8 @@ export class RubikRenderer {
         face,
         normal: [normal.x, normal.y, normal.z],
         cubieId: object.parent?.userData?.cubieId ?? null,
+        cubieType: object.parent?.userData?.cubieType ?? null,
+        logicalPosition: object.parent?.userData?.logicalPosition ? [...object.parent.userData.logicalPosition] : null,
         object
       });
     }

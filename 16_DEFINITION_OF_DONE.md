@@ -6,6 +6,7 @@
 - [ ] empty internal center position
 - [ ] six face centers
 - [ ] legal face moves
+- [ ] legal slice moves M/E/S with standard direction conventions
 - [ ] correct cubie orientation
 - [ ] inverse moves
 - [ ] double turns
@@ -26,7 +27,14 @@
 - [ ] camera orbit
 - [ ] mouse wheel zoom
 - [ ] touch pinch zoom
-- [ ] face drag
+- [ ] face/sticker drag from center, edge, and corner
+- [ ] POV dominant-face resolution restricted to F/R/B/L
+- [ ] canonical color orientation: U yellow, D white, F red, R green, B orange, L blue
+- [ ] exact F/R/B/L adjacency table
+- [ ] center identity invariant during M/E/S
+- [ ] front corner/edge mapping
+- [ ] side F/B/S mapping
+- [ ] live drag progress and snap/cancel
 - [ ] correct move direction
 - [ ] input conflict prevention
 

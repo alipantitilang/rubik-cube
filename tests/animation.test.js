@@ -85,3 +85,10 @@ test('runtime cancel discards active and queued turns without mutating logical s
   assert.equal(runtime.cubeState.signature(), before);
   assert.deepEqual(calls, ['finish', ['render', before]]);
 });
+
+test('slice animation selects the four middle-slice edge cubies and leaves centers fixed', () => {
+  const cube = createSolvedCube();
+  for (const move of ['M', 'E', 'S']) {
+    assert.equal(getLayerCubieIds(cube, move).length, 4, move);
+  }
+});

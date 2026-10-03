@@ -114,4 +114,4 @@ Phase 6 menambahkan test untuk:
 - completion and return to playing;
 - reset.
 
-Core shuffle regression is included in the full suite: **54 passed, 0 failed**. The Play UI/end-to-end product flow remains pending for the dedicated Phase 6 completion pass.
+Core shuffle regression is included in the current full suite: **61 passed, 0 failed**. The Play UI/end-to-end product flow remains pending for the dedicated Phase 6 completion pass.

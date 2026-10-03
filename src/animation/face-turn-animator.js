@@ -72,5 +72,6 @@ export function getLayerCubieIds(cubeState, move) {
   const axisIndex = { x: 0, y: 1, z: 2 }[actual.axis];
   return [...cubeState.cubies.values()]
     .filter(cubie => cubie.position[axisIndex] === actual.layer)
+    .filter(cubie => !['M', 'E', 'S'].includes(actual.face) || cubie.position.filter(v => v !== 0).length === 2)
     .map(cubie => cubie.id);
 }

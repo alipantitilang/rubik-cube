@@ -55,6 +55,16 @@ Setelah dicatat di sini:
 | FIX-200 | Phase 2 | Test | FIXED | Memperbaiki assertion test warna agar membandingkan face-to-color contract, bukan nama warna ke nilai hex. | `tests/render-model.test.js` |
 | FIX-300 | Phase 3 | Animation / Renderer | FIXED | Reset transform cubie setelah face-turn agar rotasi sementara tidak terakumulasi sebagai drift visual. | `src/render/cube-renderer.js`, `PHASE_03_FACE_TURN_ANIMATION.md` |
 | FIX-500 | Phase 5 | Interaction / Architecture | FIXED | Integrasi manual face gesture dengan renderer dan camera Phase 4 agar sticker drag tidak ikut mengorbit kamera. | `src/interaction/gesture.js`, `src/interaction/manual-controller.js`, `src/render/cube-renderer.js`, `src/camera-controller.js`, `PHASE_05_MANUAL_INTERACTION.md` |
+| FIX-505 | Phase 5 | Interaction / Animation | FIXED | Mengubah manual face turn menjadi live drag: layer mengikuti displacement pointer dan snap/cancel saat release. | `src/interaction/gesture.js`, `src/interaction/manual-controller.js`, `src/animation/cube-turn-runtime.js`, `PHASE_05_MANUAL_INTERACTION.md` |
+| FIX-506 | Phase 5 | Interaction / Coverage | FIXED | Semua sticker center, edge, dan corner menggunakan kontrak picking dan interactive turn yang sama. | `src/render/cube-renderer.js`, `src/interaction/manual-controller.js`, `tests/interactive-drag.test.js` |
+| FIX-507 | Phase 5 | Gesture | FIXED | Diagonal live drag diselesaikan berdasarkan dominant axis sehingga arah drag alami tetap dapat memutar face. | `src/interaction/gesture.js`, `tests/interactive-drag.test.js` |
+| FIX-508 | Phase 5 | Architecture / Interaction | FIXED | Mengganti gesture face-plane lama dengan POV front-face method: dominant camera face menjadi virtual F dan R/L/U/D/B diturunkan relatif terhadap POV. | `src/interaction/pov-move-resolver.js`, `src/interaction/manual-controller.js`, `PHASE_05_MANUAL_INTERACTION.md` |
+| FIX-509 | Phase 5 / Phase 1 | Move Engine | FIXED | Menambahkan M/E/S sebagai legal slice moves dengan konvensi M mengikuti L, E mengikuti D, S mengikuti F. | `src/core/cube.js`, `05_MOVE_ENGINE.md`, `tests/cube.test.js` |
+| FIX-510 | Phase 5 | Interaction / Renderer | FIXED | Picking sekarang mengembalikan `cubieType` dan `logicalPosition` agar resolver tidak menebak struktur cubie dari render transform. | `src/render/cube-renderer.js`, `tests/pov-move-resolver.test.js` |
+| FIX-511 | Phase 5 | Cleanup | FIXED | Menghapus contract gesture lama yang memiliki mapping face langsung dan menjadikan POV resolver sebagai satu-satunya sumber aturan manual interaction. | `src/interaction/gesture.js`, `src/interaction/index.js`, `tests/interaction.test.js` |
+| FIX-512 | Phase 5 | Cube Model / Renderer / Interaction | FIXED | Menetapkan canonical color orientation: U yellow, D white, F red, R green, B orange, L blue; hanya F/R/B/L menjadi POV front. | `src/core/cube.js`, `src/render/cube-render-model.js`, `src/interaction/pov-move-resolver.js`, `21_COLOR_ORIENTATION_AND_POV.md` |
+| FIX-513 | Phase 5 / Phase 1 | Move Engine / Animation | FIXED | Mengoreksi M/E/S agar hanya memutar 4 middle-slice edge cubies; center cubies tetap fixed. | `src/core/cube.js`, `src/animation/face-turn-animator.js`, `tests/cube.test.js`, `tests/animation.test.js` |
+| FIX-514 | Phase 5 | Interaction / Coverage | FIXED | Yellow/White centers tetap draggable sebagai U/D anchors tanpa memperoleh hak menjadi POV front. | `src/interaction/pov-move-resolver.js`, `tests/pov-move-resolver.test.js` |
 
 ---
 
@@ -206,6 +216,33 @@ Belum ada fix.
 
 # Phase 5 — Manual Rubik Interaction
 
+### FIX-505
+- **Status:** `FIXED`
+- **Tipe:** Interaction / Animation
+- **Tanggal:** 2026-10-04
+- **Fase:** Phase 5 — Manual Rubik Interaction
+- **Ringkasan:** Face turn sekarang mengikuti drag secara langsung, bukan menunggu drag selesai lalu memainkan fixed animation.
+- **Perubahan:** Menambahkan `beginInteractive()`, `updateInteractive()`, dan `endInteractive()` pada `CubeTurnRuntime`; controller menghitung progress berdasarkan displacement pada bidang face.
+- **Acceptance:** Layer visual bergerak searah drag, lalu snap ke 90° atau kembali tanpa mengubah `CubeState` sebelum commit.
+
+### FIX-506
+- **Status:** `FIXED`
+- **Tipe:** Interaction / Coverage
+- **Tanggal:** 2026-10-04
+- **Fase:** Phase 5 — Manual Rubik Interaction
+- **Ringkasan:** Semua visible cubie type harus dapat menjadi titik awal drag.
+- **Perubahan:** Hit contract membawa `cubieType`; center, edge, dan corner sticker memakai jalur interactive turn yang sama.
+- **Acceptance:** Seluruh 26 cubie visible tercakup melalui sticker yang dapat dipilih.
+
+### FIX-507
+- **Status:** `FIXED`
+- **Tipe:** Gesture
+- **Tanggal:** 2026-10-04
+- **Fase:** Phase 5 — Manual Rubik Interaction
+- **Ringkasan:** Diagonal drag tidak lagi menjadi dead-zone pada live interaction.
+- **Perubahan:** `classifyDrag()` memilih dominant axis pada bidang face.
+- **Acceptance:** Drag ke segala arah menghasilkan salah satu dari dua sumbu turn face yang relevan.
+
 ### FIX-500
 - **Status:** `FIXED`
 - **Tipe:** Interaction / Architecture
@@ -339,4 +376,84 @@ Sebelum fase ditandai `COMPLETE`:
 | 2026-10-03 | Phase 1: memperbaiki inverse move dan memperbaiki acceptance test layer selection. |
 | 2026-10-03 | Phase 3: menambahkan animation controller, temporary layer pivot, runtime commit, dan transform reset. |
 | 2026-10-03 | Phase 4: menambahkan camera state/controller dengan orbit, zoom, preset rotation, dan reset. |
+| 2026-10-04 | Phase 5: live drag mengikuti pointer, seluruh center/edge/corner tercakup, diagonal dominant-axis, dan interactive snap/cancel (`FIX-505`–`FIX-507`). |
 | 2026-10-03 | Phase 5: mengintegrasikan sticker picking, gesture projection, manual face turns, camera ownership boundary, input locking, dan memperbaiki adapter animation integration (`FIX-501`), safe cancellation (`FIX-502`), serta single gesture mapping contract (`FIX-503`). |
+
+
+# Phase 5 — POV Front-Face Redesign
+
+### FIX-508
+- **Status:** `FIXED`
+- **Tipe:** Architecture / Interaction
+- **Tanggal:** 2026-10-04
+- **Ringkasan:** Model interaksi lama yang memakai face sticker sebagai basis tetap diganti menjadi POV front-face method.
+- **Perubahan:** Kamera menentukan physical face dominan sebagai virtual `F`; projected camera right/up menentukan virtual `R/L/U/D/B`. Frame dibekukan saat pointer down.
+- **Acceptance:** Mapping tetap konsisten setelah arbitrary camera rotation.
+
+### FIX-509
+- **Status:** `FIXED`
+- **Tipe:** Move Engine
+- **Tanggal:** 2026-10-04
+- **Ringkasan:** Manual interaction membutuhkan `M`, `E`, dan `S`.
+- **Perubahan:** `CubeState` sekarang mendukung slice notation dan inverse/half-turn modifiers. M follows L, E follows D, S follows F.
+- **Acceptance:** Slice move ×4 dan move+inverse kembali ke state semula; slice memilih 4 middle-slice edge cubies; center cubies tetap fixed.
+
+### FIX-510
+- **Status:** `FIXED`
+- **Tipe:** Renderer / Interaction Contract
+- **Tanggal:** 2026-10-04
+- **Ringkasan:** POV resolver membutuhkan cubie type dan logical position yang authoritative.
+- **Perubahan:** `pickFace()` mengembalikan `logicalPosition` dan `cubieType`.
+- **Acceptance:** Seluruh corner/edge/center mapping dapat diuji tanpa membaca transform renderer.
+
+### FIX-511
+- **Status:** `FIXED`
+- **Tipe:** Cleanup / Architecture
+- **Tanggal:** 2026-10-04
+- **Ringkasan:** Contract `gestureToMove()` dan face tangent basis lama menjadi sumber aturan kedua yang bertentangan dengan POV model.
+- **Perubahan:** Contract lama dihapus dari active interaction API. `gesture.js` hanya menangani threshold/progress; `pov-move-resolver.js` menjadi single source of truth untuk manual move resolution.
+
+# Phase 5 — Canonical Color Orientation and Slice Correction
+
+### FIX-512
+- **Status:** `FIXED`
+- **Tipe:** Cube Model / Renderer / Interaction
+- **Tanggal:** 2026-10-04
+- **Ringkasan:** Menetapkan orientasi warna canonical yang baru.
+- **Perubahan:** `U=yellow`, `D=white`, `F=red`, `R=green`, `B=orange`, `L=blue`. Hanya `F/R/B/L` yang boleh menjadi virtual POV front; adjacency `U/D/R/L/B` mengikuti tabel warna tetap.
+- **Acceptance:** Core, renderer, color tests, POV frame tests, dan dokumentasi memakai mapping yang sama.
+
+### FIX-513
+- **Status:** `FIXED`
+- **Tipe:** Move Engine / Animation
+- **Tanggal:** 2026-10-04
+- **Ringkasan:** Memperbaiki semantik M/E/S agar center cubies tidak berpindah.
+- **Perubahan:** Standard `M/E/S` sekarang hanya memutar 4 middle-slice edge cubies. Center cubies tetap pada posisi/warna face-nya.
+- **Acceptance:** Logical engine dan animation adapter memilih 4 cubies untuk M/E/S; center identity tetap invariant.
+
+
+### 2026-10-04 — Canonical color orientation + slice correction
+
+- Phase 5 now uses the fixed color orientation and F/R/B/L-only POV front authority (`FIX-512`).
+- M/E/S now preserve center identity and rotate only the four middle-slice edge cubies (`FIX-513`).
+
+### FIX-514
+- **Status:** `FIXED`
+- **Tipe:** Interaction / Coverage
+- **Tanggal:** 2026-10-04
+- **Ringkasan:** Menjaga seluruh 26 visible cubies tetap memiliki jalur interaction anchor tanpa memberi U/D hak menjadi POV front.
+- **Perubahan:** Yellow/White center tetap dapat di-drag sebagai direct `U/D` face anchors; front authority tetap hanya F/R/B/L.
+- **Acceptance:** U/D center interaction diuji dan tidak mengubah aturan POV front selection.
+
+### 2026-10-04 — U/D center interaction coverage
+
+- Yellow/White centers remain draggable as direct U/D anchors without becoming POV front (`FIX-514`).
+- Full regression suite: 68 passed, 0 failed.
+
+### FIX-515
+- **Status:** `FIXED`
+- **Tipe:** Interaction / Direction Mapping
+- **Tanggal:** 2026-10-04
+- **Ringkasan:** Pada kondisi merah (`F`) sebagai virtual front, gerakan horizontal pada kolom kiri/kanan terasa berlawanan dengan arah grab pengguna.
+- **Perubahan:** Untuk `frame.front === 'F'`, kolom kiri yang di-drag ke kanan sekarang memakai arah move yang menghasilkan gerakan ke kanan; kolom kanan yang di-drag ke kiri memakai arah move yang menghasilkan gerakan ke kiri. Berlaku untuk corner atas/bawah dan edge kiri/kanan. Mapping POV hijau/oranye/biru tidak diubah pada fix ini.
+- **Acceptance:** Empat corner horizontal dan dua edge horizontal pada front merah diuji; regression suite 68/68 lulus.

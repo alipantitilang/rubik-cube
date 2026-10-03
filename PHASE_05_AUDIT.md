@@ -1,92 +1,81 @@
-# Phase 5 — Full Project Audit
-
-## Audit target
-
-The uploaded project archive was inspected as a whole, with Phase 5 treated as the active scope and prior phases as regression dependencies.
+# Phase 5 — POV Interaction Audit
 
 ## Result
 
-**Phase 5 is structurally sound after the fixes in this audit.**
+**PASS — redesigned and revalidated.**
 
-The main architecture remains:
+The previous Phase 5 gesture model was replaced because it treated the picked sticker face as a permanent local coordinate system. That did not match the desired physical Rubik interaction after camera rotation and could not express the M/E/S slice rules cleanly.
+
+## Major structural changes
+
+### 1. Single POV resolver
+
+Added:
+
+`src/interaction/pov-move-resolver.js`
+
+Responsibilities:
+
+- determine dominant physical front face from camera position, restricted to F/R/B/L;
+- derive relative R/L/U/D/B faces from the fixed color adjacency table;
+- freeze the POV frame for a gesture;
+- resolve center/edge/corner anchors;
+- map the specified front and side rules to legal notation.
+
+### 2. Removed duplicate gesture-to-face mapping
+
+The old `FACE_BASES` / `gestureToMove()` contract was removed from the active interaction architecture. `gesture.js` now only owns generic threshold/progress helpers.
+
+### 3. Logical engine extension
+
+`src/core/cube.js` now supports:
 
 ```text
-CubeState
-   ↓
-CubeTurnRuntime
-   ↓
-FaceTurnRenderAdapter / Renderer
-   ↓
-ManualInteractionController
-   ↓
-Pointer gesture
+M M' M2
+E E' E2
+S S' S2
 ```
 
-`CubeState` remains the authoritative logical state.
+with the required conventions:
 
-## Findings fixed
+```text
+M follows L
+E follows D
+S follows F
+```
 
-### FIX-501 — Missing animation adapter in Phase 5 entry points
+### 4. Renderer picking context
 
-`public/index.html` and `public/phase5.html` created `CubeTurnRuntime` without `FaceTurnRenderAdapter`.
+Picking now exposes:
 
-That meant a manual gesture could wait for the logical commit and re-render, but the physical face-turn animation was not connected in the actual preview entry points.
+- `cubieType`
+- `logicalPosition`
 
-**Fixed:** both entry points now instantiate and pass the adapter.
+so interaction does not have to reconstruct state from render transforms.
 
-### FIX-502 — Unsafe runtime cancellation
+## Validation
 
-`ShuffleController.reset()` directly nulled `animator.active`.
+```text
+66 tests passed
+0 failed
+```
 
-That bypassed the renderer adapter lifecycle and could leave a cubie layer visually rotated after cancellation.
+The suite includes:
 
-**Fixed:** `CubeTurnRuntime.cancel()` now:
-1. finishes the temporary adapter attachment;
-2. clears the animator queue;
-3. clears the active animation;
-4. re-renders the authoritative `CubeState`.
+- canonical color orientation and fixed F/R/B/L front eligibility;
 
-### FIX-503 — Duplicated gesture mapping
+- logical face and slice move invariants;
+- POV dominant-face selection;
+- every specified front corner mapping;
+- every specified front edge mapping;
+- every specified right/left corner mapping;
+- every specified right/left edge mapping;
+- center interaction, including U/D center fallback without front-face authority;
+- live runtime commit/cancel;
+- pointer ownership;
+- camera isolation;
+- existing Phase 1–6 regression tests.
 
-`ManualInteractionController` had a second implementation of gesture-to-move mapping even though `gestureToMove()` already defined the contract.
+## Decision
 
-**Fixed:** the controller now delegates to the shared helper.
-
-### FIX-504 — Shuffle random-source robustness
-
-Seed `0` previously fell back to the default seed. Invalid random values could also produce invalid indices, and a pathological random source could loop indefinitely under constraints.
-
-**Fixed:** seed `0` is valid, random output is validated, and generation has an attempt guard.
-
-## Structure review
-
-### Kept
-
-- `src/core/` — logical cube and shuffle generator.
-- `src/animation/` — turn runtime, face animation, and shuffle controller.
-- `src/render/` — render model, renderer, and face-turn adapter.
-- `src/interaction/` — manual pointer/gesture layer.
-- `src/camera-*` — Phase 4 camera foundation.
-- `tests/` — regression and interaction tests.
-- `public/index.html` — current application entry point.
-- phase preview pages — retained as development/verification artifacts because earlier phase documentation references them.
-
-### Not included in release ZIP
-
-- `.git/` repository metadata. The repository itself is not application runtime data and should not be bundled into a project handoff archive.
-
-### Intentionally not deleted
-
-Phase 6 shuffle source is present in the working tree, but its product UI flow is not yet complete. It is therefore retained and explicitly marked `IN PROGRESS` rather than silently deleted.
-
-## Static checks
-
-- Relative JavaScript imports: no missing local modules found.
-- `node --check`: all source and test JavaScript files passed.
-- Full test suite: **54 passed, 0 failed**.
-
-## Remaining boundary
-
-The next meaningful work is Phase 6 product completion: wire the Play/Reshuffle lifecycle into the product shell and then proceed to history/solved flow.
-
-No Phase 5 blocker remains in the audited code.
+Phase 5 is considered complete under the new POV interaction contract. Phase 6 may build on the finalized move notation and runtime without reintroducing the previous face-plane gesture system.

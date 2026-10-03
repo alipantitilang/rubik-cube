@@ -64,4 +64,4 @@ Perubahan camera state tidak boleh mengubah `CubeState`.
 
 ## Handoff ke Phase 5
 
-Phase 5 dapat menggunakan pointer events pada cube viewport untuk membedakan **camera drag** dan **face interaction**, tanpa mengubah camera state contract.
+Phase 5 menggunakan pointer events pada cube viewport untuk membedakan **camera drag** dan **POV-relative cube interaction**, tanpa mengubah camera state contract. Phase 5 mengambil snapshot kamera saat gesture dimulai dan menurunkannya menjadi virtual F/R/L/U/D/B.

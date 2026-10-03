@@ -53,6 +53,7 @@ Setelah dicatat di sini:
 |---|---|---|---|---|---|
 | FIX-000 | Phase 0 | Baseline | FIXED | Sistem Fix Log dibuat sebagai bagian dari dokumentasi proyek. | `README.md`, `FIX_LOG.md` |
 | FIX-200 | Phase 2 | Test | FIXED | Memperbaiki assertion test warna agar membandingkan face-to-color contract, bukan nama warna ke nilai hex. | `tests/render-model.test.js` |
+| FIX-300 | Phase 3 | Animation / Renderer | FIXED | Reset transform cubie setelah face-turn agar rotasi sementara tidak terakumulasi sebagai drift visual. | `src/render/cube-renderer.js`, `PHASE_03_FACE_TURN_ANIMATION.md` |
 
 ---
 
@@ -120,6 +121,22 @@ Phase 1 fix entries are recorded above. No unresolved Phase 1 fix remains.
 Belum ada fix.
 
 > Semua perubahan yang ditemukan selama Phase 3 ditambahkan di bawah bagian ini dengan ID `FIX-3xx`.
+
+---
+
+
+# Phase 3 — Face-Turn Animation
+
+### FIX-300
+- **Status:** `FIXED`
+- **Tipe:** Animation / Renderer
+- **Tanggal:** 2026-10-03
+- **Fase:** Phase 3 — Face-Turn Animation
+- **Ringkasan:** Setelah cubie keluar dari temporary turn group, transform rotasinya dapat tetap terbawa jika renderer hanya memperbarui posisi.
+- **Masalah / Alasan:** Face-turn menggunakan temporary pivot group. Setelah selesai, logical sticker orientation menjadi sumber kebenaran sehingga transform rotasi visual lama harus dibuang. Jika tidak, turn berulang dapat mengakumulasi rotasi visual.
+- **Perubahan:** `renderCube()` sekarang mereset `rotation` dan `scale` setiap cubie sebelum menyinkronkan sticker berdasarkan `CubeState`.
+- **Acceptance:** Setelah setiap move selesai, visual state berasal dari logical state dan repeated turns tidak mengakumulasi transform error.
+- **Dokumentasi Terkait:** `PHASE_03_FACE_TURN_ANIMATION.md`
 
 ---
 
@@ -255,3 +272,4 @@ Sebelum fase ditandai `COMPLETE`:
 |---|---|
 | 2026-10-03 | Membuat sistem Fix Log terpusat untuk seluruh fase proyek. |
 | 2026-10-03 | Phase 1: memperbaiki inverse move dan memperbaiki acceptance test layer selection. |
+| 2026-10-03 | Phase 3: menambahkan animation controller, temporary layer pivot, runtime commit, dan transform reset. |

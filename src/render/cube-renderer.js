@@ -69,6 +69,8 @@ export class RubikRenderer {
         this.cubeGroup.add(group);
       }
       group.position.set(...cubie.renderPosition);
+      group.rotation.set(0, 0, 0);
+      group.scale.set(1, 1, 1);
       this._syncStickers(group, cubie.stickers);
     }
 

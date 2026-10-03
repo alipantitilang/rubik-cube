@@ -1,0 +1,59 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { createSolvedCube, parseMove } from '../src/core/cube.js';
+import {
+  FaceTurnAnimator,
+  easeInOutCubic,
+  getLayerCubieIds,
+  moveAngleRadians
+} from '../src/animation/face-turn-animator.js';
+import { CubeTurnRuntime } from '../src/animation/cube-turn-runtime.js';
+
+test('easing starts at 0, ends at 1, and remains bounded', () => {
+  assert.equal(easeInOutCubic(0), 0);
+  assert.equal(easeInOutCubic(1), 1);
+  assert.ok(easeInOutCubic(0.25) > 0 && easeInOutCubic(0.25) < 0.5);
+});
+
+test('move angle supports quarter, inverse, and half turns', () => {
+  assert.equal(moveAngleRadians(parseMove('R'), 1), -Math.PI / 2);
+  assert.equal(moveAngleRadians(parseMove("R'"), 1), Math.PI / 2);
+  assert.equal(moveAngleRadians(parseMove('R2'), 1), Math.PI);
+});
+
+test('each face animation selects exactly 9 cubies', () => {
+  const cube = createSolvedCube();
+  for (const face of ['U', 'D', 'R', 'L', 'F', 'B']) {
+    assert.equal(getLayerCubieIds(cube, face).length, 9, face);
+  }
+});
+
+test('animator queues moves and completes exactly once', () => {
+  const animator = new FaceTurnAnimator({ durationMs: 100 });
+  animator.enqueue('R', "U'");
+  assert.equal(animator.queuedCount, 2);
+  assert.equal(animator.tick(50).active.progress, 0.5);
+  assert.equal(animator.tick(50).completed.notation, 'R');
+  assert.equal(animator.tick(100).completed.notation, "U'");
+  assert.equal(animator.busy, false);
+});
+
+test('runtime does not mutate CubeState before animation completion', () => {
+  const cube = createSolvedCube();
+  const runtime = new CubeTurnRuntime({ cubeState: cube, animator: new FaceTurnAnimator({ durationMs: 100 }) });
+  const solvedSignature = cube.signature();
+  runtime.enqueue('R');
+  runtime.tick(99);
+  assert.equal(runtime.cubeState.signature(), solvedSignature);
+  runtime.tick(1);
+  assert.equal(runtime.cubeState.isSolved(), false);
+  assert.equal(runtime.cubeState.getCubie('cubie_1_1_1').position.join(','), '1,1,-1');
+});
+
+test('runtime commits an inverse pair back to solved', () => {
+  const runtime = new CubeTurnRuntime({ animator: new FaceTurnAnimator({ durationMs: 10 }) });
+  runtime.enqueue('R', "R'");
+  runtime.tick(10);
+  runtime.tick(10);
+  assert.equal(runtime.cubeState.isSolved(), true);
+});

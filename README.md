@@ -26,6 +26,7 @@ Read in this order:
 18. `17_ROADMAP.md`
 19. `PHASE_01_CORE_ENGINE.md`
 20. `PHASE_02_RENDERER.md`
+21. `PHASE_03_FACE_TURN_ANIMATION.md`
 
 ## Important architectural decision
 
@@ -197,10 +198,20 @@ Scope:
 Output:
 
 - every legal move can be rendered as a smooth physical face turn.
+- temporary 9-cubie layer pivot;
+- deterministic animation queue;
+- exact logical commit at animation completion;
+- transform reset to prevent accumulated floating-point drift.
 
 Status:
 
-**Pending**
+**Complete**
+
+Implementation: `src/animation/face-turn-animator.js`, `src/animation/cube-turn-runtime.js`, `src/render/face-turn-renderer.js`, `public/phase3.html`, `tests/animation.test.js`.
+
+Validation: **22 tests passed, 0 failed** (Phase 1 + Phase 2 + Phase 3 regression suite).
+
+Fixes during phase: `FIX-300` (reset final cubie transforms from authoritative CubeState to prevent visual rotation drift).
 
 ---
 

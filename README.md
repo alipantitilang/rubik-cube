@@ -24,7 +24,8 @@ Read in this order:
 16. `15_TEST_PLAN.md`
 17. `16_DEFINITION_OF_DONE.md`
 18. `17_ROADMAP.md`
-19. Phase-specific implementation documents, beginning with `PHASE_02_RENDERER.md`
+19. `PHASE_01_CORE_ENGINE.md`
+20. `PHASE_02_RENDERER.md`
 
 ## Important architectural decision
 
@@ -111,7 +112,19 @@ Output:
 
 Status:
 
-**Pending**
+**Complete**
+
+Implementation:
+
+- `src/core/cube.js`
+- `tests/cube.test.js`
+- `package.json`
+
+Validation:
+
+- 10 automated tests passed
+- 0 tests failed
+- Phase 1 acceptance checklist completed
 
 ---
 
@@ -417,3 +430,22 @@ Setiap fase dapat menghasilkan bug fix, koreksi spesifikasi, tambahan requiremen
 
 - `FIX-000` — Phase 0 — Menambahkan sistem Fix Log terpusat untuk melacak seluruh revisi dan tambahan requirement selama proyek berlangsung.
 
+
+
+## Phase 1 Implementation
+
+Phase 1 telah diimplementasikan sebagai logical engine executable di:
+
+- `src/core/cube.js` — authoritative CubeState, move parser, move application, solved detection, move history, dan move queue.
+- `tests/cube.test.js` — automated invariant tests.
+- `PHASE_01_CORE_ENGINE.md` — scope, API, move convention, dan acceptance checklist.
+- `package.json` — test command.
+
+Validasi terakhir:
+
+```text
+10 tests passed
+0 failed
+```
+
+Perubahan selama pengerjaan Phase 1 dicatat di [`FIX_LOG.md`](FIX_LOG.md).

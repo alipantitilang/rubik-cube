@@ -66,11 +66,34 @@ Setelah dicatat di sini:
 
 ---
 
+
+## Phase 1 — Cube Core / Logical Engine
+
+### FIX-100
+- **Status:** `FIXED`
+- **Tipe:** Bug / Move Engine
+- **Tanggal:** 2026-10-03
+- **Fase:** Phase 1 — Cube Core / Logical Engine
+- **Ringkasan:** Inversi move untuk beberapa face tidak menghasilkan rotasi lawan yang benar.
+- **Masalah / Alasan:** Implementasi awal menghitung modifier inverse dari jumlah quarter-turn tanpa mempertimbangkan arah base move per face. Akibatnya move seperti `D` dapat menghasilkan inverse yang salah.
+- **Perubahan:** Logika `invertMove()` sekarang membandingkan inverse quarter-turn dengan definisi base face dan memilih modifier canonical ``, `'`, atau `2` secara benar.
+- **Acceptance:** `M + M⁻¹ = identity` untuk seluruh face dan modifier yang diuji.
+- **Dokumentasi Terkait:** `PHASE_01_CORE_ENGINE.md`, `tests/cube.test.js`
+
+### FIX-101
+- **Status:** `FIXED`
+- **Tipe:** Test / State Representation
+- **Tanggal:** 2026-10-03
+- **Fase:** Phase 1 — Cube Core / Logical Engine
+- **Ringkasan:** Pengujian awal menganggap setiap dari 9 cubie pada face harus selalu memiliki perubahan signature setelah face turn.
+- **Masalah / Alasan:** Face-center cubie berputar pada sumbu normalnya; orientasi sticker tunggalnya tidak berubah secara representasional, walaupun cubie tersebut memang termasuk layer yang diputar.
+- **Perubahan:** Test diubah untuk memverifikasi **layer selection** berisi tepat 9 cubies, bukan menghitung perubahan signature.
+- **Acceptance:** Setiap `U/D/R/L/F/B` memilih tepat 9 cubies.
+- **Dokumentasi Terkait:** `PHASE_01_CORE_ENGINE.md`, `tests/cube.test.js`
+
 # Phase 1 — Cube Core / Logical Engine
 
-Belum ada fix.
-
-> Semua perubahan yang ditemukan selama Phase 1 ditambahkan di bawah bagian ini dengan ID `FIX-1xx`.
+Phase 1 fix entries are recorded above. No unresolved Phase 1 fix remains.
 
 ---
 
@@ -221,3 +244,4 @@ Sebelum fase ditandai `COMPLETE`:
 | Tanggal | Perubahan |
 |---|---|
 | 2026-10-03 | Membuat sistem Fix Log terpusat untuk seluruh fase proyek. |
+| 2026-10-03 | Phase 1: memperbaiki inverse move dan memperbaiki acceptance test layer selection. |

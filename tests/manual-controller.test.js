@@ -46,6 +46,24 @@ test('sticker drag resolves against the frozen POV frame and never orbits camera
   controller.dispose();
 });
 
+test('camera movement during a sticker drag cannot change the frozen POV front', () => {
+  const el = makeElement();
+  const camera = makeCamera();
+  const moves = [];
+  const controller = new ManualInteractionController({
+    domElement: el, cameraController: camera,
+    pickFace: () => ({ face: 'F', normal: [0,0,1], cubieId: 'c', cubieType: 'corner', logicalPosition: [-1,1,1] }),
+    enqueueMove: move => moves.push(move)
+  });
+  el.emit('pointerdown', makeEvent());
+  camera.camera.position.x = 5;
+  camera.camera.position.z = 0;
+  el.emit('pointermove', makeEvent({ clientX: 140, clientY: 100 }));
+  el.emit('pointerup', makeEvent({ clientX: 140, clientY: 100 }));
+  assert.deepEqual(moves, ['U']);
+  controller.dispose();
+});
+
 test('tap on sticker does not enqueue a move', () => {
   const el = makeElement();
   const camera = makeCamera();

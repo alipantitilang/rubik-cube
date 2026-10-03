@@ -140,7 +140,33 @@ CubeState
 
 The resolver never edits colors directly.
 
-## 7. Required consistency
+## 7. Horizontal direction invariant
+
+For every eligible front (`F` red, `R` green, `B` orange, `L` blue), front-face horizontal interaction follows the user's visual grab direction: left-column drag-right moves right; right-column drag-left moves left. The corresponding legal notation is `U`, `U'`, `D'`, `D`, `E'`, and `E` according to the cubie's row/column.
+
+The POV frame is captured at sticker `pointerdown` and remains frozen until `pointerup` or `pointercancel`. Camera movement during a gesture therefore cannot change the active front or remap the gesture.
+
+## 8. Vertical direction invariant
+
+For every eligible Front, the visible vertical gesture direction is preserved:
+
+```text
+top row    + drag down → movement down
+bottom row + drag up   → movement up
+```
+
+The physical notation changes with the active Front according to the canonical table:
+
+| Front | Top-left ↓ | Top-right ↓ | Bottom-left ↑ | Bottom-right ↑ | Top edge ↓ | Bottom edge ↑ |
+|---|---|---|---|---|---|---|
+| `F` / Red | `L` | `R'` | `L'` | `R` | `M` | `M'` |
+| `R` / Green | `F` | `B'` | `F'` | `B` | `S'` | `S` |
+| `B` / Orange | `R` | `L'` | `R'` | `L` | `M'` | `M` |
+| `L` / Blue | `B` | `F'` | `B'` | `F` | `S` | `S'` |
+
+This is a POV-relative contract. It prevents a correct red/F vertical gesture from becoming inverted when the camera changes Front.
+
+## 9. Required consistency
 
 Any future change to solved color orientation must update, at minimum:
 
@@ -153,3 +179,8 @@ Any future change to solved color orientation must update, at minimum:
 - `README.md`
 - `FIX_LOG.md`
 - relevant phase specifications
+
+
+## Side-face F/F' family rule (`FIX-518`)
+
+When a slight camera angle exposes a neighboring right/left face and a vertical corner drag resolves to the front/back family, use the active POV frame's `front`/`back` identities rather than literal F/B notation. Therefore Red→F/F', Green→R/R', Orange→B/B', Blue→L/L'. The opposite visible face uses the corresponding active `back` identity.

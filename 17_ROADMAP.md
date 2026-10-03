@@ -91,7 +91,7 @@ This is a high-risk interaction phase and needs dedicated testing.
 
 Status: **Complete — redesigned under POV front-face method**
 
-Validation: **68 tests passed, 0 failed**
+Validation: **69 tests passed, 0 failed**
 
 The finalized interaction contract uses the canonical color orientation (U yellow, D white, F red, R green, B orange, L blue), allows only F/R/B/L to become virtual front, uses fixed color adjacency, standard M/E/S slice moves, all 26 visible cubies as anchors, and live drag/snap behavior.
 

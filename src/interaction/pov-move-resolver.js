@@ -71,27 +71,45 @@ function normalizeDirection(dragX, dragY) {
   return Math.abs(dragX) >= Math.abs(dragY) ? 'horizontal' : 'vertical';
 }
 
-function resolveFrontCorner({ x, y, dragX, dragY }) {
+const VERTICAL_FRONT_CORNER_MOVES = Object.freeze({
+  F: Object.freeze({ topLeftDown: 'L', topRightDown: "R'", bottomLeftUp: "L'", bottomRightUp: 'R' }),
+  R: Object.freeze({ topLeftDown: 'F', topRightDown: "B'", bottomLeftUp: "F'", bottomRightUp: 'B' }),
+  B: Object.freeze({ topLeftDown: 'R', topRightDown: "L'", bottomLeftUp: "R'", bottomRightUp: 'L' }),
+  L: Object.freeze({ topLeftDown: 'B', topRightDown: "F'", bottomLeftUp: "B'", bottomRightUp: 'F' })
+});
+
+const VERTICAL_FRONT_EDGE_MOVES = Object.freeze({
+  F: Object.freeze({ topDown: 'M', bottomUp: "M'" }),
+  R: Object.freeze({ topDown: "S'", bottomUp: 'S' }),
+  B: Object.freeze({ topDown: "M'", bottomUp: 'M' }),
+  L: Object.freeze({ topDown: 'S', bottomUp: "S'" })
+});
+
+function resolveFrontCorner({ front, x, y, dragX, dragY }) {
   const axis = normalizeDirection(dragX, dragY);
   if (axis === 'horizontal') {
     if (x < 0 && y > 0 && dragX > 0) return "U'";
     if (x > 0 && y > 0 && dragX < 0) return 'U';
-    if (x < 0 && y < 0 && dragX > 0) return 'D';
-    if (x > 0 && y < 0 && dragX < 0) return "D'";
+    if (x < 0 && y < 0 && dragX > 0) return "D'";
+    if (x > 0 && y < 0 && dragX < 0) return 'D';
   } else {
-    if (x < 0 && y > 0 && dragY > 0) return 'L';
-    if (x > 0 && y > 0 && dragY > 0) return "R'";
-    if (x < 0 && y < 0 && dragY < 0) return "L'";
-    if (x > 0 && y < 0 && dragY < 0) return 'R';
+    const moves = VERTICAL_FRONT_CORNER_MOVES[front];
+    if (x < 0 && y > 0 && dragY > 0) return moves.topLeftDown;
+    if (x > 0 && y > 0 && dragY > 0) return moves.topRightDown;
+    if (x < 0 && y < 0 && dragY < 0) return moves.bottomLeftUp;
+    if (x > 0 && y < 0 && dragY < 0) return moves.bottomRightUp;
   }
   return null;
 }
 
-function resolveFrontEdge({ x, y, dragX, dragY }) {
+function resolveFrontEdge({ front, x, y, dragX, dragY }) {
   const axis = normalizeDirection(dragX, dragY);
-  if (axis === 'vertical' && x === 0 && y > 0 && dragY > 0) return 'M';
+  if (axis === 'vertical') {
+    const moves = VERTICAL_FRONT_EDGE_MOVES[front];
+    if (x === 0 && y > 0 && dragY > 0) return moves.topDown;
+    if (x === 0 && y < 0 && dragY < 0) return moves.bottomUp;
+  }
   if (axis === 'horizontal' && x < 0 && y === 0 && dragX > 0) return 'E';
-  if (axis === 'vertical' && x === 0 && y < 0 && dragY < 0) return "M'";
   if (axis === 'horizontal' && x > 0 && y === 0 && dragX < 0) return "E'";
   return null;
 }
@@ -105,6 +123,7 @@ export function resolvePovMove({ frame, physicalStickerFace, cubieType, cubiePos
   const selectedVirtualFace = virtualFace(frame, physicalStickerFace);
   if (!selectedVirtualFace) return null;
 
+  const front = frame.front;
   const frontNormal = FACE_NORMALS[frame.front];
   const rightNormal = FACE_NORMALS[frame.right];
   const upNormal = FACE_NORMALS[frame.up];
@@ -113,18 +132,22 @@ export function resolvePovMove({ frame, physicalStickerFace, cubieType, cubiePos
 
   if (selectedVirtualFace === 'front') {
     if (cubieType === 'corner') {
-      if (frame.front === 'F' && Math.abs(dragX) >= Math.abs(dragY)) {
+      // Horizontal front-face movement follows the user's visual grab direction
+      // for every eligible POV front, not only red/F.
+      if (Math.abs(dragX) >= Math.abs(dragY)) {
         if (x < 0 && dragX > 0) return y > 0 ? 'U' : "D'";
         if (x > 0 && dragX < 0) return y > 0 ? "U'" : 'D';
       }
-      return resolveFrontCorner({ x, y, dragX, dragY });
+      return resolveFrontCorner({ front: frame.front, x, y, dragX, dragY });
     }
     if (cubieType === 'edge') {
-      if (frame.front === 'F' && Math.abs(dragX) >= Math.abs(dragY)) {
+      // The same visual-direction contract applies to the front left/right
+      // middle edges in every F/R/B/L POV frame.
+      if (Math.abs(dragX) >= Math.abs(dragY)) {
         if (x < 0 && dragX > 0) return "E'";
         if (x > 0 && dragX < 0) return 'E';
       }
-      return resolveFrontEdge({ x, y, dragX, dragY });
+      return resolveFrontEdge({ front: frame.front, x, y, dragX, dragY });
     }
     if (cubieType === 'center') {
       if (Math.abs(dragX) >= Math.abs(dragY)) return dragX > 0 ? `${frame.front}'` : frame.front;
@@ -134,18 +157,18 @@ export function resolvePovMove({ frame, physicalStickerFace, cubieType, cubiePos
 
   if (selectedVirtualFace === 'right' && cubieType === 'corner' && y !== 0 && dragY !== 0) {
     const z = Math.sign(dot(cubiePosition, frontNormal));
-    if (y > 0 && dragY > 0) return z > 0 ? 'F' : "B'";
-    if (y < 0 && dragY < 0) return z > 0 ? "F'" : 'B';
-    if (y > 0 && dragY < 0) return z > 0 ? "F'" : 'B';
-    if (y < 0 && dragY > 0) return z > 0 ? 'F' : "B'";
+    if (y > 0 && dragY > 0) return z > 0 ? front : `${frame.back}'`;
+    if (y < 0 && dragY < 0) return z > 0 ? `${front}'` : frame.back;
+    if (y > 0 && dragY < 0) return z > 0 ? `${front}'` : frame.back;
+    if (y < 0 && dragY > 0) return z > 0 ? front : `${frame.back}'`;
   }
 
   if (selectedVirtualFace === 'left' && cubieType === 'corner' && y !== 0 && dragY !== 0) {
     const z = Math.sign(dot(cubiePosition, frontNormal));
-    if (y > 0 && dragY > 0) return z > 0 ? "F'" : 'B';
-    if (y < 0 && dragY < 0) return z > 0 ? 'F' : "B'";
-    if (y > 0 && dragY < 0) return z > 0 ? 'F' : 'B';
-    if (y < 0 && dragY > 0) return z > 0 ? "F'" : 'B';
+    if (y > 0 && dragY > 0) return z > 0 ? `${front}'` : frame.back;
+    if (y < 0 && dragY < 0) return z > 0 ? front : `${frame.back}'`;
+    if (y > 0 && dragY < 0) return z > 0 ? front : frame.back;
+    if (y < 0 && dragY > 0) return z > 0 ? `${front}'` : frame.back;
   }
 
   if (selectedVirtualFace === 'right' && cubieType === 'edge' && y !== 0 && dragY !== 0) {

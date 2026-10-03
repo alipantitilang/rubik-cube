@@ -56,7 +56,7 @@ so interaction does not have to reconstruct state from render transforms.
 ## Validation
 
 ```text
-66 tests passed
+71 tests passed
 0 failed
 ```
 
@@ -68,6 +68,8 @@ The suite includes:
 - POV dominant-face selection;
 - every specified front corner mapping;
 - every specified front edge mapping;
+- front horizontal direction consistency for all four eligible fronts (F/R/B/L);
+- front vertical direction consistency for all four eligible fronts (F/R/B/L), including top/bottom corners and edges;
 - every specified right/left corner mapping;
 - every specified right/left edge mapping;
 - center interaction, including U/D center fallback without front-face authority;
@@ -78,4 +80,9 @@ The suite includes:
 
 ## Decision
 
-Phase 5 is considered complete under the new POV interaction contract. Phase 6 may build on the finalized move notation and runtime without reintroducing the previous face-plane gesture system.
+Phase 5 is considered complete under the new POV interaction contract, including the four-front horizontal and vertical direction contracts and gesture-time POV frame lock. Phase 6 may build on the finalized move notation and runtime without reintroducing the previous face-plane gesture system.
+
+
+### FIX-518 — Side-face F/F' family
+
+PASS — right/left side corner vertical interaction now resolves the active POV front/back notation rather than literal physical F/B. Red→F/F', Green→R/R', Orange→B/B', Blue→L/L'.

@@ -208,9 +208,9 @@ Reverse drags resolve to the inverse.
 
 A center sticker is a direct face anchor. For an eligible front/side face, horizontal drag direction determines the face turn and its inverse.
 
-### Red-front horizontal direction lock (`FIX-515`)
+### Four-front horizontal direction contract (`FIX-515` / `FIX-516`)
 
-When the virtual front is physical `F` (red), horizontal movement follows the same visual direction as the user's grab:
+For every eligible virtual front — `F` (red), `R` (green), `B` (orange), and `L` (blue) — horizontal front-face movement follows the same visual direction as the user's grab. The decision uses the frozen POV frame's local right/left axis.
 
 | Front position | Grab direction | Expected visible row/column motion |
 |---|---|---|
@@ -221,9 +221,48 @@ When the virtual front is physical `F` (red), horizontal movement follows the sa
 | Left edge | right | right |
 | Right edge | left | left |
 
-This is implemented as a red-front-specific correction in `pov-move-resolver.js`. The existing vertical mapping is unchanged. The F/R/B/L frame system remains intact, but green/orange/blue horizontal behavior is intentionally left unchanged until separately validated.
+The corresponding standard notation is: top-left → `U`, top-right → `U'`, bottom-left → `D'`, bottom-right → `D`, left edge → `E'`, right edge → `E`.
+
+`FIX-515` established this behavior for red/F. `FIX-516` generalizes the same contract to green/R, orange/B, and blue/L. The POV frame is locked for the entire gesture.
+
+### Four-front vertical direction contract (`FIX-517`)
+
+Vertical front-face interaction must follow the same visual grab direction for every eligible Front:
+
+| Front | Top-left + down | Top-right + down | Bottom-left + up | Bottom-right + up | Top edge + down | Bottom edge + up |
+|---|---|---|---|---|---|---|
+| Red / `F` | `L` | `R'` | `L'` | `R` | `M` | `M'` |
+| Green / `R` | `F` | `B'` | `F'` | `B` | `S'` | `S` |
+| Orange / `B` | `R` | `L'` | `R'` | `L` | `M'` | `M` |
+| Blue / `L` | `B` | `F'` | `B'` | `F` | `S` | `S'` |
+
+This table is the vertical equivalent of the four-front horizontal contract. It is obtained by rotating the canonical red/F front table with the fixed color adjacency. It must not be replaced with the physical `L/R/M` notation from the red/F frame when the active Front is another color.
+
+For the direct user gesture contract:
+
+```text
+top row    + grab down → visual movement down
+bottom row + grab up   → visual movement up
+```
+
+`FIX-517` changes only this front-face vertical mapping. Horizontal mapping, side-face F/B/S mapping, Front selection, and gesture-time frame locking remain unchanged.
 
 Yellow/White centers remain valid visible interaction anchors but do not receive POV-front authority. Their detailed fallback gesture behavior is intentionally not allowed to redefine the canonical front-face table.
+
+### Side-face F/F' direction contract (`FIX-518`)
+
+When the camera is slightly rotated and the user interacts with a corner on the virtual right/left side face, vertical dragging can intentionally resolve to a front/back face turn. The notation must follow the **active POV frame**, not the literal physical letters `F` and `B`.
+
+| Active Front | Front-facing side-corner turn | Back-facing side-corner turn |
+|---|---|---|
+| Red / `F` | `F` / `F'` | `B` / `B'` |
+| Green / `R` | `R` / `R'` | `L` / `L'` |
+| Orange / `B` | `B` / `B'` | `F` / `F'` |
+| Blue / `L` | `L` / `L'` | `R` / `R'` |
+
+The inverse direction is always the inverse notation of the same active face. This preserves the user's visual expectation when a slightly angled camera exposes a neighboring face. For example, with Red as Front, the front-facing side corner uses `F/F'`; after Green becomes Front, the equivalent interaction uses `R/R'` instead.
+
+`FIX-518` changes only the side-face corner vertical F/B-family resolution. The front-face contracts, side-edge `S/S'` mapping, front detection, and gesture-time POV lock remain unchanged.
 
 ## 12. Direction interpretation
 
@@ -273,6 +312,6 @@ Interaction code never edits sticker colors directly.
 Current automated regression:
 
 ```text
-68 tests passed
+71 tests passed
 0 failed
 ```

@@ -449,7 +449,7 @@ Setiap fase dapat menghasilkan bug fix, koreksi spesifikasi, tambahan requiremen
 | Phase 2 | `FIX-200` FIXED; phase complete |
 | Phase 3 | `FIX-300` FIXED; phase complete |
 | Phase 4 | `FIX-400` FIXED; phase complete |
-| Phase 5 | `FIX-500`–`FIX-514` FIXED; POV front-face interaction, canonical color orientation, M/E/S slices, live drag, all cubie types, and audited |
+| Phase 5 | `FIX-500`–`FIX-518` FIXED; POV front-face interaction, canonical color orientation, four-front horizontal/vertical direction contracts, M/E/S slices, live drag, all cubie types, and audited |
 | Phase 6 | `FIX-504` FIXED; core shuffle work present, product flow still pending
 | Phase 7–10 | No fixes recorded yet |
 
@@ -540,7 +540,7 @@ Files utama:
 Validasi terakhir:
 
 ```text
-68 tests passed
+71 tests passed
 0 failed
 ```
 
@@ -556,6 +556,9 @@ Perubahan selama Phase 5 dicatat di [`FIX_LOG.md`](FIX_LOG.md), termasuk `FIX-50
 
 ### Latest Phase 5 Fix
 - `FIX-511` — Contract gesture lama dihapus; POV resolver menjadi single source of truth.
+- `FIX-517` — Vertical front-face drag direction now follows the visual grab direction for all four eligible fronts; Red/F behavior is preserved and Green/R, Orange/B, Blue/L use the rotated notation table.
+- `FIX-518` — Side-face corner vertical F/B-family turns now follow the active POV Front/Back face: F/F' for Red, R/R' for Green, B/B' for Orange, L/L' for Blue.
+- `FIX-516` — Horizontal front-face drag direction now follows the visual grab direction for all four eligible fronts; POV frame is frozen per gesture.
 - `FIX-510` — Picking mengekspos `cubieType` dan `logicalPosition`.
 - `FIX-509` — Move engine menambahkan `M/E/S` dengan konvensi standar proyek.
 - `FIX-508` — Manual interaction dirombak menjadi POV front-face method.
@@ -570,4 +573,4 @@ Perubahan selama Phase 5 dicatat di [`FIX_LOG.md`](FIX_LOG.md), termasuk `FIX-50
 
 ### Latest interaction correction
 
-`FIX-515` corrects horizontal drag direction specifically when red/F is the active POV front. Left-column drag-right and right-column drag-left now visually follow the user's grab direction; vertical mapping is unchanged.
+`FIX-515` established the red/F horizontal direction correction. `FIX-516` generalizes that same visual-direction contract to green/R, orange/B, and blue/L while preserving the existing vertical and side-face mappings. The active POV frame is frozen for each gesture.

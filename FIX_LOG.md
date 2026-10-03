@@ -457,3 +457,33 @@ Sebelum fase ditandai `COMPLETE`:
 - **Ringkasan:** Pada kondisi merah (`F`) sebagai virtual front, gerakan horizontal pada kolom kiri/kanan terasa berlawanan dengan arah grab pengguna.
 - **Perubahan:** Untuk `frame.front === 'F'`, kolom kiri yang di-drag ke kanan sekarang memakai arah move yang menghasilkan gerakan ke kanan; kolom kanan yang di-drag ke kiri memakai arah move yang menghasilkan gerakan ke kiri. Berlaku untuk corner atas/bawah dan edge kiri/kanan. Mapping POV hijau/oranye/biru tidak diubah pada fix ini.
 - **Acceptance:** Empat corner horizontal dan dua edge horizontal pada front merah diuji; regression suite 68/68 lulus.
+
+
+### FIX-516
+- **Status:** `FIXED`
+- **Tipe:** Interaction / POV Direction Mapping
+- **Tanggal:** 2026-10-04
+- **Ringkasan:** Kontrak arah horizontal front-face yang sebelumnya dikoreksi untuk red/F digeneralisasi ke seluruh empat POV front yang sah: F/red, R/green, B/orange, dan L/blue.
+- **Perubahan:** Untuk seluruh front, top-left drag-right → `U`, top-right drag-left → `U'`, bottom-left drag-right → `D'`, bottom-right drag-left → `D`, left middle edge drag-right → `E'`, dan right middle edge drag-left → `E`.
+- **POV lock:** Frame kamera ditangkap saat sticker `pointerdown` dan tidak berubah selama gesture.
+- **Acceptance:** Semua empat front diuji dengan corner atas/bawah dan edge kiri/kanan; existing vertical/side mappings tetap lulus.
+
+
+### FIX-517
+- **Status:** `FIXED`
+- **Tipe:** Interaction / POV Vertical Direction Mapping
+- **Tanggal:** 2026-10-04
+- **Ringkasan:** Vertical front-face drag masih menggunakan notasi `L/R/M` yang benar untuk Red/F tetapi tidak ikut berputar ketika Front menjadi Green/R, Orange/B, atau Blue/L.
+- **Perubahan:** Menambahkan canonical vertical mapping per Front. Green/R menggunakan `F/F'/B/B'/S'/S`, Orange/B menggunakan `R/R'/L/L'/M'/M`, dan Blue/L menggunakan `B/B'/F/F'/S/S'`, sehingga top-row drag-down dan bottom-row drag-up tetap mengikuti arah visual.
+- **Scope:** Hanya front-face vertical corner/edge mapping. Horizontal, side-face F/B/S, front selection, dan gesture-time POV lock tidak diubah.
+- **Acceptance:** 4 Front × 4 corner directions + 2 edge directions diuji; regression suite 70/70 lulus.
+
+
+### FIX-518
+- **Status:** `FIXED`
+- **Tipe:** Interaction / Side-face F/F' Direction Mapping
+- **Tanggal:** 2026-10-04
+- **Ringkasan:** Vertical drag pada corner di virtual side face masih mengembalikan literal `F/F'` dan `B/B'`. Itu benar saat Red/F menjadi Front, tetapi salah ketika Front berpindah ke Green/R, Orange/B, atau Blue/L.
+- **Perubahan:** Side-face corner vertical mapping sekarang menggunakan `frame.front` dan `frame.back` sebagai notasi aktif. Dengan demikian sisi yang menghadap Front aktif memakai `F/F'` saat Red, `R/R'` saat Green, `B/B'` saat Orange, dan `L/L'` saat Blue; sisi belakang memakai inverse yang sesuai.
+- **Scope:** Hanya side-face corner vertical F/B-family mapping. Front horizontal/vertical, side-edge S mapping, Front detection, dan gesture-time POV lock dipertahankan.
+- **Acceptance:** Seluruh right/left side corner combinations diuji untuk F/R/B/L; regression suite 71/71 lulus.

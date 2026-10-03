@@ -52,6 +52,7 @@ Setelah dicatat di sini:
 | ID | Fase | Tipe | Status | Ringkasan | Dokumentasi Terkait |
 |---|---|---|---|---|---|
 | FIX-000 | Phase 0 | Baseline | FIXED | Sistem Fix Log dibuat sebagai bagian dari dokumentasi proyek. | `README.md`, `FIX_LOG.md` |
+| FIX-200 | Phase 2 | Test | FIXED | Memperbaiki assertion test warna agar membandingkan face-to-color contract, bukan nama warna ke nilai hex. | `tests/render-model.test.js` |
 
 ---
 
@@ -99,9 +100,18 @@ Phase 1 fix entries are recorded above. No unresolved Phase 1 fix remains.
 
 # Phase 2 — 3D Renderer / Visual Cube
 
-Belum ada fix.
+### FIX-200
+- **Status:** `FIXED`
+- **Tipe:** Test
+- **Tanggal:** 2026-10-03
+- **Fase:** Phase 2 — 3D Renderer / Visual Cube
+- **Ringkasan:** Assertion test warna awal membandingkan nilai nama warna dari CubeState dengan nilai hex renderer.
+- **Masalah / Alasan:** Kontrak renderer memang menerima nama warna dari logical state lalu menerjemahkannya ke palette hex terpusat. Test sebelumnya salah membandingkan dua representasi berbeda.
+- **Perubahan:** Test diubah untuk memvalidasi face → logical color dan memastikan setiap face memiliki entry pada `CUBE_COLORS`.
+- **Acceptance:** Seluruh test Phase 1 + Phase 2 harus lulus.
+- **Dokumentasi Terkait:** `PHASE_02_RENDERER.md`, `tests/render-model.test.js`.
 
-> Semua perubahan yang ditemukan selama Phase 2 ditambahkan di bawah bagian ini dengan ID `FIX-2xx`.
+
 
 ---
 

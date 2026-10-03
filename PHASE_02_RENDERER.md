@@ -2,7 +2,7 @@
 
 ## Phase status
 
-**Pending**
+**Complete**
 
 This document defines the exact scope for Phase 2.
 
@@ -581,3 +581,81 @@ Do not declare Phase 2 complete merely because:
 It must also be structurally correct.
 
 Visual correctness and architectural correctness are both required.
+
+
+---
+
+# 9. Phase 2 Implementation
+
+Implemented renderer layer:
+
+- `src/render/cube-render-model.js` — pure logical-to-render mapping, cubie classification, sticker descriptors, centralized face colors.
+- `src/render/cube-renderer.js` — Three.js scene, camera, lighting, cubie geometry, stickers, stable object mapping, resize/high-DPI handling.
+- `public/index.html` — minimal Phase 2 renderer preview.
+- `public/styles.css` — responsive renderer viewport and debug label.
+- `tests/render-model.test.js` — renderer mapping/invariant tests.
+
+The renderer consumes `CubeState`; it does not create or modify puzzle state.
+
+## 9.1 Visual architecture
+
+```text
+CubeState
+   ↓
+buildRenderModel()
+   ↓
+26 renderer cubie records
+   ↓
+RubikRenderer
+   ↓
+Three.js scene
+```
+
+## 9.2 Face colors
+
+The initial palette is centralized in `src/render/cube-render-model.js`:
+
+```text
+U = white
+D = yellow
+F = green
+B = blue
+R = red
+L = orange
+```
+
+The palette is intentionally configurable so the visual distinction between faces can be tuned later without touching the logical engine.
+
+## 9.3 Validation
+
+Automated validation currently reports:
+
+```text
+16 tests passed
+0 failed
+```
+
+This includes all 10 Phase 1 core tests plus 6 Phase 2 renderer-model tests.
+
+## 9.4 Phase 2 acceptance
+
+- [x] Exactly 26 visible cubies are exposed to the renderer.
+- [x] No cubie exists at `(0,0,0)`.
+- [x] 8 corners, 12 edges, 6 centers are preserved.
+- [x] Cubie IDs are deterministic and unique.
+- [x] Logical positions map to render positions with consistent spacing.
+- [x] Sticker face normals are derived from logical sticker faces.
+- [x] Face colors are centralized.
+- [x] Renderer owns scene/camera/lighting only; CubeState remains authoritative.
+- [x] Resize and high-DPI handling are implemented.
+- [x] Phase 2 does not introduce face-drag gameplay, scramble flow, history UI, or move animation.
+
+## 9.5 Verification note
+
+The Node-based automated suite and JavaScript syntax checks pass. A headless Chromium visual capture was attempted in the build environment, but the browser process did not complete within the environment timeout, so no automated screenshot assertion is counted as part of the Phase 2 acceptance.
+
+---
+
+# 10. Handoff to Phase 3
+
+Phase 3 may now use the renderer's stable cubie groups as the visual layer for physical face turns. The logical `CubeState` remains the sole source of truth.

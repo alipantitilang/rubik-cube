@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rubik 26 Cubies — Phase 2 Renderer</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="stage" aria-label="Rubik cube renderer">
+    <div id="cube" class="cube-viewport"></div>
+    <aside class="debug-panel">
+      <strong>Phase 2</strong>
+      <span>26 visible cubies</span>
+      <span>Renderer-only preview</span>
+    </aside>
+  </main>
+  <script type="importmap">
+    {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"}}
+  </script>
+  <script type="module">
+    import { createSolvedCube } from '../src/core/cube.js';
+    import { RubikRenderer } from '../src/render/cube-renderer.js';
+    const renderer = new RubikRenderer(document.querySelector('#cube'));
+    renderer.renderCube(createSolvedCube());
+  </script>
+</body>
+</html>

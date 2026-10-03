@@ -1,0 +1,33 @@
+:root {
+  color-scheme: dark;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; background: #0c0f13; }
+body { min-height: 100vh; }
+.stage { min-height: 100vh; position: relative; overflow: hidden; }
+.cube-viewport { width: 100%; height: 100vh; min-height: 420px; }
+.cube-viewport canvas { display: block; width: 100%; height: 100%; }
+.debug-panel {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 12px;
+  background: rgba(8,10,13,.72);
+  backdrop-filter: blur(10px);
+  color: #e8ebef;
+  font-size: 12px;
+  line-height: 1.35;
+  pointer-events: none;
+}
+.debug-panel strong { font-size: 14px; }
+
+@media (max-width: 640px) {
+  .debug-panel { top: 12px; left: 12px; }
+  .cube-viewport { min-height: 360px; }
+}

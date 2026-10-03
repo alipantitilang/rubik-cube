@@ -553,3 +553,20 @@ Sebelum fase ditandai `COMPLETE`:
   - Local `serve` script diperbarui untuk root repository.
   - Dokumentasi aktif diselaraskan dengan direct-geometric + sticker-position architecture.
 - **Acceptance:** satu `index.html`, tidak ada active legacy notation API, tidak ada obsolete POV resolver, dan full regression suite lulus.
+
+### FIX-525
+- **Status:** `FIXED`
+- **Tipe:** Post-Phase 5 / Rendering Performance
+- **Tanggal:** 2026-10-04
+- **Scope:** Post-Phase 5 fix only. Phase 5 remains **COMPLETE** and its architecture is unchanged.
+- **Masalah:** Rendering terasa berat bahkan setelah satu gerakan. Repository menjalankan render loop Three.js sendiri sekaligus loop `requestAnimationFrame` di `index.html`, sehingga scheduler logic/render terpisah. Renderer juga membuat hingga 6 sticker mesh, geometry, dan material per cubie walaupun satu cubie hanya dapat memiliki maksimal 3 sticker. Dynamic shadow mapping menambah GPU work tanpa ground plane yang membutuhkan shadow.
+- **Perubahan:**
+  - Menghapus render loop internal `RubikRenderer`; renderer sekarang menyediakan `renderFrame()` dan hanya satu RAF loop di `index.html` menjalankan `runtime.tick()` lalu `renderer.renderFrame()`.
+  - Sticker renderer direduksi menjadi maksimal 3 mesh per cubie.
+  - Geometry body, geometry sticker, body material, dan enam sticker materials sekarang di-share/reuse.
+  - Shadow map dinonaktifkan karena tidak ada ground plane dan efek shadow tidak diperlukan untuk visual cube saat ini.
+  - Pixel ratio renderer dibatasi hingga `1.5` untuk menghindari biaya GPU berlebihan pada layar high-DPI.
+  - Cleanup renderer tidak lagi mencoba dispose shared geometry/material dari setiap cubie. Resource shared di-dispose satu kali saat renderer dispose.
+- **Invariant:** Sticker identity, sticker-position model, generic `{axis, layer, quarterTurns}` turn, center movement, cube orientation quaternion, dan gesture resolution tidak diubah.
+- **Acceptance:** Single RAF architecture, shared render resources, 26 cubie bodies, maksimal 3 sticker meshes/cubie, no dynamic shadow map, syntax checks, dan full regression suite lulus.
+

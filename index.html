@@ -84,6 +84,7 @@
       const delta = Math.min(50, now - previous);
       previous = now;
       const result = runtime.tick(delta);
+      renderer.renderFrame();
       if (result.completed) {
         status.textContent = result.completed ? `Turn complete: layer ${result.completed.axis.toUpperCase()}${result.completed.layer > 0 ? '+' : result.completed.layer < 0 ? '-' : '0'}` : 'Ready';
       } else if (!runtime.busy) {

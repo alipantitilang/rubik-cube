@@ -1,7 +1,6 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
 import {
   FACE_NORMALS,
-  CUBE_COLORS,
   COLOR_HEX,
   buildRenderModel
 } from './cube-render-model.js';
@@ -35,17 +34,29 @@ export class RubikRenderer {
     this.camera.lookAt(0, 0, 0);
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    // The cube has no ground plane; dynamic shadow maps add GPU work without
+    // meaningful visual value for this compact interactive viewer.
+    this.renderer.shadowMap.enabled = false;
     container.replaceChildren(this.renderer.domElement);
 
     this.scene.add(new THREE.HemisphereLight(0xffffff, 0x20242a, 2.0));
     const key = new THREE.DirectionalLight(0xffffff, 3.0);
     key.position.set(4, 7, 8);
-    key.castShadow = true;
     this.scene.add(key);
+
+    this._bodyGeometry = new THREE.BoxGeometry(this.cubieSize, this.cubieSize, this.cubieSize);
+    this._bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.62, metalness: 0.02 });
+    this._stickerGeometry = new THREE.PlaneGeometry(this.stickerSize, this.stickerSize);
+    this._stickerMaterials = Object.freeze(Object.fromEntries(
+      Object.entries(COLOR_HEX).map(([color, hex]) => [color, new THREE.MeshStandardMaterial({
+        color: hex,
+        roughness: 0.48,
+        metalness: 0,
+        side: THREE.FrontSide
+      })])
+    ));
 
     this.cubeGroup = new THREE.Group();
     this.scene.add(this.cubeGroup);
@@ -66,8 +77,6 @@ export class RubikRenderer {
     this._resizeObserver.observe(container);
     this.resize();
 
-    this._frame = this._frame.bind(this);
-    requestAnimationFrame(this._frame);
   }
 
   renderCube(cubeState) {
@@ -96,11 +105,6 @@ export class RubikRenderer {
     for (const [id, group] of this.objects) {
       if (!seen.has(id)) {
         this.cubeGroup.remove(group);
-        group.traverse(obj => {
-          obj.geometry?.dispose();
-          if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
-          else obj.material?.dispose();
-        });
         this.objects.delete(id);
       }
     }
@@ -145,64 +149,59 @@ export class RubikRenderer {
     const height = Math.max(1, this.container.clientHeight);
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
     this.renderer.setSize(width, height, false);
   }
 
   dispose() {
     this._resizeObserver.disconnect();
     this.cameraController.dispose();
+    this._bodyGeometry.dispose();
+    this._bodyMaterial.dispose();
+    this._stickerGeometry.dispose();
+    Object.values(this._stickerMaterials).forEach(material => material.dispose());
     this.renderer.dispose();
+  }
+
+  renderFrame() {
+    this.renderer.render(this.scene, this.camera);
   }
 
   _createCubie(cubie) {
     const group = new THREE.Group();
     group.name = cubie.id;
-    group.userData = { cubieId: cubie.id, cubieType: cubie.type };
+    group.userData = { cubieId: cubie.id, cubieType: cubie.type, stickers: [] };
 
-    const body = new THREE.Mesh(
-      new THREE.BoxGeometry(this.cubieSize, this.cubieSize, this.cubieSize),
-      new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.62, metalness: 0.02 })
-    );
-    body.castShadow = true;
-    body.receiveShadow = true;
+    const body = new THREE.Mesh(this._bodyGeometry, this._bodyMaterial);
     group.add(body);
 
-    const stickerGeometry = new THREE.PlaneGeometry(this.stickerSize, this.stickerSize);
-    for (const face of Object.keys(FACE_NORMALS)) {
-      const material = new THREE.MeshStandardMaterial({
-        color: CUBE_COLORS[face],
-        roughness: 0.48,
-        metalness: 0,
-        side: THREE.FrontSide
-      });
-      const sticker = new THREE.Mesh(stickerGeometry.clone(), material);
-      sticker.name = `sticker-${face}`;
-      sticker.userData.face = face;
+    // A cubie can expose at most three stickers. Reuse shared geometry/materials
+    // instead of allocating six meshes, six geometries, and six materials per cubie.
+    for (let i = 0; i < 3; i += 1) {
+      const sticker = new THREE.Mesh(this._stickerGeometry, this._stickerMaterials.yellow);
+      sticker.name = `sticker-${i}`;
       sticker.visible = false;
+      group.userData.stickers.push(sticker);
       group.add(sticker);
     }
     return group;
   }
 
   _syncStickers(group, stickers) {
-    const active = new Map(stickers.map(s => [s.face, s]));
-    for (let i = 1; i < group.children.length; i++) {
-      const sticker = group.children[i];
-      const face = sticker.userData.face;
-      const desc = FACE_AXES[face];
-      const descriptor = active.get(face);
+    const meshes = group.userData.stickers;
+    for (let i = 0; i < meshes.length; i += 1) {
+      const sticker = meshes[i];
+      const descriptor = stickers[i];
       sticker.visible = Boolean(descriptor);
-      if (!sticker.visible) continue;
+      if (!descriptor) continue;
+
+      const desc = FACE_AXES[descriptor.face];
       sticker.position.set(...desc.position);
       sticker.rotation.set(...desc.rotation);
-      sticker.material.color.set(COLOR_HEX[descriptor.color]);
+      sticker.material = this._stickerMaterials[descriptor.color];
+      sticker.userData.face = descriptor.face;
       sticker.userData.stickerId = descriptor.id;
     }
   }
 
-  _frame() {
-    this.renderer.render(this.scene, this.camera);
-    this._animationFrame = requestAnimationFrame(this._frame);
-  }
 }

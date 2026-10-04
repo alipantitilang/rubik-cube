@@ -96,7 +96,9 @@ export class ShuffleController {
     if (this.completedMoves >= this.scramble.length && !this.runtime.busy) {
       this.runtime.animator.durationMs = this._previousDuration;
       this._setState(SHUFFLE_STATES.PREVIEW);
-      this.interaction?.setEnabled?.(false);
+      // Preview must remain pointer-active so the user can rotate the Rubik.
+      // Layer moves are blocked by ManualInteractionController.viewOnly.
+      this.interaction?.setEnabled?.(true);
       this.onProgress?.({ completed: this.scramble.length, total: this.scramble.length, scramble: this.scramble });
     }
   }
@@ -111,7 +113,9 @@ export class ShuffleController {
   pause() {
     if (!this.canPause) return false;
     this._setState(SHUFFLE_STATES.PAUSED);
-    this.interaction?.setEnabled?.(false);
+    // Keep pointer input enabled while paused; viewOnly blocks layer turns
+    // but still permits empty-space cube rotation and zoom.
+    this.interaction?.setEnabled?.(true);
     return true;
   }
 

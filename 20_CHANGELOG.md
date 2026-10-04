@@ -230,3 +230,5 @@ The generic sticker-position model no longer treats centers as fixed during midd
 - Added Pause/Resume with active-time-only timer accounting.
 - Added Finish fallback with logical solved-state validation.
 - Added Reset session boundary and view-only inspection mode.
+
+- FIX-531: empty-space Rubik rotation remains available in PREVIEW and PAUSED; pointer interaction stays enabled while view-only mode blocks layer turns.

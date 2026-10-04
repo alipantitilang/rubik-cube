@@ -36,7 +36,7 @@ test('play is ignored while already scrambling', () => {
   assert.equal(controller.play(), false);
 });
 
-test('completed scramble transitions to playing and unlocks interaction', () => {
+test('completed scramble transitions to preview and keeps pointer interaction available', () => {
   const { runtime, controller, interaction } = makeController();
   controller.play({ seed: 42 });
   let guard = 0;
@@ -46,7 +46,7 @@ test('completed scramble transitions to playing and unlocks interaction', () => 
   }
   assert.ok(guard < 100);
   assert.equal(controller.state, SHUFFLE_STATES.PREVIEW);
-  assert.equal(interaction.enabled, false);
+  assert.equal(interaction.enabled, true);
   assert.equal(runtime.cubeState.isSolved(), false);
   assert.equal(controller.start(), true);
   assert.equal(controller.state, SHUFFLE_STATES.PLAYING);
@@ -62,7 +62,7 @@ test('preview requires explicit start and pause/resume preserves lifecycle', () 
   assert.equal(controller.start(), true);
   assert.equal(controller.pause(), true);
   assert.equal(controller.state, SHUFFLE_STATES.PAUSED);
-  assert.equal(interaction.enabled, false);
+  assert.equal(interaction.enabled, true);
   assert.equal(controller.resume(), true);
   assert.equal(controller.state, SHUFFLE_STATES.PLAYING);
   assert.equal(interaction.enabled, true);
@@ -127,7 +127,7 @@ test('full play-to-reset cycle returns runtime to a clean pre-game state', () =>
   while (controller.state === SHUFFLE_STATES.SCRAMBLING && guard++ < 200) controller.handleTick(runtime.tick(5));
   assert.equal(controller.state, SHUFFLE_STATES.PREVIEW);
   assert.equal(runtime.cubeState.isSolved(), false);
-  assert.equal(interaction.enabled, false);
+  assert.equal(interaction.enabled, true);
   controller.start();
   assert.equal(controller.state, SHUFFLE_STATES.PLAYING);
   assert.equal(interaction.enabled, true);

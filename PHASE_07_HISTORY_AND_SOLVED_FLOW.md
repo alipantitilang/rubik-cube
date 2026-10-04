@@ -59,3 +59,7 @@ The solve session now has an explicit inspection phase and pause/resume controls
 - **FINISH:** manual completion fallback. It accepts completion only when the logical cube state is actually solved, so it safely covers cases where the automatic solved sensor does not fire.
 - **RESET:** cancels the current session, restores a solved cube, clears move history/timer, and starts from the pre-game state.
 - The timer measures active solving time only; paused inspection time is excluded.
+
+### View rotation availability
+
+Empty-space drag rotation is available in every non-scrambling session state: before Play, PREVIEW after scramble, PLAYING, PAUSED, after Resume, and after Reset. PREVIEW/PAUSED use view-only interaction so layer moves remain blocked while cube rotation and zoom remain available.

@@ -45,9 +45,27 @@ test('completed scramble transitions to playing and unlocks interaction', () => 
     controller.handleTick(result);
   }
   assert.ok(guard < 100);
+  assert.equal(controller.state, SHUFFLE_STATES.PREVIEW);
+  assert.equal(interaction.enabled, false);
+  assert.equal(runtime.cubeState.isSolved(), false);
+  assert.equal(controller.start(), true);
   assert.equal(controller.state, SHUFFLE_STATES.PLAYING);
   assert.equal(interaction.enabled, true);
-  assert.equal(runtime.cubeState.isSolved(), false);
+});
+
+test('preview requires explicit start and pause/resume preserves lifecycle', () => {
+  const { runtime, controller, interaction } = makeController();
+  controller.play({ seed: 42 });
+  let guard = 0;
+  while (controller.state === SHUFFLE_STATES.SCRAMBLING && guard++ < 100) controller.handleTick(runtime.tick(5));
+  assert.equal(controller.state, SHUFFLE_STATES.PREVIEW);
+  assert.equal(controller.start(), true);
+  assert.equal(controller.pause(), true);
+  assert.equal(controller.state, SHUFFLE_STATES.PAUSED);
+  assert.equal(interaction.enabled, false);
+  assert.equal(controller.resume(), true);
+  assert.equal(controller.state, SHUFFLE_STATES.PLAYING);
+  assert.equal(interaction.enabled, true);
 });
 
 test('reset returns to idle', () => {
@@ -98,7 +116,7 @@ test('play completion preserves the manual animator duration', () => {
   while (controller.state === SHUFFLE_STATES.SCRAMBLING && guard++ < 100) {
     controller.handleTick(runtime.tick(5));
   }
-  assert.equal(controller.state, SHUFFLE_STATES.PLAYING);
+  assert.equal(controller.state, SHUFFLE_STATES.PREVIEW);
   assert.equal(runtime.animator.durationMs, 123);
 });
 
@@ -107,8 +125,11 @@ test('full play-to-reset cycle returns runtime to a clean pre-game state', () =>
   assert.equal(controller.play({ seed: 20261004 }), true);
   let guard = 0;
   while (controller.state === SHUFFLE_STATES.SCRAMBLING && guard++ < 200) controller.handleTick(runtime.tick(5));
-  assert.equal(controller.state, SHUFFLE_STATES.PLAYING);
+  assert.equal(controller.state, SHUFFLE_STATES.PREVIEW);
   assert.equal(runtime.cubeState.isSolved(), false);
+  assert.equal(interaction.enabled, false);
+  controller.start();
+  assert.equal(controller.state, SHUFFLE_STATES.PLAYING);
   assert.equal(interaction.enabled, true);
 
   controller.reset();

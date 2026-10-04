@@ -9,7 +9,9 @@ import { DEFAULT_SCRAMBLE_LENGTH, generateScramble, scrambleSummary } from '../c
 export const SHUFFLE_STATES = Object.freeze({
   IDLE: 'idle',
   SCRAMBLING: 'scrambling',
-  PLAYING: 'playing'
+  PREVIEW: 'preview',
+  PLAYING: 'playing',
+  PAUSED: 'paused'
 });
 
 export const DEFAULT_SHUFFLE_DURATION_MS = 90;
@@ -44,7 +46,10 @@ export class ShuffleController {
   }
 
   get busy() { return this.state === SHUFFLE_STATES.SCRAMBLING || this.runtime.busy; }
-  get canPlay() { return this.state !== SHUFFLE_STATES.SCRAMBLING && !this.runtime.busy; }
+  get canPlay() { return this.state === SHUFFLE_STATES.IDLE && !this.runtime.busy; }
+  get canStart() { return this.state === SHUFFLE_STATES.PREVIEW && !this.runtime.busy; }
+  get canPause() { return this.state === SHUFFLE_STATES.PLAYING && !this.runtime.busy; }
+  get canResume() { return this.state === SHUFFLE_STATES.PAUSED && !this.runtime.busy; }
   get scrambleText() { return scrambleSummary(this.scramble); }
 
   play({ length = this.length, seed } = {}) {
@@ -69,7 +74,7 @@ export class ShuffleController {
     } catch (error) {
       this.runtime.animator.durationMs = this._previousDuration;
       this._setState(SHUFFLE_STATES.IDLE);
-      this.interaction?.setEnabled?.(true);
+      this.interaction?.setEnabled?.(false);
       throw error;
     }
     return true;
@@ -90,10 +95,31 @@ export class ShuffleController {
 
     if (this.completedMoves >= this.scramble.length && !this.runtime.busy) {
       this.runtime.animator.durationMs = this._previousDuration;
-      this._setState(SHUFFLE_STATES.PLAYING);
-      this.interaction?.setEnabled?.(true);
+      this._setState(SHUFFLE_STATES.PREVIEW);
+      this.interaction?.setEnabled?.(false);
       this.onProgress?.({ completed: this.scramble.length, total: this.scramble.length, scramble: this.scramble });
     }
+  }
+
+  start() {
+    if (!this.canStart) return false;
+    this._setState(SHUFFLE_STATES.PLAYING);
+    this.interaction?.setEnabled?.(true);
+    return true;
+  }
+
+  pause() {
+    if (!this.canPause) return false;
+    this._setState(SHUFFLE_STATES.PAUSED);
+    this.interaction?.setEnabled?.(false);
+    return true;
+  }
+
+  resume() {
+    if (!this.canResume) return false;
+    this._setState(SHUFFLE_STATES.PLAYING);
+    this.interaction?.setEnabled?.(true);
+    return true;
   }
 
   reset() {

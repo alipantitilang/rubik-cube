@@ -50,6 +50,8 @@
     .game-action button:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
     .game-action button:disabled { opacity: .55; cursor: default; }
     .game-action button[hidden] { display: none; }
+    .game-action { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+    .game-action .secondary { background: rgba(255,255,255,.06); }
 
     .stats {
       display: grid;
@@ -128,7 +130,10 @@
     </aside>
     <div class="game-action" aria-label="Game controls">
       <button id="play-button" type="button">Play</button>
-      <button id="reset-button" type="button" hidden>Reset</button>
+      <button id="start-button" type="button" hidden>Start</button>
+      <button id="stop-button" class="secondary" type="button" hidden>Stop</button>
+      <button id="finish-button" class="secondary" type="button" hidden>Finish</button>
+      <button id="reset-button" class="secondary" type="button" hidden>Reset</button>
     </div>
     <section id="solved-overlay" class="solved-overlay" hidden aria-live="polite">
       <div class="solved-card">
@@ -208,6 +213,9 @@
     });
 
     const playButton = document.querySelector('#play-button');
+    const startButton = document.querySelector('#start-button');
+    const stopButton = document.querySelector('#stop-button');
+    const finishButton = document.querySelector('#finish-button');
     const resetButton = document.querySelector('#reset-button');
     const moveCount = document.querySelector('#move-count');
     const timerLabel = document.querySelector('#timer');
@@ -217,9 +225,10 @@
     const playAgainButton = document.querySelector('#play-again-button');
     const solvedResetButton = document.querySelector('#solved-reset-button');
 
-    // A game begins only after Play. The solved cube is a pre-game state,
-    // so manual turning remains locked until the scramble has finished.
-    interaction.setEnabled(false);
+    // Play generates the scramble. Start begins the timed attempt only after
+    // the player has had time to inspect the shuffled cube.
+    interaction.setEnabled(true);
+    interaction.setViewOnly(true);
 
     
     function formatTime(ms) {
@@ -277,25 +286,38 @@
       solvedOverlay.hidden = false;
     }
 
-const shuffle = new ShuffleController({
+    const shuffle = new ShuffleController({
       runtime,
       interaction,
       onStateChange: state => {
+        playButton.hidden = state !== SHUFFLE_STATES.IDLE;
+        startButton.hidden = state !== SHUFFLE_STATES.PREVIEW;
+        stopButton.hidden = !(state === SHUFFLE_STATES.PLAYING || state === SHUFFLE_STATES.PAUSED);
+        finishButton.hidden = !(state === SHUFFLE_STATES.PLAYING || state === SHUFFLE_STATES.PAUSED);
+        resetButton.hidden = state === SHUFFLE_STATES.SCRAMBLING || gameSolved;
+
         if (state === SHUFFLE_STATES.SCRAMBLING) {
-          playButton.hidden = true;
-          resetButton.hidden = true;
+          interaction.setViewOnly(false);
+          interaction.setEnabled(false);
           status.textContent = 'Scrambling…';
+        } else if (state === SHUFFLE_STATES.PREVIEW) {
+          interaction.setEnabled(true);
+          interaction.setViewOnly(true);
+          status.textContent = 'Inspect the cube, then press Start';
         } else if (state === SHUFFLE_STATES.PLAYING) {
-          playButton.hidden = true;
-          resetButton.hidden = true;
-          status.textContent = 'Ready to solve';
-          sessionStartedAt = Date.now();
-          solveTimer.start(sessionStartedAt);
-          updateHistoryUI();
+          interaction.setViewOnly(false);
+          interaction.setEnabled(true);
+          stopButton.textContent = 'Stop';
+          status.textContent = 'Solving…';
+        } else if (state === SHUFFLE_STATES.PAUSED) {
+          interaction.setEnabled(true);
+          interaction.setViewOnly(true);
+          stopButton.textContent = 'Resume';
+          status.textContent = 'Paused — inspect the cube';
         } else {
-          playButton.hidden = false;
-          playButton.disabled = false;
-          resetButton.hidden = true;
+          interaction.setEnabled(true);
+          interaction.setViewOnly(true);
+          stopButton.textContent = 'Stop';
           status.textContent = 'Ready';
         }
       },
@@ -309,7 +331,33 @@ const shuffle = new ShuffleController({
     playButton.addEventListener('click', () => {
       beginFreshSession();
       if (!shuffle.play()) return;
-      playButton.hidden = true;
+    });
+
+    startButton.addEventListener('click', () => {
+      if (!shuffle.start()) return;
+      sessionStartedAt = Date.now();
+      solveTimer.start(sessionStartedAt);
+      status.textContent = 'Solving…';
+      updateHistoryUI();
+    });
+
+    stopButton.addEventListener('click', () => {
+      if (shuffle.state === SHUFFLE_STATES.PLAYING) {
+        solveTimer.pause();
+        shuffle.pause();
+      } else if (shuffle.state === SHUFFLE_STATES.PAUSED) {
+        solveTimer.resume();
+        shuffle.resume();
+      }
+    });
+
+    finishButton.addEventListener('click', () => {
+      if (shuffle.state !== SHUFFLE_STATES.PLAYING && shuffle.state !== SHUFFLE_STATES.PAUSED) return;
+      if (!runtime.cubeState.isSolved()) {
+        status.textContent = 'Cube belum solved — lanjutkan atau periksa kembali.';
+        return;
+      }
+      finishGame();
     });
 
     function resetToReady() {
@@ -322,9 +370,13 @@ const shuffle = new ShuffleController({
       completedSession = null;
       updateHistoryUI();
       hideSolvedOverlay();
-      interaction.setEnabled(false);
+      interaction.setEnabled(true);
+      interaction.setViewOnly(true);
       resetButton.hidden = true;
       playButton.hidden = false;
+      startButton.hidden = true;
+      stopButton.hidden = true;
+      finishButton.hidden = true;
       playButton.disabled = false;
       status.textContent = 'Ready';
     }
@@ -336,19 +388,29 @@ const shuffle = new ShuffleController({
       playButton.click();
     });
 
-    function detectSolvedState() {
-      if (gameSolved || shuffle.state !== SHUFFLE_STATES.PLAYING || runtime.busy) return false;
+    function finishGame() {
+      if (gameSolved || (shuffle.state !== SHUFFLE_STATES.PLAYING && shuffle.state !== SHUFFLE_STATES.PAUSED)) return false;
       if (!runtime.cubeState.isSolved()) return false;
 
       gameSolved = true;
-      interaction.setEnabled(false);
+      interaction.setEnabled(true);
+      interaction.setViewOnly(true);
       solveTimer.stop();
       resetButton.hidden = false;
       playButton.hidden = true;
+      startButton.hidden = true;
+      stopButton.hidden = true;
+      finishButton.hidden = true;
       status.textContent = 'Solved!';
       updateHistoryUI();
       showSolvedResult();
       return true;
+    }
+
+    function detectSolvedState() {
+      if (gameSolved || shuffle.state !== SHUFFLE_STATES.PLAYING || runtime.busy) return false;
+      if (!runtime.cubeState.isSolved()) return false;
+      return finishGame();
     }
 
     // Use the requestAnimationFrame timestamp for both sides of the delta.
@@ -369,9 +431,9 @@ const shuffle = new ShuffleController({
       } else if (detectSolvedState()) {
         // Solved detection runs after every runtime tick, including the
         // interactive-settle path where result.completed is intentionally null.
-      } else if (result.completed) {
+      } else if (result.completed && shuffle.state === SHUFFLE_STATES.PLAYING) {
         status.textContent = `Turn complete: layer ${result.completed.axis.toUpperCase()}${result.completed.layer > 0 ? '+' : result.completed.layer < 0 ? '-' : '0'}`;
-      } else if (shuffle.state === SHUFFLE_STATES.IDLE && !runtime.busy) {
+      } else if (shuffle.state === SHUFFLE_STATES.IDLE && !runtime.busy && !gameSolved) {
         status.textContent = 'Ready';
       }
       requestAnimationFrame(frame);

@@ -177,3 +177,7 @@ Phase 5 no longer depends on a POV Front frame. The active interaction primitive
 The project now also treats all 54 visible stickers as permanent identities with stable codes and all 54 visible sticker locations as stable slot IDs `p01..p54`.
 
 Future History/Replay phases must use these identities and positions rather than notation strings.
+
+
+### Phase 7 gameplay refinement
+Inspection preview, explicit Start timing, Stop/Resume pause flow, Finish fallback, and reset lifecycle are included in the Phase 7 implementation.

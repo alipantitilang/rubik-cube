@@ -53,6 +53,7 @@ export class ManualInteractionController {
     this.gestureConfig = gestureConfig;
     this.onGesture = onGesture;
     this.enabled = true;
+    this.viewOnly = false;
     this._pointer = null;
 
     this.cameraController.setPointerOrbitEnabled?.(false);
@@ -78,6 +79,11 @@ export class ManualInteractionController {
     if (!this.enabled) this._cancelPointer(true);
   }
 
+  setViewOnly(enabled) {
+    this.viewOnly = Boolean(enabled);
+    if (this.viewOnly) this._cancelPointer(true);
+  }
+
   dispose() {
     this._cancelPointer(true);
     const el = this.domElement;
@@ -91,7 +97,18 @@ export class ManualInteractionController {
   }
 
   _onPointerDown(event) {
-    if (!this.enabled || event.button !== 0 || this.isInputLocked()) return;
+    if (!this.enabled || event.button !== 0) return;
+    if (this.viewOnly) {
+      this._pointer = {
+        id: event.pointerId, startX: event.clientX, startY: event.clientY,
+        lastX: event.clientX, lastY: event.clientY, mode: 'cube', hit: null,
+        gestureView: null, turn: null, axis: null, progress: 0
+      };
+      this.domElement.setPointerCapture?.(event.pointerId);
+      event.stopPropagation();
+      return;
+    }
+    if (this.isInputLocked()) return;
     const hit = this.pickFace(event.clientX, event.clientY);
     const gestureView = hit ? this._getViewContext() : null;
 

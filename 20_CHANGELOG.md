@@ -223,3 +223,10 @@ The generic sticker-position model no longer treats centers as fixed during midd
 - Reset now clears player history, timer, completed session, and solved presentation.
 - Added Phase 7 unit/integration regression tests.
 - Phase 7 acceptance: **complete**.
+
+
+### Phase 7 gameplay refinement
+- Added post-scramble inspection preview before timing starts.
+- Added Stop/Resume with active-time-only timer accounting.
+- Added Finish fallback with logical solved-state validation.
+- Added Reset session boundary and view-only inspection mode.

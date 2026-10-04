@@ -25,9 +25,16 @@ test('SolveTimer starts, reports elapsed time, and stops', () => {
   timer.start();
   now = 2345;
   assert.equal(timer.elapsedMs, 1345);
+  timer.pause();
+  now = 5000;
+  assert.equal(timer.elapsedMs, 1345);
+  assert.equal(timer.paused, true);
+  timer.resume();
+  now = 6345;
+  assert.equal(timer.elapsedMs, 2690);
   timer.stop();
   now = 9999;
-  assert.equal(timer.elapsedMs, 1345);
+  assert.equal(timer.elapsedMs, 2690);
   assert.equal(timer.running, false);
 });
 
@@ -104,7 +111,9 @@ test('scramble lifecycle can separate scramble commits from player commits', () 
   while (controller.state === SHUFFLE_STATES.SCRAMBLING && guard++ < 100) {
     controller.handleTick(runtime.tick(2));
   }
-  assert.equal(controller.state, SHUFFLE_STATES.PLAYING);
+  assert.equal(controller.state, SHUFFLE_STATES.PREVIEW);
   assert.equal(committed.length, 2);
+  controller.start();
+  assert.equal(controller.state, SHUFFLE_STATES.PLAYING);
   assert.equal(runtime.cubeState.isSolved(), false);
 });

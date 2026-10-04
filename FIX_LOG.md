@@ -615,3 +615,12 @@ Status: **FIXED**
 - Added SolveTimer and completed-session record.
 - Added solved result overlay and Play Again/Reset lifecycle.
 - Added regression coverage for committed turn callbacks, scramble separation, timer, and session history.
+
+
+### FIX-530 — Phase 7 inspection/pause/finish flow
+- Added PREVIEW state after scramble so the player can inspect the cube before timing.
+- Added explicit START and active-only timer start.
+- Added STOP/RESUME with move lock but cube rotate/zoom retained.
+- Added FINISH fallback that validates the actual solved state.
+- Added timer pause/resume accounting so inspection time is excluded.
+Status: FIXED

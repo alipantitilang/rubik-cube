@@ -45,3 +45,17 @@ READY
 - sound
 - final responsive/accessibility polish
 - advanced history visualization
+
+
+## Post-Phase-7 gameplay flow refinement
+
+The solve session now has an explicit inspection phase and pause/resume controls:
+
+`READY → SCRAMBLING → PREVIEW → PLAYING ↔ PAUSED → SOLVED`
+
+- **PREVIEW:** scramble has finished; the player may rotate/zoom the cube and inspect all colors. Sticker moves are locked.
+- **START:** begins the solve timer and unlocks sticker moves.
+- **STOP / RESUME:** pauses the solve timer and locks sticker moves while keeping cube rotation and zoom available for inspection.
+- **FINISH:** manual completion fallback. It accepts completion only when the logical cube state is actually solved, so it safely covers cases where the automatic solved sensor does not fire.
+- **RESET:** cancels the current session, restores a solved cube, clears move history/timer, and starts from the pre-game state.
+- The timer measures active solving time only; paused inspection time is excluded.

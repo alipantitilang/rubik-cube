@@ -37,40 +37,75 @@ export class SolveTimer {
     this.now = now;
     this.startedAt = null;
     this.stoppedAt = null;
+    this.pausedAt = null;
+    this.runningSince = null;
+    this.accumulatedMs = 0;
   }
 
   start(timestamp = this.now()) {
     if (!Number.isFinite(timestamp)) throw new TypeError('timestamp must be finite');
     if (this.startedAt === null) this.startedAt = timestamp;
     this.stoppedAt = null;
+    this.pausedAt = null;
+    this.runningSince = timestamp;
+    return this;
+  }
+
+  pause(timestamp = this.now()) {
+    if (!Number.isFinite(timestamp)) throw new TypeError('timestamp must be finite');
+    if (this.running) {
+      this.accumulatedMs += Math.max(0, timestamp - this.runningSince);
+      this.pausedAt = timestamp;
+      this.runningSince = null;
+    }
+    return this;
+  }
+
+  resume(timestamp = this.now()) {
+    if (!Number.isFinite(timestamp)) throw new TypeError('timestamp must be finite');
+    if (this.startedAt !== null && this.pausedAt !== null && this.stoppedAt === null) {
+      this.runningSince = timestamp;
+      this.pausedAt = null;
+    }
     return this;
   }
 
   stop(timestamp = this.now()) {
     if (!Number.isFinite(timestamp)) throw new TypeError('timestamp must be finite');
-    if (this.startedAt !== null && this.stoppedAt === null) this.stoppedAt = Math.max(timestamp, this.startedAt);
+    if (this.startedAt !== null && this.stoppedAt === null) {
+      if (this.running) this.accumulatedMs += Math.max(0, timestamp - this.runningSince);
+      this.stoppedAt = timestamp;
+      this.pausedAt = null;
+      this.runningSince = null;
+    }
     return this;
   }
 
   reset() {
     this.startedAt = null;
     this.stoppedAt = null;
+    this.pausedAt = null;
+    this.runningSince = null;
+    this.accumulatedMs = 0;
     return this;
   }
 
-  get running() { return this.startedAt !== null && this.stoppedAt === null; }
+  get running() { return this.startedAt !== null && this.stoppedAt === null && this.pausedAt === null && this.runningSince !== null; }
+  get paused() { return this.startedAt !== null && this.stoppedAt === null && this.pausedAt !== null; }
 
   get elapsedMs() {
     if (this.startedAt === null) return 0;
-    const end = this.stoppedAt ?? this.now();
-    return Math.max(0, end - this.startedAt);
+    if (this.running) return Math.max(0, this.accumulatedMs + this.now() - this.runningSince);
+    return Math.max(0, this.accumulatedMs);
   }
 
   snapshot() {
     return Object.freeze({
       startedAt: this.startedAt,
       completedAt: this.stoppedAt,
-      elapsedMs: this.elapsedMs
+      elapsedMs: this.elapsedMs,
+      paused: this.paused,
+      accumulatedMs: this.accumulatedMs
     });
   }
 }

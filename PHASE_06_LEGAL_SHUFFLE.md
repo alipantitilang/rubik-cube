@@ -2,7 +2,7 @@
 
 ## Status
 
-**IN PROGRESS**
+**COMPLETE**
 
 ## Tujuan
 
@@ -49,7 +49,7 @@ Play:
 
 `idle → scrambling → playing`
 
-Production entry point: `index.html`. Phase 6 adds a minimal Play control to the existing panel; polished control-shell work remains Phase 8.
+Production entry point: `index.html`. The Play/Reset controls live on the main cube screen; no phase-specific HTML is created.
 
 Selama `scrambling`:
 
@@ -61,9 +61,17 @@ Selama `scrambling`:
 Setelah scramble selesai:
 
 - state menjadi `playing`;
-- kontrol Play tetap nonaktif karena Reshuffle UI belum menjadi bagian Phase 6;
+- tombol Play tetap tersembunyi selama sesi permainan;
 - interaksi manual aktif kembali;
 - cube berada pada state yang mathematically reachable dari solved state.
+
+### Main-screen Play / Reset flow
+
+- Saat halaman pertama dibuka, tombol `Play` terlihat pada layar utama.
+- Menekan `Play` langsung menyembunyikan tombol tersebut.
+- Tombol tetap tersembunyi selama scramble dan selama pemain menyelesaikan cube.
+- Setelah `CubeState.isSolved()` bernilai `true` setelah sebuah player turn selesai, interaksi dikunci, status menjadi `Solved!`, dan tombol `Reset` muncul.
+- `Reset` mengembalikan CubeState ke solved state, membersihkan history runtime, mengunci kembali manual interaction, menyembunyikan `Reset`, dan menampilkan `Play` untuk sesi baru.
 
 ## Kecepatan animasi
 
@@ -104,6 +112,10 @@ Scramble juga tidak dianggap sebagai player history.
 - [x] State berpindah dari `idle` ke `scrambling` lalu `playing`.
 - [x] Scramble menghasilkan state yang valid dan reachable.
 - [x] Tidak ada halaman `phase6.html`; aplikasi utama tetap satu entry point.
+- [x] Play berada pada layar utama, bukan di panel informasi.
+- [x] Play menghilang saat sesi dimulai.
+- [x] Reset muncul hanya setelah cube solved.
+- [x] Reset mengembalikan cube ke solved state dan membuka sesi baru melalui Play.
 
 ## Test Coverage
 
@@ -120,4 +132,4 @@ Phase 6 menambahkan test untuk:
 - completion and return to playing;
 - reset.
 
-Core shuffle and Play-flow regression are included in the full suite. Implementation is complete. Final phase closure requires the GitHub Pages smoke test: Play → animated scramble → manual interaction unlocked.
+Core shuffle and Play-flow regression are included in the full suite. Implementation is complete. Phase 6 UI flow is complete: Play → animated scramble → manual interaction → solved detection → Reset → new Play session. Final release QA remains in Phase 10.

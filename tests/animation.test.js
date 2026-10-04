@@ -63,3 +63,17 @@ test('middle layer turn selects four edges plus four face centers', () => {
   const cube = createSolvedCube();
   for (const axis of ['x', 'y', 'z']) assert.equal(getLayerCubieIds(cube, { axis, layer: 0, quarterTurns: 1 }).length, 8);
 });
+
+test('runtime reset restores a solved cube and clears history', () => {
+  const runtime = new CubeTurnRuntime({ animator: new TurnAnimator({ durationMs: 10 }) });
+  runtime.enqueue({ axis: 'x', layer: 1, quarterTurns: 1 });
+  runtime.tick(10);
+  assert.equal(runtime.cubeState.isSolved(), false);
+  assert.equal(runtime.history.length, 1);
+
+  const resetCube = runtime.reset();
+  assert.equal(resetCube.isSolved(), true);
+  assert.equal(runtime.cubeState.isSolved(), true);
+  assert.equal(runtime.history.length, 0);
+  assert.equal(runtime.busy, false);
+});

@@ -23,11 +23,33 @@
       line-height: 1.4;
     }
     .interaction-panel strong { font-size: 15px; }
-    .interaction-panel .controls { display: flex; gap: 8px; margin-top: 4px; }
-    .interaction-panel button { border: 1px solid rgba(255,255,255,.16); border-radius: 9px; background: rgba(255,255,255,.08); color: inherit; padding: 7px 12px; font: inherit; font-weight: 700; cursor: pointer; }
-    .interaction-panel button:hover:not(:disabled) { background: rgba(255,255,255,.14); }
-    .interaction-panel button:disabled { opacity: .45; cursor: default; }
     .interaction-panel .status { opacity: .82; }
+    .game-action {
+      position: absolute;
+      left: 50%;
+      bottom: 28px;
+      transform: translateX(-50%);
+      z-index: 5;
+    }
+    .game-action button {
+      min-width: 132px;
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: 12px;
+      background: rgba(255,255,255,.1);
+      color: #f5f7fa;
+      padding: 11px 22px;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: .01em;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      transition: background .16s ease, transform .16s ease, opacity .16s ease;
+    }
+    .game-action button:hover { background: rgba(255,255,255,.16); transform: translateY(-1px); }
+    .game-action button:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+    .game-action button:disabled { opacity: .55; cursor: default; }
+    .game-action button[hidden] { display: none; }
     @media (max-width: 640px) {
       .interaction-panel { left: 12px; top: 12px; }
     }
@@ -42,9 +64,12 @@
       <span>Release after roughly half a turn to snap 90°; release earlier to return.</span>
       <span>Drag empty space to rotate the Rubik itself.</span>
       <span>Wheel / touchpad = zoom.</span>
-      <div class="controls"><button id="play-button" type="button">Play</button></div>
       <span id="status" class="status" aria-live="polite">Ready</span>
     </aside>
+    <div class="game-action" aria-label="Game controls">
+      <button id="play-button" type="button">Play</button>
+      <button id="reset-button" type="button" hidden>Reset</button>
+    </div>
   </main>
 
   <script>
@@ -99,20 +124,29 @@
     });
 
     const playButton = document.querySelector('#play-button');
+    const resetButton = document.querySelector('#reset-button');
+
+    // A game begins only after Play. The solved cube is a pre-game state,
+    // so manual turning remains locked until the scramble has finished.
+    interaction.setEnabled(false);
+
     const shuffle = new ShuffleController({
       runtime,
       interaction,
       onStateChange: state => {
         if (state === SHUFFLE_STATES.SCRAMBLING) {
-          playButton.disabled = true;
-          playButton.textContent = 'Scrambling…';
+          playButton.hidden = true;
+          resetButton.hidden = true;
+          status.textContent = 'Scrambling…';
         } else if (state === SHUFFLE_STATES.PLAYING) {
-          playButton.disabled = true;
-          playButton.textContent = 'Playing';
+          playButton.hidden = true;
+          resetButton.hidden = true;
           status.textContent = 'Ready to solve';
         } else {
+          playButton.hidden = false;
           playButton.disabled = false;
-          playButton.textContent = 'Play';
+          resetButton.hidden = true;
+          status.textContent = 'Ready';
         }
       },
       onProgress: ({ completed, total }) => {
@@ -124,6 +158,17 @@
 
     playButton.addEventListener('click', () => {
       if (!shuffle.play()) return;
+      playButton.hidden = true;
+    });
+
+    resetButton.addEventListener('click', () => {
+      shuffle.reset();
+      runtime.reset();
+      interaction.setEnabled(false);
+      resetButton.hidden = true;
+      playButton.hidden = false;
+      playButton.disabled = false;
+      status.textContent = 'Ready';
     });
 
     // Use the requestAnimationFrame timestamp for both sides of the delta.
@@ -140,7 +185,14 @@
       if (shuffle.state === SHUFFLE_STATES.SCRAMBLING) {
         // ShuffleController owns the progress/status text while scrambling.
       } else if (result.completed) {
-        status.textContent = `Turn complete: layer ${result.completed.axis.toUpperCase()}${result.completed.layer > 0 ? '+' : result.completed.layer < 0 ? '-' : '0'}`;
+        if (shuffle.state === SHUFFLE_STATES.PLAYING && runtime.cubeState.isSolved()) {
+          interaction.setEnabled(false);
+          resetButton.hidden = false;
+          playButton.hidden = true;
+          status.textContent = 'Solved!';
+        } else {
+          status.textContent = `Turn complete: layer ${result.completed.axis.toUpperCase()}${result.completed.layer > 0 ? '+' : result.completed.layer < 0 ? '-' : '0'}`;
+        }
       } else if (shuffle.state === SHUFFLE_STATES.IDLE && !runtime.busy) {
         status.textContent = 'Ready';
       }

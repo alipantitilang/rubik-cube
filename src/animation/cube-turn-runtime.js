@@ -48,6 +48,14 @@ export class CubeTurnRuntime {
     if (this.renderer) this.renderer.renderCube(this.cubeState);
     return { cancelled: true, cubeState: this.cubeState };
   }
+  reset(cubeState = new CubeState()) {
+    if (!(cubeState instanceof CubeState)) throw new TypeError('reset requires a CubeState.');
+    this.cancel();
+    this.cubeState = cubeState;
+    this.history?.clear();
+    this.renderer?.renderCube(this.cubeState);
+    return this.cubeState;
+  }
   tick(deltaMs) {
     if (!Number.isFinite(deltaMs) || deltaMs < 0) throw new Error('deltaMs must be non-negative');
     if (this.interactive) {

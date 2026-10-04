@@ -183,3 +183,14 @@ The generic sticker-position model no longer treats centers as fixed during midd
 - Manual interaction is locked during automatic scramble and restored after completion.
 - Scramble playback continues through `CubeTurnRuntime`; CubeState remains authoritative.
 - No new phase HTML file was created.
+
+
+## 2026-10-04 — Phase 6 Main-Screen Play / Reset Flow
+
+- Moved Play from the information panel to the main cube screen.
+- Play now disappears immediately when a game session starts.
+- Manual interaction is locked before Play, during scramble, and after the cube is solved.
+- Added solved-state detection after completed player turns.
+- Added main-screen Reset control that appears only after a solved cube.
+- Reset returns the authoritative CubeTurnRuntime to a fresh solved CubeState and clears runtime history.
+- No new HTML file was created.

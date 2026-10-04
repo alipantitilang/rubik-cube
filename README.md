@@ -224,4 +224,4 @@ Current source modules are intentionally separated by responsibility:
 
 `src/interaction/gesture.js` was removed in FIX-526 because its only production responsibility was small gesture configuration/helper logic now owned by `manual-controller.js`.
 
-Phase 6 shuffle modules are wired into the single production entry point. The Play control starts a legal animated scramble, locks manual turns during playback, then returns the cube to the playable state.
+Phase 6 shuffle modules are wired into the single production entry point. The Play control starts a legal animated scramble on the main screen, hides for the active session, locks manual turns during playback, then returns the cube to the playable state. When the cube is solved, Reset appears to start a new session.

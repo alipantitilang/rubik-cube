@@ -1,4 +1,5 @@
 /** Phase 6 — generic legal scramble generation without move notation. */
+import { createSolvedCube } from './cube.js';
 import { createTurn, TURN_AXES } from './turn.js';
 
 export const DEFAULT_SCRAMBLE_LENGTH = 20;
@@ -7,6 +8,7 @@ export const DEFAULT_AVOID_SAME_AXIS = true;
 const LAYERS = Object.freeze([-1, 1]);
 const DIRECTIONS = Object.freeze([-1, 1, 2]);
 const MAX_GENERATION_ATTEMPTS_PER_MOVE = 1000;
+const MAX_SCRAMBLED_STATE_ATTEMPTS = 100;
 
 function normalizeLength(length) {
   if (!Number.isInteger(length) || length < 1 || length > 200) throw new RangeError('scramble length must be an integer from 1 to 200');
@@ -33,33 +35,49 @@ export function generateScramble({
   length = DEFAULT_SCRAMBLE_LENGTH,
   seed,
   random = seed === undefined ? Math.random : createSeededRandom(seed),
-  avoidSameAxis = DEFAULT_AVOID_SAME_AXIS
+  avoidSameAxis = DEFAULT_AVOID_SAME_AXIS,
+  ensureNonSolved = true
 } = {}) {
   const count = normalizeLength(length);
   if (typeof random !== 'function') throw new TypeError('random must be a function');
-  const turns = [];
-  let previousAxis = null;
-  let attempts = 0;
-  while (turns.length < count) {
-    attempts += 1;
-    if (attempts > count * MAX_GENERATION_ATTEMPTS_PER_MOVE) throw new Error('Unable to generate scramble with the supplied random source and constraints.');
-    const axis = TURN_AXES[randomIndex(random, TURN_AXES.length)];
-    if (avoidSameAxis && axis === previousAxis) continue;
-    const layer = LAYERS[randomIndex(random, LAYERS.length)];
-    const quarterTurns = DIRECTIONS[randomIndex(random, DIRECTIONS.length)];
-    const candidate = createTurn({ axis, layer, quarterTurns });
-    const previous = turns[turns.length - 1];
-    const isImmediateInverse = previous
-      && previous.axis === candidate.axis
-      && previous.layer === candidate.layer
-      && previous.quarterTurns !== 2
-      && candidate.quarterTurns !== 2
-      && previous.quarterTurns === -candidate.quarterTurns;
-    if (isImmediateInverse) continue;
-    turns.push(candidate);
-    previousAxis = axis;
+  if (typeof ensureNonSolved !== 'boolean') throw new TypeError('ensureNonSolved must be a boolean');
+
+  const generateCandidate = () => {
+    const turns = [];
+    let previousAxis = null;
+    let attempts = 0;
+    while (turns.length < count) {
+      attempts += 1;
+      if (attempts > count * MAX_GENERATION_ATTEMPTS_PER_MOVE) {
+        throw new Error('Unable to generate scramble with the supplied random source and constraints.');
+      }
+      const axis = TURN_AXES[randomIndex(random, TURN_AXES.length)];
+      if (avoidSameAxis && axis === previousAxis) continue;
+      const layer = LAYERS[randomIndex(random, LAYERS.length)];
+      const quarterTurns = DIRECTIONS[randomIndex(random, DIRECTIONS.length)];
+      const candidate = createTurn({ axis, layer, quarterTurns });
+      const previous = turns[turns.length - 1];
+      const isImmediateInverse = previous
+        && previous.axis === candidate.axis
+        && previous.layer === candidate.layer
+        && previous.quarterTurns !== 2
+        && candidate.quarterTurns !== 2
+        && previous.quarterTurns === -candidate.quarterTurns;
+      if (isImmediateInverse) continue;
+      turns.push(candidate);
+      previousAxis = axis;
+    }
+    return Object.freeze(turns);
+  };
+
+  if (!ensureNonSolved) return generateCandidate();
+
+  for (let attempt = 0; attempt < MAX_SCRAMBLED_STATE_ATTEMPTS; attempt += 1) {
+    const turns = generateCandidate();
+    if (!createSolvedCube().applySequence(turns).isSolved()) return turns;
   }
-  return Object.freeze(turns);
+
+  throw new Error('Unable to generate a non-solved scramble with the supplied random source and constraints.');
 }
 
 export function scrambleSummary(scramble) {

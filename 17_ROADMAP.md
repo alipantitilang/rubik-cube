@@ -98,7 +98,7 @@ Phase 5 no longer depends on notation or a virtual Front frame.
 
 ## Phase 6 — Legal Shuffle / Play Flow
 
-Status: **Implementation complete — awaiting GitHub Pages smoke validation**
+Status: **Complete**
 
 Build:
 

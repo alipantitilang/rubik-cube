@@ -79,3 +79,18 @@ test('invalid random output is rejected', () => {
 test('pathological random source fails instead of looping forever', () => {
   assert.throws(() => generateScramble({ length: 2, random: () => 0, avoidSameAxis: true }), /Unable to generate scramble/);
 });
+
+test('default scramble is never accepted if it leaves the cube solved', () => {
+  const scramble = generateScramble({ length: 20, seed: 20261004 });
+  assert.equal(createSolvedCube().applySequence(scramble).isSolved(), false);
+});
+
+test('non-solved scramble requirement can be explicitly disabled', () => {
+  const scramble = generateScramble({ length: 1, seed: 20261004, ensureNonSolved: false });
+  assert.equal(scramble.length, 1);
+});
+
+test('default scramble quality avoids consecutive axes', () => {
+  const scramble = generateScramble({ length: 80, seed: 9090 });
+  for (let i = 1; i < scramble.length; i++) assert.notEqual(scramble[i].axis, scramble[i - 1].axis);
+});

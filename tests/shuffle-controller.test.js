@@ -101,3 +101,26 @@ test('play completion preserves the manual animator duration', () => {
   assert.equal(controller.state, SHUFFLE_STATES.PLAYING);
   assert.equal(runtime.animator.durationMs, 123);
 });
+
+test('full play-to-reset cycle returns runtime to a clean pre-game state', () => {
+  const { runtime, controller, interaction } = makeController({ length: 6, durationMs: 2 });
+  assert.equal(controller.play({ seed: 20261004 }), true);
+  let guard = 0;
+  while (controller.state === SHUFFLE_STATES.SCRAMBLING && guard++ < 200) controller.handleTick(runtime.tick(5));
+  assert.equal(controller.state, SHUFFLE_STATES.PLAYING);
+  assert.equal(runtime.cubeState.isSolved(), false);
+  assert.equal(interaction.enabled, true);
+
+  controller.reset();
+  runtime.reset();
+  interaction.setEnabled(false);
+
+  assert.equal(controller.state, SHUFFLE_STATES.IDLE);
+  assert.equal(runtime.busy, false);
+  assert.equal(runtime.cubeState.isSolved(), true);
+  assert.equal(runtime.history.length, 0);
+  assert.equal(interaction.enabled, false);
+
+  assert.equal(controller.play({ seed: 20261005 }), true);
+  assert.equal(controller.state, SHUFFLE_STATES.SCRAMBLING);
+});

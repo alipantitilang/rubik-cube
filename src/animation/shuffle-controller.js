@@ -20,7 +20,7 @@ export class ShuffleController {
     interaction = null,
     length = DEFAULT_SCRAMBLE_LENGTH,
     durationMs = DEFAULT_SHUFFLE_DURATION_MS,
-    avoidSameAxis = false,
+    avoidSameAxis = true,
     random = Math.random,
     onStateChange = null,
     onProgress = null

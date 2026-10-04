@@ -593,3 +593,13 @@ Sebelum fase ditandai `COMPLETE`:
 - **Reset:** Reset clears the local solved flag before restoring a fresh solved CubeState, so the next Play session can be detected independently.
 - **Invariant:** `CubeState.isSolved()` remains the authoritative solved-state predicate; no sticker/color shortcuts are used.
 - **Acceptance:** Solved detection covers both animator-completed and interactive-settle completion paths; reset clears detection state; regression suite passes.
+
+
+## FIX-529 — Phase 6 Final Hardening
+- **Status:** `FIXED`
+- **Tipe:** Phase 6 / Shuffle Quality / Session Reset
+- **Tanggal:** 2026-10-04
+- **Scope:** Phase 6. Does not reopen Phase 5.
+- **Masalah:** Phase 6 still had four hardening gaps: a legal scramble could theoretically return to solved, controller defaults did not enforce the documented same-axis quality rule, full reset-cycle coverage was missing, and the Phase 6 documentation had not formally closed those acceptance points.
+- **Perubahan:** `generateScramble()` now validates the resulting state against `CubeState.isSolved()` and regenerates within a bounded budget; `ShuffleController` defaults to same-axis avoidance; reset-cycle regression coverage verifies cancellation, solved state, cleared history, and a subsequent Play session; shuffle specification, roadmap, changelog, and acceptance documentation are synchronized.
+- **Acceptance:** Full regression suite passes; Phase 6 hardening acceptance points are complete.

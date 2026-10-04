@@ -111,12 +111,16 @@ Scramble juga tidak dianggap sebagai player history.
 - [x] Input manual aktif kembali setelah scramble selesai.
 - [x] State berpindah dari `idle` ke `scrambling` lalu `playing`.
 - [x] Scramble menghasilkan state yang valid dan reachable.
+- [x] Default scramble menolak hasil akhir yang kebetulan kembali solved.
+- [x] Default generator menghindari axis yang sama berturut-turut dan immediate inverse.
 - [x] Tidak ada halaman `phase6.html`; aplikasi utama tetap satu entry point.
 - [x] Play berada pada layar utama, bukan di panel informasi.
 - [x] Play menghilang saat sesi dimulai.
 - [x] Solved-state sensor berjalan setelah setiap runtime tick selama sesi `playing`.
 - [x] Reset muncul hanya setelah cube solved.
 - [x] Reset mengembalikan cube ke solved state dan membuka sesi baru melalui Play.
+- [x] Reset membatalkan runtime/animation yang aktif, membersihkan runtime history, dan mengembalikan session state ke pre-game.
+- [x] Full Play → Scramble → Playing → Solved → Reset → Play regression coverage tersedia.
 
 ## Test Coverage
 
@@ -133,4 +137,4 @@ Phase 6 menambahkan test untuk:
 - completion and return to playing;
 - reset.
 
-Core shuffle and Play-flow regression are included in the full suite. Implementation is complete. Phase 6 UI flow is complete: Play → animated scramble → manual interaction → solved detection → Reset → new Play session. Final release QA remains in Phase 10.
+Core shuffle, Play-flow, solved-sensor, reset, and end-to-end regression are included in the full suite. Phase 6 implementation and acceptance criteria are complete: Play → animated legal scramble → manual interaction → solved detection → Reset → new Play session. Final release QA remains in Phase 10.

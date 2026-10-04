@@ -202,3 +202,11 @@ The generic sticker-position model no longer treats centers as fixed during midd
 - The sensor waits for `PLAYING` + `!runtime.busy` and uses `CubeState.isSolved()` as the sole solved predicate.
 - Once solved, manual interaction is locked, `Reset` appears, `Play` remains hidden, and status becomes `Solved!`.
 - Reset clears the local solved latch before returning to the pre-game solved state.
+
+
+## 2026-10-04 — Phase 6 Final Hardening
+
+- Scramble generator now rejects a candidate sequence if applying it to solved CubeState would leave the cube solved; this prevents a valid-but-useless scramble from starting a session.
+- `ShuffleController` now enables same-axis avoidance by default, matching the Phase 6 scramble quality contract.
+- Reset/session regression coverage now verifies cancellation, fresh solved state, cleared runtime history, and readiness for a new Play session.
+- Phase 6 acceptance criteria and documentation updated to mark scramble quality, reset state integrity, and end-to-end flow as complete.

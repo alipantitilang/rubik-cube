@@ -12,7 +12,8 @@ Interactive 3D Rubik project with a generic, view-independent layer-turn model a
 - Phase 5 — Manual Rubik Interaction: **FINAL / Complete**
 - Phase 6 — Legal Shuffle / Play Flow: **Complete**
 - Phase 7 — History & Solved Flow: **Complete**
-- Phase 8–10: **Pending**
+- Phase 8 — UI & Responsive Product Shell: **Complete**
+- Phase 9–10: **Pending**
 
 The overall product is not final until the remaining phases and the Definition of Done are complete.
 
@@ -247,3 +248,6 @@ Phase 6 shuffle modules are wired into the single production entry point. The Pl
 After scrambling, the cube enters an inspection-only preview. **Start** begins timing and enables moves. **Pause/Resume** pauses active solving while preserving rotate/zoom inspection. **Finish** provides a safe manual solved-state fallback, and **Reset** starts a fresh session.
 
 - FIX-531: empty-space Rubik rotation remains available in PREVIEW and PAUSED; pointer interaction stays enabled while view-only mode blocks layer turns.
+
+
+**Phase 7 fix:** Finish now accepts a visually solved cube as a fallback when strict sticker identity is not the deciding factor. Phase 8 is intentionally skipped/deferred.

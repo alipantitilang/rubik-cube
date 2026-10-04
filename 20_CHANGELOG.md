@@ -232,3 +232,20 @@ The generic sticker-position model no longer treats centers as fixed during midd
 - Added Reset session boundary and view-only inspection mode.
 
 - FIX-531: empty-space Rubik rotation remains available in PREVIEW and PAUSED; pointer interaction stays enabled while view-only mode blocks layer turns.
+
+
+## 2026-10-05 — Phase 8: UI & Responsive Product Shell
+
+- Rebuilt the production `index.html` around a cube-first responsive product shell.
+- Added state-driven presentation for Ready, Scrambling, Preview, Playing, Paused, and Solved.
+- Added desktop side panel plus tablet/mobile bottom-sheet and landscape adaptations.
+- Added timer, move counter, recent generic move history, status badge, and solved result presentation.
+- Added cube-object rotation buttons and camera zoom slider/reset using existing controllers.
+- Added menu/help drawer and safe-area/dynamic-viewport support.
+- Preserved empty-space cube rotation in all non-scrambling states.
+- Removed obsolete `src/interaction/gesture.js`.
+- Phase 8 acceptance: **complete**.
+
+
+### FIX-532
+- Hardened Phase 7 Finish fallback to accept a visually solved cube using `CubeState.isColorSolved()` while retaining strict sticker identity for the core `isSolved()` check.

@@ -70,3 +70,10 @@ test('cube API exposes generic turns without legacy notation helpers', async () 
   assert.equal('MoveQueue' in module, false);
   assert.equal('getMoveDefinitions' in module, false);
 });
+
+
+test('color solved check accepts the solved cube', () => {
+  const cube = createSolvedCube();
+  assert.equal(cube.isColorSolved(), true);
+  assert.equal(cube.isSolved(), true);
+});

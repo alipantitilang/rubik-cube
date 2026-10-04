@@ -2,161 +2,123 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Rubik 26 Cubies</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#090b0f">
+  <title>Rubik 26 — Interactive Cube</title>
   <link rel="stylesheet" href="./styles.css">
-  <style>
-    .interaction-panel {
-      position: absolute;
-      left: 20px;
-      top: 20px;
-      display: grid;
-      gap: 6px;
-      max-width: min(340px, calc(100vw - 40px));
-      padding: 14px 16px;
-      border: 1px solid rgba(255,255,255,.12);
-      border-radius: 14px;
-      background: rgba(8,10,13,.78);
-      backdrop-filter: blur(10px);
-      color: #e8ebef;
-      font-size: 13px;
-      line-height: 1.4;
-    }
-    .interaction-panel strong { font-size: 15px; }
-    .interaction-panel .status { opacity: .82; }
-    .game-action {
-      position: absolute;
-      left: 50%;
-      bottom: 28px;
-      transform: translateX(-50%);
-      z-index: 5;
-    }
-    .game-action button {
-      min-width: 132px;
-      border: 1px solid rgba(255,255,255,.2);
-      border-radius: 12px;
-      background: rgba(255,255,255,.1);
-      color: #f5f7fa;
-      padding: 11px 22px;
-      font: inherit;
-      font-size: 14px;
-      font-weight: 800;
-      letter-spacing: .01em;
-      cursor: pointer;
-      backdrop-filter: blur(10px);
-      transition: background .16s ease, transform .16s ease, opacity .16s ease;
-    }
-    .game-action button:hover { background: rgba(255,255,255,.16); transform: translateY(-1px); }
-    .game-action button:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
-    .game-action button:disabled { opacity: .55; cursor: default; }
-    .game-action button[hidden] { display: none; }
-    .game-action { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
-    .game-action .secondary { background: rgba(255,255,255,.06); }
-
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 6px 14px;
-      margin-top: 4px;
-      padding-top: 8px;
-      border-top: 1px solid rgba(255,255,255,.08);
-    }
-    .stats span { display: flex; justify-content: space-between; gap: 12px; opacity: .9; }
-    .history {
-      display: grid;
-      gap: 3px;
-      max-height: 96px;
-      overflow: auto;
-      margin-top: 2px;
-      padding-top: 2px;
-      font-variant-numeric: tabular-nums;
-    }
-    .history .move { opacity: .75; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-    .solved-overlay {
-      position: absolute;
-      inset: 0;
-      display: grid;
-      place-items: center;
-      z-index: 10;
-      background: rgba(5,7,10,.48);
-      backdrop-filter: blur(5px);
-    }
-    .solved-card {
-      width: min(360px, calc(100vw - 32px));
-      padding: 24px;
-      border: 1px solid rgba(255,255,255,.16);
-      border-radius: 18px;
-      background: rgba(12,15,19,.92);
-      color: #f5f7fa;
-      box-shadow: 0 18px 60px rgba(0,0,0,.32);
-      text-align: center;
-    }
-    .solved-card h2 { margin: 0 0 8px; font-size: 26px; }
-    .solved-card p { margin: 0 0 18px; opacity: .78; }
-    .solved-result { font-size: 18px; font-weight: 800; margin-bottom: 18px; }
-    .solved-actions { display: flex; justify-content: center; gap: 8px; }
-    .solved-actions button {
-      border: 1px solid rgba(255,255,255,.16);
-      border-radius: 10px;
-      background: rgba(255,255,255,.1);
-      color: inherit;
-      padding: 10px 16px;
-      font: inherit;
-      font-weight: 750;
-      cursor: pointer;
-    }
-    .solved-overlay[hidden] { display: none; }
-
-    @media (max-width: 640px) {
-      .interaction-panel { left: 12px; top: 12px; }
-    }
-  </style>
 </head>
 <body>
   <main class="stage" aria-label="Interactive 3D Rubik cube">
     <div id="cube" class="cube-viewport"></div>
-    <aside class="interaction-panel">
-      <strong>Interactive Rubik</strong>
-      <span>Drag any sticker on a center, edge, or corner; the selected layer follows your drag.</span>
-      <span>Release after roughly half a turn to snap 90°; release earlier to return.</span>
-      <span>Drag empty space to rotate the Rubik itself.</span>
-      <span>Wheel / touchpad = zoom.</span>
-      <span id="status" class="status" aria-live="polite">Ready</span>
-      <div class="stats" aria-label="Solve statistics">
-        <span><b>Moves</b><b id="move-count">0</b></span>
-        <span><b>Time</b><b id="timer">00:00.00</b></span>
+
+    <header class="app-header">
+      <div class="brand" aria-label="Rubik 26">
+        <span class="brand-mark" aria-hidden="true">26</span>
+        <span class="brand-label">RUBIK 26</span>
       </div>
-      <div id="history" class="history" aria-label="Recent move history"></div>
+      <button id="menu-button" class="menu-button" type="button" aria-label="Open menu" aria-controls="side-menu" aria-expanded="false">
+        <span class="menu-icon" aria-hidden="true"><span></span><span></span><span></span></span>
+      </button>
+    </header>
+
+    <aside class="game-panel" aria-label="Game information and controls">
+      <div class="panel-state">
+        <h1>Cube Session</h1>
+        <span id="state-badge" class="status-badge" data-state="idle">Ready</span>
+      </div>
+
+      <p id="status" class="status-line" aria-live="polite">Ready</p>
+
+      <div class="stats-grid" aria-label="Solve statistics">
+        <div class="stat-card"><span class="stat-label">Time</span><span id="timer" class="stat-value">00:00.00</span></div>
+        <div class="stat-card"><span class="stat-label">Moves</span><span id="move-count" class="stat-value">0</span></div>
+      </div>
+
+      <section class="panel-section">
+        <h2 class="section-title">Recent moves</h2>
+        <div id="history" class="history-list" aria-label="Recent move history">
+          <span class="history-empty">No player moves yet.</span>
+        </div>
+      </section>
+
+      <section class="panel-section view-section">
+        <h2 class="section-title">View</h2>
+        <div class="view-controls">
+          <div class="rotate-grid" aria-label="Rotate cube">
+            <button class="icon-button rotate-up" id="rotate-up" type="button" aria-label="Rotate cube up">↑</button>
+            <button class="icon-button rotate-left" id="rotate-left" type="button" aria-label="Rotate cube left">←</button>
+            <button class="icon-button rotate-reset" id="rotate-reset" type="button" aria-label="Reset cube orientation">•</button>
+            <button class="icon-button rotate-right" id="rotate-right" type="button" aria-label="Rotate cube right">→</button>
+            <button class="icon-button rotate-down" id="rotate-down" type="button" aria-label="Rotate cube down">↓</button>
+          </div>
+          <label class="zoom-row" for="zoom-range">
+            <span>ZOOM</span>
+            <input id="zoom-range" type="range" min="0" max="100" value="50" step="1" aria-label="Cube zoom">
+            <button id="zoom-reset" class="zoom-reset" type="button">Reset</button>
+          </label>
+        </div>
+      </section>
     </aside>
-    <div class="game-action" aria-label="Game controls">
-      <button id="play-button" type="button">Play</button>
-      <button id="start-button" type="button" hidden>Start</button>
-      <button id="stop-button" class="secondary" type="button" hidden>Pause</button>
-      <button id="finish-button" class="secondary" type="button" hidden>Finish</button>
-      <button id="reset-button" class="secondary" type="button" hidden>Reset</button>
+
+    <div id="game-actions" class="game-actions" aria-label="Game controls">
+      <button id="play-button" class="control-button" type="button">Play</button>
+      <button id="start-button" class="control-button" type="button" hidden>Start</button>
+      <button id="stop-button" class="control-button secondary" type="button" hidden>Pause</button>
+      <button id="finish-button" class="control-button secondary" type="button" hidden>Finish</button>
+      <button id="reset-button" class="control-button secondary danger" type="button" hidden>Reset</button>
     </div>
+
+    <div class="instruction-chip" aria-hidden="true">
+      <b>Drag empty space</b> to rotate the cube · <b>drag a sticker</b> to turn a layer · wheel to zoom
+    </div>
+
     <section id="solved-overlay" class="solved-overlay" hidden aria-live="polite">
-      <div class="solved-card">
-        <h2>Congratulations!</h2>
-        <p>Cube solved.</p>
-        <div id="solved-result" class="solved-result">00:00.00 · 0 moves</div>
+      <div class="solved-card" role="dialog" aria-modal="false" aria-labelledby="solved-title">
+        <div class="solved-mark" aria-hidden="true">✓</div>
+        <h2 id="solved-title">Solved!</h2>
+        <p>The cube is back in its solved state.</p>
+        <div id="solved-result" class="solved-result">
+          <div class="result-stat"><span id="solved-time" class="result-value">00:00.00</span><span class="result-label">Time</span></div>
+          <div class="result-stat"><span id="solved-moves" class="result-value">0</span><span class="result-label">Moves</span></div>
+        </div>
         <div class="solved-actions">
-          <button id="play-again-button" type="button">Play Again</button>
-          <button id="solved-reset-button" type="button">Reset</button>
+          <button id="play-again-button" class="control-button" type="button">Play Again</button>
+          <button id="solved-reset-button" class="control-button secondary" type="button">Reset</button>
         </div>
       </div>
     </section>
+
+    <div id="menu-scrim" class="menu-scrim" hidden></div>
+    <aside id="side-menu" class="side-menu" hidden aria-label="Application menu">
+      <div class="menu-head">
+        <h2>Rubik 26</h2>
+        <button id="menu-close" class="close-button" type="button" aria-label="Close menu">×</button>
+      </div>
+      <section class="menu-block">
+        <h3>Controls</h3>
+        <div class="menu-key"><span>Rotate cube</span><b>Empty-space drag</b></div>
+        <div class="menu-key"><span>Turn a layer</span><b>Sticker drag</b></div>
+        <div class="menu-key"><span>Zoom</span><b>Wheel / slider</b></div>
+      </section>
+      <section class="menu-block">
+        <h3>Solve flow</h3>
+        <p>Play creates the scramble. Start begins the timer after inspection. Pause stops the timer while keeping cube rotation available. Finish is a manual solved-state fallback.</p>
+      </section>
+      <section class="menu-block">
+        <h3>About</h3>
+        <p>This interface is built around the 26 visible cubies and generic axis/layer turns. The cube remains the visual focus while controls adapt to desktop, tablet, and mobile layouts.</p>
+      </section>
+    </aside>
+
+    <div id="boot-status" class="boot-status" hidden>Loading 3D cube…</div>
   </main>
 
   <script>
     window.__rubikBooted = false;
     window.setTimeout(() => {
       if (window.__rubikBooted) return;
-      const status = document.querySelector('#status');
-      if (status) {
-        status.textContent = 'Preview gagal memuat modul 3D. Jalankan lewat HTTP server.';
-        status.dataset.error = 'true';
-      }
+      const status = document.querySelector('#boot-status');
+      if (status) { status.hidden = false; status.textContent = '3D preview failed to load. Run through an HTTP server.'; }
     }, 4000);
   </script>
 
@@ -171,6 +133,7 @@
 
     const renderer = new RubikRenderer(document.querySelector('#cube'));
     window.__rubikBooted = true;
+    document.querySelector('#boot-status').hidden = true;
     const adapter = new TurnRenderAdapter(renderer);
     const moveHistory = new MoveHistory();
     const solveTimer = new SolveTimer();
@@ -182,7 +145,7 @@
       cubeState: createSolvedCube(),
       adapter,
       renderer,
-      onTurnCommitted: (turn) => {
+      onTurnCommitted: turn => {
         if (shuffle?.state === SHUFFLE_STATES.PLAYING && !gameSolved) {
           moveHistory.record(turn);
           updateHistoryUI();
@@ -193,7 +156,6 @@
     renderer.renderCube(runtime.cubeState);
 
     const status = document.querySelector('#status');
-
     const interaction = new ManualInteractionController({
       domElement: renderer.renderer.domElement,
       cameraController: renderer.cameraController,
@@ -205,7 +167,8 @@
       isInputLocked: () => runtime.busy,
       onGesture: event => {
         if (event.type === 'face-drag') {
-          status.textContent = `Layer ${event.turn.axis.toUpperCase()}${event.turn.layer > 0 ? '+' : event.turn.layer < 0 ? '-' : '0'} • ${Math.round(event.progress * 90)}°`;
+          const layer = event.turn.layer > 0 ? '+' : event.turn.layer < 0 ? '-' : '0';
+          status.textContent = `Layer ${event.turn.axis.toUpperCase()}${layer} · ${Math.round(event.progress * 90)}°`;
         } else if (event.type === 'cube-rotate') {
           status.textContent = 'Cube rotation';
         }
@@ -221,16 +184,13 @@
     const timerLabel = document.querySelector('#timer');
     const historyList = document.querySelector('#history');
     const solvedOverlay = document.querySelector('#solved-overlay');
-    const solvedResult = document.querySelector('#solved-result');
+    const solvedTime = document.querySelector('#solved-time');
+    const solvedMoves = document.querySelector('#solved-moves');
     const playAgainButton = document.querySelector('#play-again-button');
     const solvedResetButton = document.querySelector('#solved-reset-button');
+    const stateBadge = document.querySelector('#state-badge');
+    const zoomRange = document.querySelector('#zoom-range');
 
-    // Play generates the scramble. Start begins the timed attempt only after
-    // the player has had time to inspect the shuffled cube.
-    interaction.setEnabled(true);
-    interaction.setViewOnly(true);
-
-    
     function formatTime(ms) {
       const total = Math.max(0, Math.floor(ms));
       const minutes = Math.floor(total / 60000);
@@ -242,24 +202,34 @@
     function formatTurn(turn) {
       const axis = turn.axis.toUpperCase();
       const layer = turn.layer > 0 ? '+' : turn.layer < 0 ? '-' : '0';
-      const amount = turn.quarterTurns === 2 ? ' ×2' : turn.quarterTurns < 0 ? ' −90°' : ' +90°';
-      return `${axis}${layer}${amount}`;
+      const amount = turn.quarterTurns === 2 ? '×2' : turn.quarterTurns < 0 ? '−90°' : '+90°';
+      return `${axis}${layer} ${amount}`;
     }
 
     function updateHistoryUI() {
       moveCount.textContent = String(moveHistory.length);
       historyList.replaceChildren();
-      for (const event of moveHistory.last(8)) {
+      const events = moveHistory.last(8);
+      if (!events.length) {
+        const empty = document.createElement('span');
+        empty.className = 'history-empty';
+        empty.textContent = 'No player moves yet.';
+        historyList.append(empty);
+        return;
+      }
+      for (const event of events) {
         const item = document.createElement('span');
-        item.className = 'move';
-        item.textContent = `${event.index}. ${formatTurn(event.turn)}`;
+        item.className = 'history-move';
+        const index = document.createElement('span');
+        index.textContent = String(event.index).padStart(2, '0');
+        const turn = document.createElement('b');
+        turn.textContent = formatTurn(event.turn);
+        item.append(index, turn);
         historyList.append(item);
       }
     }
 
-    function hideSolvedOverlay() {
-      solvedOverlay.hidden = true;
-    }
+    function hideSolvedOverlay() { solvedOverlay.hidden = true; }
 
     function beginFreshSession() {
       gameSolved = false;
@@ -282,15 +252,30 @@
         solved: true,
         elapsedMs: snapshot.elapsedMs
       });
-      solvedResult.textContent = `${formatTime(completedSession.elapsedMs)} · ${completedSession.moveCount} moves`;
+      solvedTime.textContent = formatTime(completedSession.elapsedMs);
+      solvedMoves.textContent = String(completedSession.moveCount);
       solvedOverlay.hidden = false;
+    }
+
+    function stateLabel(state) {
+      return {
+        [SHUFFLE_STATES.IDLE]: 'Ready',
+        [SHUFFLE_STATES.SCRAMBLING]: 'Scrambling',
+        [SHUFFLE_STATES.PREVIEW]: 'Preview',
+        [SHUFFLE_STATES.PLAYING]: 'Playing',
+        [SHUFFLE_STATES.PAUSED]: 'Paused'
+      }[state] ?? (gameSolved ? 'Solved' : 'Ready');
     }
 
     const shuffle = new ShuffleController({
       runtime,
       interaction,
       onStateChange: state => {
-        playButton.hidden = state !== SHUFFLE_STATES.IDLE;
+        const label = gameSolved ? 'Solved' : stateLabel(state);
+        stateBadge.textContent = label;
+        stateBadge.dataset.state = gameSolved ? 'solved' : state;
+
+        playButton.hidden = state !== SHUFFLE_STATES.IDLE || gameSolved;
         startButton.hidden = state !== SHUFFLE_STATES.PREVIEW;
         stopButton.hidden = !(state === SHUFFLE_STATES.PLAYING || state === SHUFFLE_STATES.PAUSED);
         finishButton.hidden = !(state === SHUFFLE_STATES.PLAYING || state === SHUFFLE_STATES.PAUSED);
@@ -314,7 +299,7 @@
           interaction.setViewOnly(true);
           stopButton.textContent = 'Resume';
           status.textContent = 'Paused — inspect the cube';
-        } else {
+        } else if (!gameSolved) {
           interaction.setEnabled(true);
           interaction.setViewOnly(true);
           stopButton.textContent = 'Pause';
@@ -322,9 +307,7 @@
         }
       },
       onProgress: ({ completed, total }) => {
-        if (shuffle.state === SHUFFLE_STATES.SCRAMBLING) {
-          status.textContent = `Scrambling ${completed}/${total}`;
-        }
+        if (shuffle.state === SHUFFLE_STATES.SCRAMBLING) status.textContent = `Scrambling ${completed}/${total}`;
       }
     });
 
@@ -353,8 +336,13 @@
 
     finishButton.addEventListener('click', () => {
       if (shuffle.state !== SHUFFLE_STATES.PLAYING && shuffle.state !== SHUFFLE_STATES.PAUSED) return;
-      if (!runtime.cubeState.isSolved()) {
-        status.textContent = 'Cube belum solved — lanjutkan atau periksa kembali.';
+      // Finish is an explicit fallback for the solved-state sensor. Prefer
+      // strict sticker identity, then accept a visually solved cube so the
+      // button still works when identical-color sticker identities differ.
+      const strictSolved = runtime.cubeState.isSolved();
+      const visuallySolved = runtime.cubeState.isColorSolved?.() === true;
+      if (!strictSolved && !visuallySolved) {
+        status.textContent = 'Cube is not solved yet — keep going or inspect it.';
         return;
       }
       finishGame();
@@ -372,26 +360,26 @@
       hideSolvedOverlay();
       interaction.setEnabled(true);
       interaction.setViewOnly(true);
+      renderer.cubeOrientationController.reset();
+      renderer.cameraController.reset();
+      zoomRange.value = String(renderer.cameraController.getZoomPercent());
       resetButton.hidden = true;
       playButton.hidden = false;
       startButton.hidden = true;
       stopButton.hidden = true;
       finishButton.hidden = true;
-      playButton.disabled = false;
       status.textContent = 'Ready';
+      stateBadge.textContent = 'Ready';
+      stateBadge.dataset.state = 'idle';
     }
 
     resetButton.addEventListener('click', resetToReady);
     solvedResetButton.addEventListener('click', resetToReady);
-    playAgainButton.addEventListener('click', () => {
-      resetToReady();
-      playButton.click();
-    });
+    playAgainButton.addEventListener('click', () => { resetToReady(); playButton.click(); });
 
     function finishGame() {
       if (gameSolved || (shuffle.state !== SHUFFLE_STATES.PLAYING && shuffle.state !== SHUFFLE_STATES.PAUSED)) return false;
       if (!runtime.cubeState.isSolved()) return false;
-
       gameSolved = true;
       interaction.setEnabled(true);
       interaction.setViewOnly(true);
@@ -401,6 +389,8 @@
       startButton.hidden = true;
       stopButton.hidden = true;
       finishButton.hidden = true;
+      stateBadge.textContent = 'Solved';
+      stateBadge.dataset.state = 'solved';
       status.textContent = 'Solved!';
       updateHistoryUI();
       showSolvedResult();
@@ -413,9 +403,32 @@
       return finishGame();
     }
 
+    function syncZoomUI() { zoomRange.value = String(Math.round(renderer.cameraController.getZoomPercent())); }
+    zoomRange.addEventListener('input', () => renderer.cameraController.setZoomPercent(Number(zoomRange.value)));
+    document.querySelector('#zoom-reset').addEventListener('click', () => { renderer.cameraController.reset(); syncZoomUI(); });
+
+    document.querySelector('#rotate-up').addEventListener('click', () => renderer.cubeOrientationController.rotateByScreenDelta(0, -48));
+    document.querySelector('#rotate-down').addEventListener('click', () => renderer.cubeOrientationController.rotateByScreenDelta(0, 48));
+    document.querySelector('#rotate-left').addEventListener('click', () => renderer.cubeOrientationController.rotateByScreenDelta(-48, 0));
+    document.querySelector('#rotate-right').addEventListener('click', () => renderer.cubeOrientationController.rotateByScreenDelta(48, 0));
+    document.querySelector('#rotate-reset').addEventListener('click', () => renderer.cubeOrientationController.reset());
+
+    const menuButton = document.querySelector('#menu-button');
+    const menuClose = document.querySelector('#menu-close');
+    const menuScrim = document.querySelector('#menu-scrim');
+    const sideMenu = document.querySelector('#side-menu');
+    function setMenuOpen(open) {
+      sideMenu.hidden = !open;
+      menuScrim.hidden = !open;
+      menuButton.setAttribute('aria-expanded', String(open));
+      if (open) menuClose.focus(); else menuButton.focus();
+    }
+    menuButton.addEventListener('click', () => setMenuOpen(true));
+    menuClose.addEventListener('click', () => setMenuOpen(false));
+    menuScrim.addEventListener('click', () => setMenuOpen(false));
+    window.addEventListener('keydown', event => { if (event.key === 'Escape' && !sideMenu.hidden) setMenuOpen(false); });
+
     // Use the requestAnimationFrame timestamp for both sides of the delta.
-    // Mixing performance.now() with the RAF timestamp can produce a negative
-    // delta in browser previews/embedded documents and stop the render loop.
     let previous = null;
     function frame(now) {
       const rawDelta = previous === null ? 0 : now - previous;
@@ -425,19 +438,24 @@
       shuffle.handleTick(result);
       renderer.renderFrame();
       timerLabel.textContent = formatTime(solveTimer.elapsedMs);
+      syncZoomUI();
 
       if (shuffle.state === SHUFFLE_STATES.SCRAMBLING) {
-        // ShuffleController owns the progress/status text while scrambling.
+        // ShuffleController owns progress text.
       } else if (detectSolvedState()) {
-        // Solved detection runs after every runtime tick, including the
-        // interactive-settle path where result.completed is intentionally null.
+        // State-based solved detection is authoritative.
       } else if (result.completed && shuffle.state === SHUFFLE_STATES.PLAYING) {
-        status.textContent = `Turn complete: layer ${result.completed.axis.toUpperCase()}${result.completed.layer > 0 ? '+' : result.completed.layer < 0 ? '-' : '0'}`;
+        const layer = result.completed.layer > 0 ? '+' : result.completed.layer < 0 ? '-' : '0';
+        status.textContent = `Turn complete: ${result.completed.axis.toUpperCase()}${layer}`;
       } else if (shuffle.state === SHUFFLE_STATES.IDLE && !runtime.busy && !gameSolved) {
         status.textContent = 'Ready';
       }
       requestAnimationFrame(frame);
     }
+    updateHistoryUI();
+    interaction.setEnabled(true);
+    interaction.setViewOnly(true);
+    syncZoomUI();
     requestAnimationFrame(frame);
 
     window.addEventListener('beforeunload', () => {

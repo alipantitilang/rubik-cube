@@ -63,3 +63,7 @@ The solve session now has an explicit inspection phase and pause/resume controls
 ### View rotation availability
 
 Empty-space drag rotation is available in every non-scrambling session state: before Play, PREVIEW after scramble, PLAYING, PAUSED, after Resume, and after Reset. PREVIEW/PAUSED use view-only interaction so layer moves remain blocked while cube rotation and zoom remain available.
+
+
+### Finish fallback hardening
+The manual Finish control first checks the strict sticker-identity solved state. If that is not true, it also accepts the visually solved color state via `CubeState.isColorSolved()`. This keeps the core identity model strict while making the explicit Finish fallback usable for a cube that is visually solved.

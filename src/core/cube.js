@@ -159,6 +159,20 @@ export class CubeState {
     return SOLVED_STICKERS.every(sticker => positions[sticker.code] === sticker.position);
   }
 
+  /**
+   * UI-facing solved check based on visible sticker colors. This is useful as
+   * a manual Finish fallback because identical-color stickers are visually
+   * indistinguishable even though sticker identity history remains strict.
+   */
+  isColorSolved() {
+    for (const cubie of this.cubies.values()) {
+      for (const [face, color] of Object.entries(cubie.stickers)) {
+        if (color !== COLORS[face]) return false;
+      }
+    }
+    return true;
+  }
+
   signature() {
     return [...this.cubies.values()].sort((a, b) => a.id.localeCompare(b.id)).map(c =>
       `${c.id}@${c.position.join(',')}[${Object.entries(c.stickerIds).sort().map(([f, id]) => `${f}:${id}`).join('|')}]`

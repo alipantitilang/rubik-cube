@@ -631,3 +631,10 @@ Status: FIXED
 - Problem: During PREVIEW and PAUSED inspection, cube rotation was not reliably test-covered; the control was labeled Stop even though it pauses/resumes the solve.
 - Fix: Explicitly test and preserve view-only cube rotation while layer moves remain blocked; rename the active control to `Pause` and paused-state control to `Resume`.
 - Regression: 90/90 automated tests pass.
+
+## FIX-532 — Finish fallback did not reliably finalize a visually solved cube
+- **Status:** FIXED
+- **Phase:** Phase 7
+- **Problem:** The Finish control relied only on strict sticker identity state. A cube that was visibly solved could therefore be rejected when identical-color sticker identities were not in the exact original slots.
+- **Fix:** Added `CubeState.isColorSolved()` as a UI-facing visual solved check. Finish now accepts either strict solved state or visually solved color state while preserving strict `isSolved()` for the core engine.
+- **Scope:** Phase 7 only. Phase 8 remains skipped/deferred.

@@ -23,6 +23,7 @@ test('production entry point wires the Phase 6 Play flow', () => {
   assert.match(html, /shuffle\.play\(\)/);
   assert.match(html, /shuffle\.handleTick\(result\)/);
   assert.match(html, /runtime\.cubeState\.isSolved\(\)/);
+  assert.match(html, /isColorSolved/);
   assert.match(html, /runtime\.reset\(\)/);
 });
 

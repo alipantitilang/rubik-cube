@@ -247,7 +247,6 @@ src/core/cube.js
 src/core/turn.js
 src/core/sticker-map.js
 
-src/interaction/gesture.js
 src/interaction/drag-move-resolver.js
 src/interaction/manual-controller.js
 src/interaction/cube-orientation-state.js

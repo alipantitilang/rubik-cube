@@ -131,3 +131,8 @@ When switching portrait ↔ landscape:
 - resize renderer
 
 Do not restart the game.
+
+
+## Phase 8 implementation result
+
+The production shell uses container-aware rendering, `100dvh`, safe-area insets, fluid widths, and separate desktop/tablet/mobile/landscape adaptations. The renderer continues to resize from the actual viewport container rather than assuming the window dimensions.

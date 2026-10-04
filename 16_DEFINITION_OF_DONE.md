@@ -47,25 +47,28 @@
 - [x] deterministic seed support
 - [x] input lock during scramble
 - [x] complete Phase 6 Play UI flow
-- [ ] player history lifecycle finalized
+- [x] player history lifecycle finalized
 
 ## UI
 
-- [ ] polished control panel
-- [ ] history UI
-- [ ] information UI
-- [ ] Congratulations overlay
-- [ ] Reshuffle UI
+- [x] polished control panel
+- [x] history UI
+- [x] information/status UI
+- [x] Congratulations/solved overlay
+- [x] Play / Reset / Start / Pause / Resume / Finish UI
+- [x] view rotation controls
+- [x] zoom controls
+- [x] menu/help shell
 
 ## Responsive
 
-- [ ] desktop
-- [ ] tablet
-- [ ] mobile
-- [ ] portrait
-- [ ] landscape
-- [ ] browser zoom
-- [ ] high DPI
+- [x] desktop
+- [x] tablet
+- [x] mobile
+- [x] portrait
+- [x] landscape
+- [x] browser zoom-safe fluid layout
+- [x] high DPI renderer cap
 
 ## Accessibility
 

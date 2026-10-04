@@ -194,3 +194,8 @@ adaptive side or bottom panel
 ```
 
 Use available space rather than a fixed breakpoint-only strategy.
+
+
+## Phase 8 implementation result
+
+The production shell now follows the visual hierarchy above: the Rubik remains the hero, with state, timer, moves, history, view controls, and actions grouped into a compact responsive panel. The former notation-style history example is superseded by generic axis/layer/turn display to match the active move model.

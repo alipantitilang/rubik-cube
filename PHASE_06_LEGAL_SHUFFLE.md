@@ -70,7 +70,7 @@ Setelah scramble selesai:
 - Saat halaman pertama dibuka, tombol `Play` terlihat pada layar utama.
 - Menekan `Play` langsung menyembunyikan tombol tersebut.
 - Tombol tetap tersembunyi selama scramble dan selama pemain menyelesaikan cube.
-- Setelah `CubeState.isSolved()` bernilai `true` setelah sebuah player turn selesai, interaksi dikunci, status menjadi `Solved!`, dan tombol `Reset` muncul.
+- Setelah setiap `CubeTurnRuntime.tick()`, solved-state sensor memeriksa `CubeState.isSolved()` saat sesi berada pada state `playing` dan runtime sudah tidak busy. Ini mencakup completion dari animator maupun interactive-settle.
 - `Reset` mengembalikan CubeState ke solved state, membersihkan history runtime, mengunci kembali manual interaction, menyembunyikan `Reset`, dan menampilkan `Play` untuk sesi baru.
 
 ## Kecepatan animasi
@@ -114,6 +114,7 @@ Scramble juga tidak dianggap sebagai player history.
 - [x] Tidak ada halaman `phase6.html`; aplikasi utama tetap satu entry point.
 - [x] Play berada pada layar utama, bukan di panel informasi.
 - [x] Play menghilang saat sesi dimulai.
+- [x] Solved-state sensor berjalan setelah setiap runtime tick selama sesi `playing`.
 - [x] Reset muncul hanya setelah cube solved.
 - [x] Reset mengembalikan cube ke solved state dan membuka sesi baru melalui Play.
 

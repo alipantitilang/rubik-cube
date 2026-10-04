@@ -573,17 +573,7 @@ Sebelum fase ditandai `COMPLETE`:
 
 | FIX-526 | Post-Phase 5 | Interaction lifecycle / Source cleanup | FIXED | Mencegah manual interaction tertahan setelah pointer capture hilang atau window kehilangan fokus; konfigurasi gesture dan helper kecil digabung ke `manual-controller.js`, alias resolver lama dihapus, dan regression test untuk release→settle→unlock ditambahkan. Phase 5 tetap COMPLETE. | `src/interaction/manual-controller.js`, `src/interaction/drag-move-resolver.js`, `tests/interactive-drag.test.js`, `index.html`, `package.json`, `README.md`, `PHASE_05_MANUAL_INTERACTION.md` |
 
-#
-## FIX-528 — Phase 6 solved-state sensor
-- **Status:** FIXED
-- **Scope:** Phase 6 / Play Flow
-- **Problem:** Reset did not appear reliably when the player solved the cube manually because interactive turns commit inside `CubeTurnRuntime` without necessarily returning `result.completed` to the main render loop.
-- **Cause:** The UI solved check was nested under the `result.completed` branch.
-- **Fix:** Added an authoritative state-based solved sensor that checks `SHUFFLE_STATES.PLAYING`, `!runtime.busy`, and `runtime.cubeState.isSolved()` after every runtime tick.
-- **Behavior:** Once the solved state is reached through any completed manual turn, interaction is disabled, Play remains hidden, Reset appears, and status becomes `Solved!`.
-- **Phase impact:** Phase 6 scope clarification only; no reopening of earlier phases.
-
-## FIX-527
+### FIX-527
 - **Status:** `FIXED`
 - **Tipe:** Post-Phase 5 / Render Loop Clock Safety
 - **Tanggal:** 2026-10-04
@@ -592,3 +582,14 @@ Sebelum fase ditandai `COMPLETE`:
 - **Perubahan:** `index.html` sekarang memakai timestamp `requestAnimationFrame()` secara konsisten dari frame ke frame. Frame pertama memakai delta `0`; delta berikutnya dibatasi `0..50 ms` sebelum dikirim ke runtime. Ini mempertahankan kontrak `CubeTurnRuntime.tick()` tanpa melemahkan validasi runtime.
 - **Dampak:** Render loop tidak lagi mati karena perbedaan clock source. Initial render, interactive turn, dan frame berikutnya tetap berjalan pada satu RAF loop.
 - **Acceptance:** `deltaMs` tidak pernah negatif pada production RAF loop; runtime contract tetap menolak delta negatif; full regression suite lulus; production entry point tetap satu `index.html`.
+
+## FIX-528 — Phase 6 Solved-State Sensor
+- **Status:** `FIXED`
+- **Tipe:** Phase 6 / Play Flow / Solved Detection
+- **Tanggal:** 2026-10-04
+- **Scope:** Phase 6. Does not reopen Phase 5.
+- **Masalah:** Tombol `Reset` hanya diperiksa ketika `CubeTurnRuntime.tick()` mengembalikan `result.completed`. Manual interactive turns intentionally return `completed: null` from the settling path, so the final move could restore a solved cube without the Play/Reset UI detecting it.
+- **Perubahan:** Menambahkan solved-state sensor di production RAF loop. Setelah setiap `runtime.tick()` dan `shuffle.handleTick()`, selama state permainan `PLAYING`, sensor memeriksa `runtime.busy === false` lalu `runtime.cubeState.isSolved()`. Jika solved, manual interaction dikunci, Play disembunyikan, Reset ditampilkan, dan status menjadi `Solved!`.
+- **Reset:** Reset clears the local solved flag before restoring a fresh solved CubeState, so the next Play session can be detected independently.
+- **Invariant:** `CubeState.isSolved()` remains the authoritative solved-state predicate; no sticker/color shortcuts are used.
+- **Acceptance:** Solved detection covers both animator-completed and interactive-settle completion paths; reset clears detection state; regression suite passes.

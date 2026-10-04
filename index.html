@@ -157,11 +157,13 @@
     });
 
     playButton.addEventListener('click', () => {
+      gameSolved = false;
       if (!shuffle.play()) return;
       playButton.hidden = true;
     });
 
     resetButton.addEventListener('click', () => {
+      gameSolved = false;
       shuffle.reset();
       runtime.reset();
       interaction.setEnabled(false);
@@ -170,6 +172,20 @@
       playButton.disabled = false;
       status.textContent = 'Ready';
     });
+
+    let gameSolved = false;
+
+    function detectSolvedState() {
+      if (gameSolved || shuffle.state !== SHUFFLE_STATES.PLAYING || runtime.busy) return false;
+      if (!runtime.cubeState.isSolved()) return false;
+
+      gameSolved = true;
+      interaction.setEnabled(false);
+      resetButton.hidden = false;
+      playButton.hidden = true;
+      status.textContent = 'Solved!';
+      return true;
+    }
 
     // Use the requestAnimationFrame timestamp for both sides of the delta.
     // Mixing performance.now() with the RAF timestamp can produce a negative
@@ -183,21 +199,11 @@
       shuffle.handleTick(result);
       renderer.renderFrame();
 
-      // Solved-state sensor: manual interactive turns commit inside the
-      // runtime without necessarily returning result.completed. Check the
-      // authoritative CubeState whenever the player is idle after a turn.
-      const solved =
-        shuffle.state === SHUFFLE_STATES.PLAYING &&
-        !runtime.busy &&
-        runtime.cubeState.isSolved();
-
-      if (solved) {
-        interaction.setEnabled(false);
-        resetButton.hidden = false;
-        playButton.hidden = true;
-        status.textContent = 'Solved!';
-      } else if (shuffle.state === SHUFFLE_STATES.SCRAMBLING) {
+      if (shuffle.state === SHUFFLE_STATES.SCRAMBLING) {
         // ShuffleController owns the progress/status text while scrambling.
+      } else if (detectSolvedState()) {
+        // Solved detection runs after every runtime tick, including the
+        // interactive-settle path where result.completed is intentionally null.
       } else if (result.completed) {
         status.textContent = `Turn complete: layer ${result.completed.axis.toUpperCase()}${result.completed.layer > 0 ? '+' : result.completed.layer < 0 ? '-' : '0'}`;
       } else if (shuffle.state === SHUFFLE_STATES.IDLE && !runtime.busy) {

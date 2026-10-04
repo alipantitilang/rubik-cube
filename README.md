@@ -11,7 +11,8 @@ Interactive 3D Rubik project with a generic, view-independent layer-turn model a
 - Phase 4 — Camera/View capability: **Complete as reusable infrastructure**
 - Phase 5 — Manual Rubik Interaction: **FINAL / Complete**
 - Phase 6 — Legal Shuffle / Play Flow: **Complete**
-- Phase 7–10: **Pending**
+- Phase 7 — History & Solved Flow: **Complete**
+- Phase 8–10: **Pending**
 
 The overall product is not final until the remaining phases and the Definition of Done are complete.
 
@@ -71,6 +72,21 @@ rc1: p01 → p37
 The sticker code never changes. Only its position changes.
 
 Center stickers use the same model. A middle slice carries 4 edge cubies + 4 center cubies, so center stickers can move between face-position slots.
+
+## Phase 7 result
+
+The player-facing solve session now has:
+
+- generic committed move history;
+- scramble/player history separation;
+- move counter;
+- solve timer starting when scrambling finishes;
+- solved result with time and move count;
+- recent move history in the information panel;
+- congratulations overlay;
+- Reset / Play Again session boundary.
+
+Scramble turns remain available through `StickerHistory` for internal auditing but are not counted as player moves.
 
 ## Repository structure
 

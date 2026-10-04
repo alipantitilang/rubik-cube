@@ -210,3 +210,16 @@ The generic sticker-position model no longer treats centers as fixed during midd
 - `ShuffleController` now enables same-axis avoidance by default, matching the Phase 6 scramble quality contract.
 - Reset/session regression coverage now verifies cancellation, fresh solved state, cleared runtime history, and readiness for a new Play session.
 - Phase 6 acceptance criteria and documentation updated to mark scramble quality, reset state integrity, and end-to-end flow as complete.
+
+
+## 2026-10-04 — Phase 7: History & Solved Flow
+
+- Added `MoveHistory` for committed player turns using generic `{ axis, layer, quarterTurns }`.
+- Scramble commits remain in internal `StickerHistory` but are excluded from player move count.
+- Added `SolveTimer`; timer starts when scramble playback enters `PLAYING` and stops when the authoritative cube is solved.
+- Added session result data with start/completion timestamps, scramble, moves, move count, solved flag, and elapsed time.
+- Added recent move history, move counter, timer, and solved result UI to the existing `index.html`.
+- Added congratulations overlay with Play Again and Reset actions.
+- Reset now clears player history, timer, completed session, and solved presentation.
+- Added Phase 7 unit/integration regression tests.
+- Phase 7 acceptance: **complete**.

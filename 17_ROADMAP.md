@@ -114,13 +114,20 @@ Build:
 
 ## Phase 7 — History & Solved Flow
 
+Status: **Complete**
+
 Build:
 
 - player move history lifecycle
 - solved detection flow after player turns
+- move counter
+- solve timer
 - Congratulations state/overlay
-- Reshuffle action contract
+- recent move history presentation
+- Reshuffle / Play Again action contract
 - reset/reshuffle state handling
+- completed session result
+- regression tests
 
 ---
 

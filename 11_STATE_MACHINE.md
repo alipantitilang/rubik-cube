@@ -125,3 +125,16 @@ completion = false
 `gameState` and `cameraState` are separate.
 
 Camera changes never trigger cube-state transitions.
+
+
+## Phase 7 session layer
+
+The Phase 6 shuffle state is extended with a session layer:
+
+```text
+READY → SCRAMBLING → PLAYING → SOLVED
+  ↑                         |
+  └──── Reset / Play Again ┘
+```
+
+`PLAYING` starts the solve timer and accepts player turns. `SOLVED` stops the timer, freezes player interaction, and preserves the completed move history until the next session boundary.

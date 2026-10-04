@@ -603,3 +603,15 @@ Sebelum fase ditandai `COMPLETE`:
 - **Masalah:** Phase 6 still had four hardening gaps: a legal scramble could theoretically return to solved, controller defaults did not enforce the documented same-axis quality rule, full reset-cycle coverage was missing, and the Phase 6 documentation had not formally closed those acceptance points.
 - **Perubahan:** `generateScramble()` now validates the resulting state against `CubeState.isSolved()` and regenerates within a bounded budget; `ShuffleController` defaults to same-axis avoidance; reset-cycle regression coverage verifies cancellation, solved state, cleared history, and a subsequent Play session; shuffle specification, roadmap, changelog, and acceptance documentation are synchronized.
 - **Acceptance:** Full regression suite passes; Phase 6 hardening acceptance points are complete.
+
+
+## FIX-530 — Phase 7 history/session separation
+
+Status: **FIXED**
+
+- Added a dedicated `MoveHistory` for player-facing solve moves.
+- Added `CubeTurnRuntime.onTurnCommitted` so the production session can observe committed turns without changing CubeState authority.
+- Scramble commits are excluded from MoveHistory by checking the Phase 6 `PLAYING` state.
+- Added SolveTimer and completed-session record.
+- Added solved result overlay and Play Again/Reset lifecycle.
+- Added regression coverage for committed turn callbacks, scramble separation, timer, and session history.

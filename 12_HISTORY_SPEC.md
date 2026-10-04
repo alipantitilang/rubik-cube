@@ -1,33 +1,15 @@
-# Sticker History Specification
+# History Specification — Phase 7
 
-## Purpose
+## Two history layers
 
-History records how each permanent color sticker moves between the 54 physical sticker slots.
+The project keeps two different histories:
 
-There is no move-string history such as `R U' F2`.
+1. **StickerHistory** — internal state-audit history for all committed turns, including scramble turns.
+2. **MoveHistory** — player-facing solve history. It records only committed player turns after the scramble has finished.
 
-## Permanent sticker identity
+Neither history uses move notation.
 
-Every visible sticker has one stable code:
-
-```text
-rc1 rc2 rc3 rc4 rc
-re1 re2 re3 re4
-```
-
-and equivalent codes for orange, yellow, white, green, and blue.
-
-## Position identity
-
-Every visible sticker slot has one stable ID:
-
-```text
-p01 ... p54
-```
-
-## History event
-
-A committed turn creates:
+## Player move event
 
 ```ts
 {
@@ -37,51 +19,63 @@ A committed turn creates:
     layer: 1,
     quarterTurns: 1
   },
-  changes: [
-    { code: 'rc1', from: 'p01', to: 'p37' },
-    ...
-  ]
+  timestamp: 0
 }
 ```
 
-Only stickers whose slot changed are included in `changes`.
+One committed user action is one move, including a half-turn (`quarterTurns: 2`).
 
-## Per-sticker history
+Cancelled or unfinished gestures are never recorded.
 
-The history can answer:
+## Scramble separation
 
-```text
-What happened to rc1?
-```
+Scramble turns still pass through `CubeTurnRuntime` so the logical and rendered cube remain synchronized. They are not added to `MoveHistory`.
 
-Example:
+The Phase 7 session begins when `ShuffleController` changes to `PLAYING`.
 
-```text
-rc1
-p01 → p37
-p37 → p39
-p39 → p10
-...
-```
+## Timer
 
-The sticker code remains `rc1` throughout.
+The solve timer starts when the scramble completes and the session enters `PLAYING`. It therefore includes the user's thinking time before the first move.
 
-## Current snapshot
+The timer stops when `CubeState.isSolved()` becomes true after a committed player turn.
 
-`CubeState.getStickerPositions()` returns all 54 current locations:
+## Session record
 
 ```ts
 {
-  rc1: 'p37',
-  re1: 'p38',
-  ...
+  startedAt,
+  completedAt,
+  scramble,
+  moves,
+  moveCount,
+  solved,
+  elapsedMs
 }
 ```
 
-## Scramble vs player history
+A completed session keeps its result in memory until Reset/new session. No localStorage persistence is required in Phase 7.
 
-Scramble turns may be recorded by the same mechanism for state auditing, but UI solve history should be able to distinguish them from player turns.
+## Solved flow
+
+When the authoritative cube reaches solved state:
+
+- state becomes solved;
+- player interaction is disabled;
+- timer stops;
+- move history remains available;
+- result UI shows elapsed time and move count;
+- a new session can be started through Reset / Play Again.
 
 ## Reset
 
-When the cube is reset/reshuffled as a new session, solve history is cleared. The sticker identity registry itself is never regenerated or renumbered.
+Reset is a session boundary. It:
+
+- cancels active animation;
+- returns CubeState to solved;
+- clears MoveHistory;
+- clears StickerHistory;
+- resets the timer;
+- clears the completed-session result;
+- returns to READY/pre-game state.
+
+Sticker identity codes and position IDs are never regenerated.

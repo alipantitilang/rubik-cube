@@ -4,13 +4,14 @@ import { TurnAnimator } from './turn-animator.js';
 
 /** Coordinates generic layer-turn animation and authoritative CubeState commits. */
 export class CubeTurnRuntime {
-  constructor({ cubeState = new CubeState(), animator = new TurnAnimator(), adapter = null, renderer = null, history = new StickerHistory() } = {}) {
+  constructor({ cubeState = new CubeState(), animator = new TurnAnimator(), adapter = null, renderer = null, history = new StickerHistory(), onTurnCommitted = null } = {}) {
     this.cubeState = cubeState;
     this.animator = animator;
     this.adapter = adapter;
     this.renderer = renderer;
     this.history = history;
     this.interactive = null;
+    this.onTurnCommitted = onTurnCommitted;
   }
   enqueue(...turns) {
     if (this.interactive) throw new Error('Cannot enqueue a turn during an interactive turn.');
@@ -81,6 +82,7 @@ export class CubeTurnRuntime {
       this.cubeState = this.cubeState.applyTurn(result.completed);
       this.history?.record(before, this.cubeState, result.completed);
       this.renderer?.renderCube(this.cubeState);
+      this.onTurnCommitted?.(result.completed, { cubeState: this.cubeState, source: 'queued' });
     }
     return { ...result, turn: result.completed, move: result.completed, cubeState: this.cubeState };
   }
@@ -94,6 +96,7 @@ export class CubeTurnRuntime {
       this.cubeState = this.cubeState.applyTurn(active.turn);
       this.history?.record(before, this.cubeState, active.turn);
       this.renderer?.renderCube(this.cubeState);
+      this.onTurnCommitted?.(active.turn, { cubeState: this.cubeState, source: 'interactive' });
     } else {
       this.adapter?.update(0);
       this.adapter?.finish();

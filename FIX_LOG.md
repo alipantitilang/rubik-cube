@@ -573,7 +573,17 @@ Sebelum fase ditandai `COMPLETE`:
 
 | FIX-526 | Post-Phase 5 | Interaction lifecycle / Source cleanup | FIXED | Mencegah manual interaction tertahan setelah pointer capture hilang atau window kehilangan fokus; konfigurasi gesture dan helper kecil digabung ke `manual-controller.js`, alias resolver lama dihapus, dan regression test untuk release→settle→unlock ditambahkan. Phase 5 tetap COMPLETE. | `src/interaction/manual-controller.js`, `src/interaction/drag-move-resolver.js`, `tests/interactive-drag.test.js`, `index.html`, `package.json`, `README.md`, `PHASE_05_MANUAL_INTERACTION.md` |
 
-### FIX-527
+#
+## FIX-528 — Phase 6 solved-state sensor
+- **Status:** FIXED
+- **Scope:** Phase 6 / Play Flow
+- **Problem:** Reset did not appear reliably when the player solved the cube manually because interactive turns commit inside `CubeTurnRuntime` without necessarily returning `result.completed` to the main render loop.
+- **Cause:** The UI solved check was nested under the `result.completed` branch.
+- **Fix:** Added an authoritative state-based solved sensor that checks `SHUFFLE_STATES.PLAYING`, `!runtime.busy`, and `runtime.cubeState.isSolved()` after every runtime tick.
+- **Behavior:** Once the solved state is reached through any completed manual turn, interaction is disabled, Play remains hidden, Reset appears, and status becomes `Solved!`.
+- **Phase impact:** Phase 6 scope clarification only; no reopening of earlier phases.
+
+## FIX-527
 - **Status:** `FIXED`
 - **Tipe:** Post-Phase 5 / Render Loop Clock Safety
 - **Tanggal:** 2026-10-04

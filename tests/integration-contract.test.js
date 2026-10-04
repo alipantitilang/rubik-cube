@@ -25,3 +25,11 @@ test('production entry point wires the Phase 6 Play flow', () => {
   assert.match(html, /runtime\.cubeState\.isSolved\(\)/);
   assert.match(html, /runtime\.reset\(\)/);
 });
+
+test('production entry point uses an authoritative solved-state sensor outside result.completed', () => {
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const sensor = /const solved =\s*shuffle\.state === SHUFFLE_STATES\.PLAYING\s*&&\s*!runtime\.busy\s*&&\s*runtime\.cubeState\.isSolved\(\);/s;
+  assert.match(html, sensor);
+  assert.match(html, /if \(solved\) \{/);
+  assert.match(html, /resetButton\.hidden = false;/);
+});

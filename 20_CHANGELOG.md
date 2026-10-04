@@ -194,3 +194,11 @@ The generic sticker-position model no longer treats centers as fixed during midd
 - Added main-screen Reset control that appears only after a solved cube.
 - Reset returns the authoritative CubeTurnRuntime to a fresh solved CubeState and clears runtime history.
 - No new HTML file was created.
+
+
+## 2026-10-04 — Phase 6 Solved-State Sensor (FIX-528)
+
+- Solved detection now reads the authoritative `CubeState` whenever the game is in `PLAYING` and the runtime is idle.
+- Manual interactive turns are detected even when `CubeTurnRuntime.tick()` returns no `completed` turn object for the commit frame.
+- Reset therefore appears reliably after solving through the manual drag interaction.
+- Existing Phase 6 Play/Reset flow remains unchanged otherwise.

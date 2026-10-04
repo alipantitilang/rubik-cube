@@ -48,6 +48,20 @@ function makeController({ pickFace = () => null, enqueueMove = () => {}, isInput
   return { el, camera, cube, controller };
 }
 
+
+test('view-only inspection still rotates the Rubik without allowing layer moves', () => {
+  const { el, cube, controller } = makeController({
+    pickFace: () => ({ face: 'F', normal: [0,0,1], cubieId: 'c', cubieType: 'corner', logicalPosition: [-1,1,1] }),
+    enqueueMove: () => { throw new Error('layer move must be blocked during inspection'); }
+  });
+  controller.setViewOnly(true);
+  el.emit('pointerdown', makeEvent({ clientX: 100, clientY: 100 }));
+  el.emit('pointermove', makeEvent({ clientX: 140, clientY: 120 }));
+  el.emit('pointerup', makeEvent({ clientX: 140, clientY: 120 }));
+  assert.deepEqual(cube.lastRotation, [40, 20]);
+  controller.dispose();
+});
+
 test('sticker drag resolves against the frozen view geometry and never rotates cube', () => {
   const moves = [];
   const { el, camera, cube, controller } = makeController({

@@ -131,7 +131,7 @@
     <div class="game-action" aria-label="Game controls">
       <button id="play-button" type="button">Play</button>
       <button id="start-button" type="button" hidden>Start</button>
-      <button id="stop-button" class="secondary" type="button" hidden>Stop</button>
+      <button id="stop-button" class="secondary" type="button" hidden>Pause</button>
       <button id="finish-button" class="secondary" type="button" hidden>Finish</button>
       <button id="reset-button" class="secondary" type="button" hidden>Reset</button>
     </div>
@@ -307,7 +307,7 @@
         } else if (state === SHUFFLE_STATES.PLAYING) {
           interaction.setViewOnly(false);
           interaction.setEnabled(true);
-          stopButton.textContent = 'Stop';
+          stopButton.textContent = 'Pause';
           status.textContent = 'Solving…';
         } else if (state === SHUFFLE_STATES.PAUSED) {
           interaction.setEnabled(true);
@@ -317,7 +317,7 @@
         } else {
           interaction.setEnabled(true);
           interaction.setViewOnly(true);
-          stopButton.textContent = 'Stop';
+          stopButton.textContent = 'Pause';
           status.textContent = 'Ready';
         }
       },

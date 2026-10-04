@@ -227,6 +227,6 @@ The generic sticker-position model no longer treats centers as fixed during midd
 
 ### Phase 7 gameplay refinement
 - Added post-scramble inspection preview before timing starts.
-- Added Stop/Resume with active-time-only timer accounting.
+- Added Pause/Resume with active-time-only timer accounting.
 - Added Finish fallback with logical solved-state validation.
 - Added Reset session boundary and view-only inspection mode.

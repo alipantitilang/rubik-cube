@@ -180,4 +180,4 @@ Future History/Replay phases must use these identities and positions rather than
 
 
 ### Phase 7 gameplay refinement
-Inspection preview, explicit Start timing, Stop/Resume pause flow, Finish fallback, and reset lifecycle are included in the Phase 7 implementation.
+Inspection preview, explicit Start timing, Pause/Resume pause flow, Finish fallback, and reset lifecycle are included in the Phase 7 implementation.

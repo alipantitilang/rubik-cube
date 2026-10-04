@@ -244,4 +244,4 @@ Phase 6 shuffle modules are wired into the single production entry point. The Pl
 
 
 ### Current solve flow
-After scrambling, the cube enters an inspection-only preview. **Start** begins timing and enables moves. **Stop/Resume** pauses active solving while preserving rotate/zoom inspection. **Finish** provides a safe manual solved-state fallback, and **Reset** starts a fresh session.
+After scrambling, the cube enters an inspection-only preview. **Start** begins timing and enables moves. **Pause/Resume** pauses active solving while preserving rotate/zoom inspection. **Finish** provides a safe manual solved-state fallback, and **Reset** starts a fresh session.

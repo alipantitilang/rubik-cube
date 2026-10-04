@@ -620,7 +620,14 @@ Status: **FIXED**
 ### FIX-530 — Phase 7 inspection/pause/finish flow
 - Added PREVIEW state after scramble so the player can inspect the cube before timing.
 - Added explicit START and active-only timer start.
-- Added STOP/RESUME with move lock but cube rotate/zoom retained.
+- Added PAUSE/RESUME with move lock but cube rotate/zoom retained.
 - Added FINISH fallback that validates the actual solved state.
 - Added timer pause/resume accounting so inspection time is excluded.
 Status: FIXED
+
+## FIX-531 — Preview/Pause inspection rotation + Pause label
+- Status: FIXED
+- Scope: Phase 7 refinement
+- Problem: During PREVIEW and PAUSED inspection, cube rotation was not reliably test-covered; the control was labeled Stop even though it pauses/resumes the solve.
+- Fix: Explicitly test and preserve view-only cube rotation while layer moves remain blocked; rename the active control to `Pause` and paused-state control to `Resume`.
+- Regression: 90/90 automated tests pass.

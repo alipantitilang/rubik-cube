@@ -12,7 +12,7 @@ Interactive 3D Rubik project with a generic, view-independent layer-turn model a
 - Phase 5 — Manual Rubik Interaction: **FINAL / Complete**
 - Phase 6 — Legal Shuffle / Play Flow: **Complete**
 - Phase 7 — History & Solved Flow: **Complete**
-- Phase 8 — UI & Responsive Product Shell: **Complete**
+- Phase 8 — UI & Responsive Product Shell: **FINAL / Complete**
 - Phase 9–10: **Pending**
 
 The overall product is not final until the remaining phases and the Definition of Done are complete.
@@ -81,7 +81,7 @@ The player-facing solve session now has:
 - generic committed move history;
 - scramble/player history separation;
 - move counter;
-- solve timer starting when scrambling finishes;
+- solve timer starting only after explicit Start, with paused inspection time excluded;
 - solved result with time and move count;
 - recent move history in the information panel;
 - congratulations overlay;
@@ -245,9 +245,66 @@ Phase 6 shuffle modules are wired into the single production entry point. The Pl
 
 
 ### Current solve flow
-After scrambling, the cube enters an inspection-only preview. **Start** begins timing and enables moves. **Pause/Resume** pauses active solving while preserving rotate/zoom inspection. **Finish** provides a safe manual solved-state fallback, and **Reset** starts a fresh session.
+After scrambling, the cube enters an inspection-only preview. The single session action button changes through **Main → Di proses → Mulai → Jeda ↔ Lanjut**. Starting the solve begins timing, enables moves, and automatically closes the session tab. Solved completion is automatic; **Atur Ulang** starts a fresh session.
 
 - FIX-531: empty-space Rubik rotation remains available in PREVIEW and PAUSED; pointer interaction stays enabled while view-only mode blocks layer turns.
 
 
-**Phase 7 fix:** Finish now accepts a visually solved cube as a fallback when strict sticker identity is not the deciding factor. Phase 8 is intentionally skipped/deferred.
+**Phase 7 fix:** Finish now accepts a visually solved cube as a fallback when strict sticker identity is not the deciding factor. Phase 8 is now finalized as the responsive product shell.
+- FIX-533: Finish now accepts a solved color grouping: all nine stickers of each color must occupy the same face; no fixed world-face mapping is assumed.
+
+### Phase 8 visual refinement — FIX-535
+The current Phase 8 shell uses a cohesive retro puzzle-machine Sesi Kubus tab with tactile controls, chunky display typography, asymmetric panel shapes, and hard offset shadows. The previous lava background system and modern/glass/blue-gradient direction have been removed entirely.
+
+
+### Current visual refinement — FIX-537
+The main Rubik view starts slightly farther back. Every colored sticker now behaves like a small static LED: solid color with uniform emissive light, with no running animation and no gradient effect.
+
+
+### Current visual refinement — FIX-538
+Sticker lighting is static LED-style illumination. The running sweep from FIX-537 has been removed; sticker colors are solid and emissive.
+
+### Current Phase 8 visual refinement — FIX-541
+View controls are literal triangle/circle shapes, and the session panel uses one physically attached open/close tab with a slower unified transition.
+
+
+### Current Phase 8 visual refinement — FIX-542
+
+View controls are centered, zoom uses a full-width +/− bar, and the session panel proportions and persistent tab have been refined without changing gameplay behavior.
+
+## FIX-543 — Grab Rotation Follows Pointer Direction
+
+- **Status:** FIXED
+- **Phase:** Phase 8 / interaction refinement
+- **Problem:** Empty-space grab rotation felt inverted: dragging left/right or up/down rotated the Rubik opposite to the pointer movement.
+- **Fix:** Screen-space drag deltas now map directly to the cube orientation quaternion without the previous sign inversion. A positive horizontal drag rotates the Rubik toward the right; a positive vertical drag rotates it toward the downward pointer movement.
+- **Invariant:** Sticker/layer drag resolution, turn engine, camera, history, shuffle, timer, and solved-state behavior are unchanged.
+- **Acceptance:** Horizontal and vertical grab-direction tests verify that the cube follows the pointer direction; full regression suite passes.
+
+
+### Latest Phase 8 refinement — FIX-545
+
+The session tab now has fixed physical slots and a stable geometry. The gameplay control is a single stateful button (`Main → Di proses → Mulai → Jeda ↔ Lanjut`), Finish has been removed in favor of automatic solved detection, Reset has a reserved slot, and the history viewport stays fixed at approximately three visible rows with internal scrolling. The attached tab can also be grabbed horizontally to open/close, while Start automatically closes it with a dedicated smooth transition.
+
+### FIX-546
+
+View controls were compacted without changing the fixed session-panel geometry: zoom `+`/`−` sit beside the rotate controls, and the bottom zoom rail is a standalone full-width bar.
+
+## FIX-547 — Remove unused information menu and lift compact session panel
+
+The unused top-right information/menu surface was removed from the product shell because the feature is not yet required. Its DOM, interaction handlers, scrim, side-menu content, and dedicated styling were removed. On compact screens the fixed session panel is positioned higher so its full border frame remains visible without changing the panel's established geometry.
+
+### FIX-548
+Compact/mobile session panel is now anchored within the visible viewport and capped to available height so the complete border remains visible without bottom overflow.
+
+
+## FIX-549 — Fixed panel geometry, direct edge zoom, and pinch zoom
+
+- Session panel uses a fixed 360px × 640px CSS design size and no longer derives its dimensions from responsive viewport calculations.
+- Added a bottom breathing space so the internal zoom rail does not touch the panel border.
+- Added a dedicated vertical edge zoom control on compact portrait screens and compact landscape screens, so zoom remains available without opening the session panel.
+- Added two-finger pinch zoom to the camera controller; multi-touch is handed to camera zoom instead of cube/layer dragging.
+- The panel content may scroll on unusually short viewports rather than changing the panel's design dimensions.
+
+### FIX-550 panel refinement
+The session panel now uses a single fixed 360×620 design geometry. Responsive behavior positions the panel within the viewport without shrinking its design size. History has a fixed three-row viewport, rotate/+/- controls share a compact row, the long zoom bar remains at the bottom, and direct edge zoom is available on compact touch layouts. The visible status paragraph was removed from the layout flow; its live region remains for accessibility announcements.

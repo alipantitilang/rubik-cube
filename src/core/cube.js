@@ -165,12 +165,37 @@ export class CubeState {
    * indistinguishable even though sticker identity history remains strict.
    */
   isColorSolved() {
+    return this.isColorGroupedSolved();
+  }
+
+  /**
+   * Finish-time solved check based on sticker color groups rather than
+   * permanent sticker identities. Every one of the nine stickers belonging
+   * to a color must currently occupy the same visible face, and each face
+   * must contain exactly one color group.
+   *
+   * This intentionally does not assume that a particular color is tied to a
+   * permanent world face: centers can move through legal middle-slice turns.
+   */
+  isColorGroupedSolved() {
+    const colorFaces = new Map();
+    const faceColors = new Map();
+    const countsByColor = new Map();
+
     for (const cubie of this.cubies.values()) {
       for (const [face, color] of Object.entries(cubie.stickers)) {
-        if (color !== COLORS[face]) return false;
+        if (!colorFaces.has(color)) colorFaces.set(color, face);
+        if (colorFaces.get(color) !== face) return false;
+
+        if (!faceColors.has(face)) faceColors.set(face, color);
+        if (faceColors.get(face) !== color) return false;
+
+        countsByColor.set(color, (countsByColor.get(color) ?? 0) + 1);
       }
     }
-    return true;
+
+    if (colorFaces.size !== 6 || faceColors.size !== 6) return false;
+    return [...countsByColor.values()].every(count => count === 9);
   }
 
   signature() {

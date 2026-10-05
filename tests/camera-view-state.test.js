@@ -47,5 +47,5 @@ test('reset restores default view values', () => {
   resetCameraView(s);
   assert.equal(s.yaw, 0.72);
   assert.equal(s.pitch, 0.56);
-  assert.equal(s.distance, 8.2);
+  assert.equal(s.distance, 13.0);
 });

@@ -98,6 +98,11 @@ export class ManualInteractionController {
 
   _onPointerDown(event) {
     if (!this.enabled || event.button !== 0) return;
+    // A second touch belongs to the camera pinch gesture, not cube/layer dragging.
+    if (event.pointerType === 'touch' && this._pointer) {
+      this._cancelPointer(true);
+      return;
+    }
     if (this.viewOnly) {
       this._pointer = {
         id: event.pointerId, startX: event.clientX, startY: event.clientY,

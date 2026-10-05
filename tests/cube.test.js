@@ -72,6 +72,23 @@ test('cube API exposes generic turns without legacy notation helpers', async () 
 });
 
 
+
+
+test('color-group solved check accepts a whole-cube orientation without requiring sticker identities', () => {
+  const cube = createSolvedCube().applySequence([
+    { axis: 'x', layer: -1, quarterTurns: 1 },
+    { axis: 'x', layer: 0, quarterTurns: 1 },
+    { axis: 'x', layer: 1, quarterTurns: 1 }
+  ]);
+  assert.equal(cube.isSolved(), false);
+  assert.equal(cube.isColorGroupedSolved(), true);
+});
+
+test('color-group solved check rejects a mixed-color face', () => {
+  const cube = createSolvedCube().applyTurn({ axis: 'x', layer: 1, quarterTurns: 1 });
+  assert.equal(cube.isColorGroupedSolved(), false);
+});
+
 test('color solved check accepts the solved cube', () => {
   const cube = createSolvedCube();
   assert.equal(cube.isColorSolved(), true);

@@ -56,7 +56,7 @@ The solve session now has an explicit inspection phase and pause/resume controls
 - **PREVIEW:** scramble has finished; the player may rotate/zoom the cube and inspect all colors. Sticker moves are locked.
 - **START:** begins the solve timer and unlocks sticker moves.
 - **PAUSE / RESUME:** pauses the solve timer and locks sticker moves while keeping cube rotation and zoom available for inspection.
-- **FINISH:** manual completion fallback. It accepts completion only when the logical cube state is actually solved, so it safely covers cases where the automatic solved sensor does not fire.
+- **FINISH:** removed from the player UI. Completion is now automatic through the solved-state sensor.
 - **RESET:** cancels the current session, restores a solved cube, clears move history/timer, and starts from the pre-game state.
 - The timer measures active solving time only; paused inspection time is excluded.
 
@@ -65,5 +65,6 @@ The solve session now has an explicit inspection phase and pause/resume controls
 Empty-space drag rotation is available in every non-scrambling session state: before Play, PREVIEW after scramble, PLAYING, PAUSED, after Resume, and after Reset. PREVIEW/PAUSED use view-only interaction so layer moves remain blocked while cube rotation and zoom remain available.
 
 
-### Finish fallback hardening
-The manual Finish control first checks the strict sticker-identity solved state. If that is not true, it also accepts the visually solved color state via `CubeState.isColorSolved()`. This keeps the core identity model strict while making the explicit Finish fallback usable for a cube that is visually solved.
+### Solved-state completion hardening
+The solved flow keeps strict sticker identity as the automatic sensor while the session UI no longer exposes a manual Finish action. The color-group solved check remains available to the solved-state validation model without adding another gameplay button.
+- FIX-533: color-group validation accepts a visually solved whole-cube orientation without assuming a fixed world-face mapping.

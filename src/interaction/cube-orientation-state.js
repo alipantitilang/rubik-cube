@@ -50,8 +50,10 @@ export function rotateVectorByQuaternion(v, q) {
 }
 
 export function rotateCubeByScreenDelta(state, { dx = 0, dy = 0, cameraRight = [1, 0, 0], cameraUp = [0, 1, 0], sensitivity = 0.006 } = {}) {
-  const yaw = -Number(dx) * sensitivity;
-  const pitch = -Number(dy) * sensitivity;
+  // Screen-space drag directly drives the cube in the same direction as the pointer.
+  // Positive X drag turns the cube toward +X; positive Y drag turns it toward +Y.
+  const yaw = Number(dx) * sensitivity;
+  const pitch = Number(dy) * sensitivity;
   const yawQ = axisAngleQuaternion(cameraUp, yaw);
   const pitchQ = axisAngleQuaternion(cameraRight, pitch);
   state.quaternion = multiplyQuaternions(pitchQ, multiplyQuaternions(yawQ, state.quaternion));

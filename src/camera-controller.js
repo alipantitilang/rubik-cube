@@ -20,7 +20,8 @@ export class CameraController {
     this.enabled = true;
     this.pointerOrbitEnabled = true;
     this._drag = null;
-    this._touchDistance = null;
+    this._touches = new Map();
+    this._pinchDistance = null;
 
     this._onPointerDown = this._onPointerDown.bind(this);
     this._onPointerMove = this._onPointerMove.bind(this);
@@ -56,6 +57,10 @@ export class CameraController {
     this.apply();
   }
 
+  zoomByPercent(deltaPercent) {
+    this.setZoomPercent(this.getZoomPercent() + Number(deltaPercent || 0));
+  }
+
   getZoomPercent() {
     return distanceToZoomPercent(this.state);
   }
@@ -87,12 +92,40 @@ export class CameraController {
 
   _onPointerDown(event) {
     if (!this.enabled || !this.pointerOrbitEnabled || event.button !== 0) return;
+
+    if (event.pointerType === 'touch') {
+      this._touches.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      if (this._touches.size >= 2) {
+        const points = [...this._touches.values()];
+        this._pinchDistance = Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+        this._drag = null;
+        return;
+      }
+    }
+
     this._drag = { id: event.pointerId, x: event.clientX, y: event.clientY };
     this.domElement.setPointerCapture?.(event.pointerId);
   }
 
   _onPointerMove(event) {
-    if (!this.enabled || !this._drag || this._drag.id !== event.pointerId) return;
+    if (!this.enabled || !this.pointerOrbitEnabled) return;
+
+    if (event.pointerType === 'touch' && this._touches.has(event.pointerId)) {
+      this._touches.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      if (this._touches.size >= 2) {
+        const points = [...this._touches.values()];
+        const distance = Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+        if (this._pinchDistance && distance > 0) {
+          const scale = this._pinchDistance / distance;
+          setDistance(this.state, this.state.distance * scale);
+          this.apply();
+        }
+        this._pinchDistance = distance;
+        return;
+      }
+    }
+
+    if (!this._drag || this._drag.id !== event.pointerId) return;
     const dx = event.clientX - this._drag.x;
     const dy = event.clientY - this._drag.y;
     this._drag.x = event.clientX;
@@ -103,6 +136,10 @@ export class CameraController {
   }
 
   _onPointerUp(event) {
+    if (event.pointerType === 'touch') {
+      this._touches.delete(event.pointerId);
+      if (this._touches.size < 2) this._pinchDistance = null;
+    }
     if (this._drag?.id === event.pointerId) this._drag = null;
   }
 

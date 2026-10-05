@@ -133,7 +133,7 @@ Build:
 
 ## Phase 8 — UI & Responsive Product Shell
 
-Status: **Complete**
+Status: **FINAL / Complete**
 
 Delivered:
 
@@ -149,7 +149,7 @@ Delivered:
 - portrait and landscape adaptation
 - safe-area and dynamic viewport handling
 
-Validated with the existing 90-test regression suite.
+Validated with the full 94-test regression suite.
 
 ## Phase 9 — Accessibility & Performance
 

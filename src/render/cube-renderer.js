@@ -50,13 +50,10 @@ export class RubikRenderer {
     this._bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.62, metalness: 0.02 });
     this._stickerGeometry = new THREE.PlaneGeometry(this.stickerSize, this.stickerSize);
     this._stickerMaterials = Object.freeze(Object.fromEntries(
-      Object.entries(COLOR_HEX).map(([color, hex]) => [color, new THREE.MeshStandardMaterial({
-        color: hex,
-        roughness: 0.48,
-        metalness: 0,
-        side: THREE.FrontSide
-      })])
+      Object.entries(COLOR_HEX).map(([color, hex]) => [color, this._createStickerMaterial(hex)])
     ));
+    this._stickerTime = 0;
+
 
     this.cubeGroup = new THREE.Group();
     this.scene.add(this.cubeGroup);
@@ -163,8 +160,21 @@ export class RubikRenderer {
     this.renderer.dispose();
   }
 
-  renderFrame() {
+  renderFrame(deltaMs = 16.67) {
+    // Sticker lighting is intentionally static: each colored square behaves
+    // like a small LED. No sweep, animation, or gradient is used.
     this.renderer.render(this.scene, this.camera);
+  }
+
+  _createStickerMaterial(hex) {
+    const color = new THREE.Color(hex);
+    return new THREE.MeshStandardMaterial({
+      color,
+      emissive: color.clone(),
+      emissiveIntensity: 0.55,
+      roughness: 0.38,
+      metalness: 0.02
+    });
   }
 
   _createCubie(cubie) {

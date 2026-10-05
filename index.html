@@ -1,116 +1,102 @@
 <!doctype html>
-<html lang="en">
+<html lang="id">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#090b0f">
-  <title>Rubik 26 — Interactive Cube</title>
+  <title>Rubik 26 — Kubus Interaktif</title>
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-  <main class="stage" aria-label="Interactive 3D Rubik cube">
+  <main class="stage" aria-label="Kubus Rubik 3D interaktif">
     <div id="cube" class="cube-viewport"></div>
+
+    <aside class="edge-zoom" aria-label="Zoom cepat">
+      <input id="edge-zoom-range" type="range" min="0" max="100" value="50" step="1" aria-label="Zoom kubus cepat">
+    </aside>
 
     <header class="app-header">
       <div class="brand" aria-label="Rubik 26">
         <span class="brand-mark" aria-hidden="true">26</span>
         <span class="brand-label">RUBIK 26</span>
       </div>
-      <button id="menu-button" class="menu-button" type="button" aria-label="Open menu" aria-controls="side-menu" aria-expanded="false">
-        <span class="menu-icon" aria-hidden="true"><span></span><span></span><span></span></span>
-      </button>
     </header>
 
-    <aside class="game-panel" aria-label="Game information and controls">
+    <aside id="game-panel" class="game-panel" aria-label="Kontrol sesi kubus">
+      <button id="panel-toggle" class="panel-tab" type="button" aria-label="Tutup panel sesi" aria-controls="game-panel" aria-expanded="true"><span aria-hidden="true"></span></button>
       <div class="panel-state">
-        <h1>Cube Session</h1>
-        <span id="state-badge" class="status-badge" data-state="idle">Ready</span>
+        <div>
+          <h1>Sesi Kubus</h1>
+          <p class="panel-tagline">Putar, acak, lalu selesaikan.</p>
+        </div>
+        <span id="state-badge" class="status-badge" data-state="idle">Siap</span>
       </div>
 
-      <p id="status" class="status-line" aria-live="polite">Ready</p>
-
-      <div class="stats-grid" aria-label="Solve statistics">
-        <div class="stat-card"><span class="stat-label">Time</span><span id="timer" class="stat-value">00:00.00</span></div>
-        <div class="stat-card"><span class="stat-label">Moves</span><span id="move-count" class="stat-value">0</span></div>
+      <div class="stats-grid" aria-label="Statistik penyelesaian">
+        <div class="stat-card"><span class="stat-label">Waktu</span><span id="timer" class="stat-value">00:00.00</span></div>
+        <div class="stat-card"><span class="stat-label">Gerakan</span><span id="move-count" class="stat-value">0</span></div>
       </div>
 
-      <section class="panel-section">
-        <h2 class="section-title">Recent moves</h2>
-        <div id="history" class="history-list" aria-label="Recent move history">
-          <span class="history-empty">No player moves yet.</span>
+      <p id="status" class="status-line" aria-live="polite">Siap</p>
+
+      <div id="game-actions" class="game-actions" aria-label="Kontrol permainan">
+        <div class="action-slot action-main"><button id="play-button" class="control-button primary" type="button">Main</button></div>
+        <div class="action-slot action-reset"><button id="reset-button" class="control-button secondary danger" type="button" hidden>Atur Ulang</button></div>
+      </div>
+
+      <section class="panel-section history-section">
+        <h2 class="section-title">Riwayat gerakan</h2>
+        <div class="history-screen">
+        <div id="history" class="history-list" aria-label="Riwayat gerakan terbaru">
+          <span class="history-empty">Belum ada gerakan.</span>
+        </div>
         </div>
       </section>
 
       <section class="panel-section view-section">
-        <h2 class="section-title">View</h2>
+        <h2 class="section-title">Tampilan</h2>
         <div class="view-controls">
-          <div class="rotate-grid" aria-label="Rotate cube">
-            <button class="icon-button rotate-up" id="rotate-up" type="button" aria-label="Rotate cube up">↑</button>
-            <button class="icon-button rotate-left" id="rotate-left" type="button" aria-label="Rotate cube left">←</button>
-            <button class="icon-button rotate-reset" id="rotate-reset" type="button" aria-label="Reset cube orientation">•</button>
-            <button class="icon-button rotate-right" id="rotate-right" type="button" aria-label="Rotate cube right">→</button>
-            <button class="icon-button rotate-down" id="rotate-down" type="button" aria-label="Rotate cube down">↓</button>
+          <div class="view-button-row">
+            <div class="rotate-grid" aria-label="Putar kubus">
+              <button class="icon-button rotate-up" id="rotate-up" type="button" aria-label="Putar kubus ke atas"><span aria-hidden="true"></span></button>
+              <button class="icon-button rotate-left" id="rotate-left" type="button" aria-label="Putar kubus ke kiri"><span aria-hidden="true"></span></button>
+              <button class="icon-button rotate-reset" id="rotate-reset" type="button" aria-label="Atur ulang orientasi kubus"><span aria-hidden="true"></span></button>
+              <button class="icon-button rotate-right" id="rotate-right" type="button" aria-label="Putar kubus ke kanan"><span aria-hidden="true"></span></button>
+              <button class="icon-button rotate-down" id="rotate-down" type="button" aria-label="Putar kubus ke bawah"><span aria-hidden="true"></span></button>
+            </div>
+            <div class="zoom-step-stack" aria-label="Langkah zoom">
+              <button id="zoom-in" class="zoom-step zoom-in" type="button" aria-label="Zoom masuk">+</button>
+              <button id="zoom-out" class="zoom-step zoom-out" type="button" aria-label="Zoom keluar">−</button>
+            </div>
           </div>
-          <label class="zoom-row" for="zoom-range">
-            <span>ZOOM</span>
-            <input id="zoom-range" type="range" min="0" max="100" value="50" step="1" aria-label="Cube zoom">
-            <button id="zoom-reset" class="zoom-reset" type="button">Reset</button>
-          </label>
+          <div class="zoom-controls" aria-label="Kontrol zoom kubus">
+            <input id="zoom-range" type="range" min="0" max="100" value="50" step="1" aria-label="Zoom kubus">
+          </div>
         </div>
       </section>
     </aside>
 
-    <div id="game-actions" class="game-actions" aria-label="Game controls">
-      <button id="play-button" class="control-button" type="button">Play</button>
-      <button id="start-button" class="control-button" type="button" hidden>Start</button>
-      <button id="stop-button" class="control-button secondary" type="button" hidden>Pause</button>
-      <button id="finish-button" class="control-button secondary" type="button" hidden>Finish</button>
-      <button id="reset-button" class="control-button secondary danger" type="button" hidden>Reset</button>
-    </div>
-
     <div class="instruction-chip" aria-hidden="true">
-      <b>Drag empty space</b> to rotate the cube · <b>drag a sticker</b> to turn a layer · wheel to zoom
+      <b>Seret ruang kosong</b> untuk memutar kubus · <b>seret stiker</b> untuk memutar lapisan · roda untuk zoom
     </div>
 
     <section id="solved-overlay" class="solved-overlay" hidden aria-live="polite">
       <div class="solved-card" role="dialog" aria-modal="false" aria-labelledby="solved-title">
         <div class="solved-mark" aria-hidden="true">✓</div>
-        <h2 id="solved-title">Solved!</h2>
-        <p>The cube is back in its solved state.</p>
+        <h2 id="solved-title">Selesai!</h2>
+        <p>Kubus kembali ke kondisi terselesaikan.</p>
         <div id="solved-result" class="solved-result">
-          <div class="result-stat"><span id="solved-time" class="result-value">00:00.00</span><span class="result-label">Time</span></div>
-          <div class="result-stat"><span id="solved-moves" class="result-value">0</span><span class="result-label">Moves</span></div>
+          <div class="result-stat"><span id="solved-time" class="result-value">00:00.00</span><span class="result-label">Waktu</span></div>
+          <div class="result-stat"><span id="solved-moves" class="result-value">0</span><span class="result-label">Gerakan</span></div>
         </div>
         <div class="solved-actions">
-          <button id="play-again-button" class="control-button" type="button">Play Again</button>
-          <button id="solved-reset-button" class="control-button secondary" type="button">Reset</button>
+          <button id="play-again-button" class="control-button" type="button">Main Lagi</button>
+          <button id="solved-reset-button" class="control-button secondary" type="button">Atur Ulang</button>
         </div>
       </div>
     </section>
 
-    <div id="menu-scrim" class="menu-scrim" hidden></div>
-    <aside id="side-menu" class="side-menu" hidden aria-label="Application menu">
-      <div class="menu-head">
-        <h2>Rubik 26</h2>
-        <button id="menu-close" class="close-button" type="button" aria-label="Close menu">×</button>
-      </div>
-      <section class="menu-block">
-        <h3>Controls</h3>
-        <div class="menu-key"><span>Rotate cube</span><b>Empty-space drag</b></div>
-        <div class="menu-key"><span>Turn a layer</span><b>Sticker drag</b></div>
-        <div class="menu-key"><span>Zoom</span><b>Wheel / slider</b></div>
-      </section>
-      <section class="menu-block">
-        <h3>Solve flow</h3>
-        <p>Play creates the scramble. Start begins the timer after inspection. Pause stops the timer while keeping cube rotation available. Finish is a manual solved-state fallback.</p>
-      </section>
-      <section class="menu-block">
-        <h3>About</h3>
-        <p>This interface is built around the 26 visible cubies and generic axis/layer turns. The cube remains the visual focus while controls adapt to desktop, tablet, and mobile layouts.</p>
-      </section>
-    </aside>
-
-    <div id="boot-status" class="boot-status" hidden>Loading 3D cube…</div>
+    <div id="boot-status" class="boot-status" hidden>Memuat kubus 3D…</div>
   </main>
 
   <script>
@@ -118,7 +104,7 @@
     window.setTimeout(() => {
       if (window.__rubikBooted) return;
       const status = document.querySelector('#boot-status');
-      if (status) { status.hidden = false; status.textContent = '3D preview failed to load. Run through an HTTP server.'; }
+      if (status) { status.hidden = false; status.textContent = 'Pratinjau 3D gagal dimuat. Jalankan melalui server HTTP.'; }
     }, 4000);
   </script>
 
@@ -168,17 +154,14 @@
       onGesture: event => {
         if (event.type === 'face-drag') {
           const layer = event.turn.layer > 0 ? '+' : event.turn.layer < 0 ? '-' : '0';
-          status.textContent = `Layer ${event.turn.axis.toUpperCase()}${layer} · ${Math.round(event.progress * 90)}°`;
+          status.textContent = `Lapisan ${event.turn.axis.toUpperCase()}${layer} · ${Math.round(event.progress * 90)}°`;
         } else if (event.type === 'cube-rotate') {
-          status.textContent = 'Cube rotation';
+          status.textContent = 'Kubus diputar';
         }
       }
     });
 
     const playButton = document.querySelector('#play-button');
-    const startButton = document.querySelector('#start-button');
-    const stopButton = document.querySelector('#stop-button');
-    const finishButton = document.querySelector('#finish-button');
     const resetButton = document.querySelector('#reset-button');
     const moveCount = document.querySelector('#move-count');
     const timerLabel = document.querySelector('#timer');
@@ -190,6 +173,7 @@
     const solvedResetButton = document.querySelector('#solved-reset-button');
     const stateBadge = document.querySelector('#state-badge');
     const zoomRange = document.querySelector('#zoom-range');
+    const edgeZoomRange = document.querySelector('#edge-zoom-range');
 
     function formatTime(ms) {
       const total = Math.max(0, Math.floor(ms));
@@ -209,11 +193,11 @@
     function updateHistoryUI() {
       moveCount.textContent = String(moveHistory.length);
       historyList.replaceChildren();
-      const events = moveHistory.last(8);
+      const events = moveHistory.getAll();
       if (!events.length) {
         const empty = document.createElement('span');
         empty.className = 'history-empty';
-        empty.textContent = 'No player moves yet.';
+        empty.textContent = 'Belum ada gerakan.';
         historyList.append(empty);
         return;
       }
@@ -259,93 +243,92 @@
 
     function stateLabel(state) {
       return {
-        [SHUFFLE_STATES.IDLE]: 'Ready',
-        [SHUFFLE_STATES.SCRAMBLING]: 'Scrambling',
-        [SHUFFLE_STATES.PREVIEW]: 'Preview',
-        [SHUFFLE_STATES.PLAYING]: 'Playing',
-        [SHUFFLE_STATES.PAUSED]: 'Paused'
-      }[state] ?? (gameSolved ? 'Solved' : 'Ready');
+        [SHUFFLE_STATES.IDLE]: 'Siap',
+        [SHUFFLE_STATES.SCRAMBLING]: 'Mengacak',
+        [SHUFFLE_STATES.PREVIEW]: 'Pratinjau',
+        [SHUFFLE_STATES.PLAYING]: 'Bermain',
+        [SHUFFLE_STATES.PAUSED]: 'Dijeda'
+      }[state] ?? (gameSolved ? 'Selesai' : 'Siap');
     }
 
     const shuffle = new ShuffleController({
       runtime,
       interaction,
       onStateChange: state => {
-        const label = gameSolved ? 'Solved' : stateLabel(state);
+        const label = gameSolved ? 'Selesai' : stateLabel(state);
         stateBadge.textContent = label;
         stateBadge.dataset.state = gameSolved ? 'solved' : state;
 
-        playButton.hidden = state !== SHUFFLE_STATES.IDLE || gameSolved;
-        startButton.hidden = state !== SHUFFLE_STATES.PREVIEW;
-        stopButton.hidden = !(state === SHUFFLE_STATES.PLAYING || state === SHUFFLE_STATES.PAUSED);
-        finishButton.hidden = !(state === SHUFFLE_STATES.PLAYING || state === SHUFFLE_STATES.PAUSED);
-        resetButton.hidden = state === SHUFFLE_STATES.SCRAMBLING || gameSolved;
+        // Keep the panel geometry stable. Inactive action slots collapse visually;
+        // the fixed panel itself never changes size.
+        playButton.hidden = false;
+        playButton.disabled = state === SHUFFLE_STATES.SCRAMBLING || gameSolved;
+        if (gameSolved) {
+          playButton.textContent = 'Selesai';
+        } else if (state === SHUFFLE_STATES.SCRAMBLING) {
+          playButton.textContent = 'Di proses';
+        } else if (state === SHUFFLE_STATES.PREVIEW) {
+          playButton.textContent = 'Mulai';
+        } else if (state === SHUFFLE_STATES.PLAYING) {
+          playButton.textContent = 'Jeda';
+        } else if (state === SHUFFLE_STATES.PAUSED) {
+          playButton.textContent = 'Lanjut';
+        } else {
+          playButton.textContent = 'Main';
+        }
+        resetButton.hidden = !(state === SHUFFLE_STATES.PLAYING || state === SHUFFLE_STATES.PAUSED || gameSolved);
 
         if (state === SHUFFLE_STATES.SCRAMBLING) {
           interaction.setViewOnly(false);
           interaction.setEnabled(false);
-          status.textContent = 'Scrambling…';
+          status.textContent = 'Mengacak…';
         } else if (state === SHUFFLE_STATES.PREVIEW) {
           interaction.setEnabled(true);
           interaction.setViewOnly(true);
-          status.textContent = 'Inspect the cube, then press Start';
+          status.textContent = 'Periksa kubus, lalu tekan Mulai';
         } else if (state === SHUFFLE_STATES.PLAYING) {
           interaction.setViewOnly(false);
           interaction.setEnabled(true);
-          stopButton.textContent = 'Pause';
-          status.textContent = 'Solving…';
+          status.textContent = 'Sedang menyelesaikan…';
         } else if (state === SHUFFLE_STATES.PAUSED) {
           interaction.setEnabled(true);
           interaction.setViewOnly(true);
-          stopButton.textContent = 'Resume';
-          status.textContent = 'Paused — inspect the cube';
+          status.textContent = 'Dijeda — periksa kubus';
         } else if (!gameSolved) {
           interaction.setEnabled(true);
           interaction.setViewOnly(true);
-          stopButton.textContent = 'Pause';
-          status.textContent = 'Ready';
+          status.textContent = 'Siap';
         }
       },
       onProgress: ({ completed, total }) => {
-        if (shuffle.state === SHUFFLE_STATES.SCRAMBLING) status.textContent = `Scrambling ${completed}/${total}`;
+        if (shuffle.state === SHUFFLE_STATES.SCRAMBLING) status.textContent = `Mengacak ${completed}/${total}`;
       }
     });
 
     playButton.addEventListener('click', () => {
-      beginFreshSession();
-      if (!shuffle.play()) return;
-    });
-
-    startButton.addEventListener('click', () => {
-      if (!shuffle.start()) return;
-      sessionStartedAt = Date.now();
-      solveTimer.start(sessionStartedAt);
-      status.textContent = 'Solving…';
-      updateHistoryUI();
-    });
-
-    stopButton.addEventListener('click', () => {
+      if (shuffle.state === SHUFFLE_STATES.IDLE) {
+        beginFreshSession();
+        shuffle.play();
+        return;
+      }
+      if (shuffle.state === SHUFFLE_STATES.PREVIEW) {
+        if (!shuffle.start()) return;
+        sessionStartedAt = Date.now();
+        solveTimer.start(sessionStartedAt);
+        setPanelCollapsed(true, { reason: 'auto-start' });
+        status.textContent = 'Sedang menyelesaikan…';
+        updateHistoryUI();
+        return;
+      }
       if (shuffle.state === SHUFFLE_STATES.PLAYING) {
         solveTimer.pause();
         shuffle.pause();
-      } else if (shuffle.state === SHUFFLE_STATES.PAUSED) {
+        return;
+      }
+      if (shuffle.state === SHUFFLE_STATES.PAUSED) {
         solveTimer.resume();
         shuffle.resume();
       }
-    });
-
-    finishButton.addEventListener('click', () => {
-      if (shuffle.state !== SHUFFLE_STATES.PLAYING && shuffle.state !== SHUFFLE_STATES.PAUSED) return;
-      // Finish is an explicit fallback for the solved-state sensor. Prefer
-      // strict sticker identity, then accept a visually solved cube so the
-      // button still works when identical-color sticker identities differ.
-      const strictSolved = runtime.cubeState.isSolved();
-      const visuallySolved = runtime.cubeState.isColorSolved?.() === true;
-      if (!strictSolved && !visuallySolved) {
-        status.textContent = 'Cube is not solved yet — keep going or inspect it.';
-        return;
-      }
-      finishGame();
     });
 
     function resetToReady() {
@@ -365,11 +348,10 @@
       zoomRange.value = String(renderer.cameraController.getZoomPercent());
       resetButton.hidden = true;
       playButton.hidden = false;
-      startButton.hidden = true;
-      stopButton.hidden = true;
-      finishButton.hidden = true;
-      status.textContent = 'Ready';
-      stateBadge.textContent = 'Ready';
+      playButton.disabled = false;
+      playButton.textContent = 'Main';
+      status.textContent = 'Siap';
+      stateBadge.textContent = 'Siap';
       stateBadge.dataset.state = 'idle';
     }
 
@@ -377,21 +359,19 @@
     solvedResetButton.addEventListener('click', resetToReady);
     playAgainButton.addEventListener('click', () => { resetToReady(); playButton.click(); });
 
-    function finishGame() {
+    function finishGame({ allowColorGrouping = false } = {}) {
       if (gameSolved || (shuffle.state !== SHUFFLE_STATES.PLAYING && shuffle.state !== SHUFFLE_STATES.PAUSED)) return false;
-      if (!runtime.cubeState.isSolved()) return false;
+      const solved = runtime.cubeState.isSolved() || (allowColorGrouping && runtime.cubeState.isColorGroupedSolved?.() === true);
+      if (!solved) return false;
       gameSolved = true;
       interaction.setEnabled(true);
       interaction.setViewOnly(true);
       solveTimer.stop();
       resetButton.hidden = false;
       playButton.hidden = true;
-      startButton.hidden = true;
-      stopButton.hidden = true;
-      finishButton.hidden = true;
-      stateBadge.textContent = 'Solved';
+      stateBadge.textContent = 'Selesai';
       stateBadge.dataset.state = 'solved';
-      status.textContent = 'Solved!';
+      status.textContent = 'Selesai!';
       updateHistoryUI();
       showSolvedResult();
       return true;
@@ -403,30 +383,21 @@
       return finishGame();
     }
 
-    function syncZoomUI() { zoomRange.value = String(Math.round(renderer.cameraController.getZoomPercent())); }
+    function syncZoomUI() {
+      const value = String(Math.round(renderer.cameraController.getZoomPercent()));
+      zoomRange.value = value;
+      edgeZoomRange.value = value;
+    }
     zoomRange.addEventListener('input', () => renderer.cameraController.setZoomPercent(Number(zoomRange.value)));
-    document.querySelector('#zoom-reset').addEventListener('click', () => { renderer.cameraController.reset(); syncZoomUI(); });
+    edgeZoomRange.addEventListener('input', () => renderer.cameraController.setZoomPercent(Number(edgeZoomRange.value)));
+    document.querySelector('#zoom-in').addEventListener('click', () => { renderer.cameraController.zoomByPercent(10); syncZoomUI(); });
+    document.querySelector('#zoom-out').addEventListener('click', () => { renderer.cameraController.zoomByPercent(-10); syncZoomUI(); });
 
     document.querySelector('#rotate-up').addEventListener('click', () => renderer.cubeOrientationController.rotateByScreenDelta(0, -48));
     document.querySelector('#rotate-down').addEventListener('click', () => renderer.cubeOrientationController.rotateByScreenDelta(0, 48));
     document.querySelector('#rotate-left').addEventListener('click', () => renderer.cubeOrientationController.rotateByScreenDelta(-48, 0));
     document.querySelector('#rotate-right').addEventListener('click', () => renderer.cubeOrientationController.rotateByScreenDelta(48, 0));
     document.querySelector('#rotate-reset').addEventListener('click', () => renderer.cubeOrientationController.reset());
-
-    const menuButton = document.querySelector('#menu-button');
-    const menuClose = document.querySelector('#menu-close');
-    const menuScrim = document.querySelector('#menu-scrim');
-    const sideMenu = document.querySelector('#side-menu');
-    function setMenuOpen(open) {
-      sideMenu.hidden = !open;
-      menuScrim.hidden = !open;
-      menuButton.setAttribute('aria-expanded', String(open));
-      if (open) menuClose.focus(); else menuButton.focus();
-    }
-    menuButton.addEventListener('click', () => setMenuOpen(true));
-    menuClose.addEventListener('click', () => setMenuOpen(false));
-    menuScrim.addEventListener('click', () => setMenuOpen(false));
-    window.addEventListener('keydown', event => { if (event.key === 'Escape' && !sideMenu.hidden) setMenuOpen(false); });
 
     // Use the requestAnimationFrame timestamp for both sides of the delta.
     let previous = null;
@@ -436,7 +407,7 @@
       previous = now;
       const result = runtime.tick(delta);
       shuffle.handleTick(result);
-      renderer.renderFrame();
+      renderer.renderFrame(delta);
       timerLabel.textContent = formatTime(solveTimer.elapsedMs);
       syncZoomUI();
 
@@ -446,14 +417,61 @@
         // State-based solved detection is authoritative.
       } else if (result.completed && shuffle.state === SHUFFLE_STATES.PLAYING) {
         const layer = result.completed.layer > 0 ? '+' : result.completed.layer < 0 ? '-' : '0';
-        status.textContent = `Turn complete: ${result.completed.axis.toUpperCase()}${layer}`;
+        status.textContent = `Putaran selesai: ${result.completed.axis.toUpperCase()}${layer}`;
       } else if (shuffle.state === SHUFFLE_STATES.IDLE && !runtime.busy && !gameSolved) {
-        status.textContent = 'Ready';
+        status.textContent = 'Siap';
       }
       requestAnimationFrame(frame);
     }
     updateHistoryUI();
     interaction.setEnabled(true);
+    const gamePanel = document.querySelector('#game-panel');
+    const panelToggle = document.querySelector('#panel-toggle');
+    let panelDrag = null;
+    function setPanelCollapsed(collapsed, { reason = 'click' } = {}) {
+      gamePanel.classList.remove('is-dragging', 'is-auto-closing');
+      if (reason === 'auto-start') gamePanel.classList.add('is-auto-closing');
+      gamePanel.classList.toggle('is-collapsed', collapsed);
+      panelToggle.setAttribute('aria-expanded', String(!collapsed));
+      panelToggle.setAttribute('aria-label', collapsed ? 'Buka panel sesi' : 'Tutup panel sesi');
+    }
+    panelToggle.addEventListener('click', () => setPanelCollapsed(!gamePanel.classList.contains('is-collapsed')));
+    panelToggle.addEventListener('pointerdown', event => {
+      if (event.pointerType === 'mouse' && event.button !== 0) return;
+      panelDrag = { id: event.pointerId, startX: event.clientX, startY: event.clientY, lastX: event.clientX };
+      panelToggle.setPointerCapture?.(event.pointerId);
+      gamePanel.classList.add('is-dragging');
+      event.preventDefault();
+    });
+    panelToggle.addEventListener('pointermove', event => {
+      if (!panelDrag || event.pointerId !== panelDrag.id) return;
+      const dx = event.clientX - panelDrag.startX;
+      const dy = event.clientY - panelDrag.startY;
+      if (Math.abs(dx) < Math.abs(dy) * 0.75) return;
+      const width = gamePanel.getBoundingClientRect().width;
+      const collapsed = gamePanel.classList.contains('is-collapsed');
+      const dragX = collapsed ? Math.min(0, Math.max(-width, dx)) : Math.max(0, Math.min(width, dx));
+      const shortViewport = window.innerHeight <= 640;
+      gamePanel.style.transform = shortViewport
+        ? (collapsed ? `translateX(calc(100% + 18px + ${dragX}px))` : `translateX(${dragX}px)`)
+        : (collapsed ? `translate(calc(100% + 18px + ${dragX}px), -50%)` : `translate(${dragX}px, -50%)`);
+      panelDrag.lastX = event.clientX;
+    });
+    function endPanelDrag(event) {
+      if (!panelDrag || (event && event.pointerId !== panelDrag.id)) return;
+      const dx = (event?.clientX ?? panelDrag.lastX) - panelDrag.startX;
+      const collapsed = gamePanel.classList.contains('is-collapsed');
+      gamePanel.classList.remove('is-dragging');
+      gamePanel.style.removeProperty('transform');
+      const threshold = Math.min(110, Math.max(56, gamePanel.getBoundingClientRect().width * 0.22));
+      if (!collapsed && dx > threshold) setPanelCollapsed(true, { reason: 'drag' });
+      else if (collapsed && dx < -threshold) setPanelCollapsed(false, { reason: 'drag' });
+      else setPanelCollapsed(collapsed, { reason: 'drag' });
+      panelDrag = null;
+    }
+    panelToggle.addEventListener('pointerup', endPanelDrag);
+    panelToggle.addEventListener('pointercancel', endPanelDrag);
+
     interaction.setViewOnly(true);
     syncZoomUI();
     requestAnimationFrame(frame);

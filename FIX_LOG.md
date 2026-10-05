@@ -638,3 +638,217 @@ Status: FIXED
 - **Problem:** The Finish control relied only on strict sticker identity state. A cube that was visibly solved could therefore be rejected when identical-color sticker identities were not in the exact original slots.
 - **Fix:** Added `CubeState.isColorSolved()` as a UI-facing visual solved check. Finish now accepts either strict solved state or visually solved color state while preserving strict `isSolved()` for the core engine.
 - **Scope:** Phase 7 only. Phase 8 remains skipped/deferred.
+## FIX-533 — Finish validates color groups on faces
+- Status: FIXED
+- Phase: Phase 7
+- Finish now validates that all 9 sticker codes of each color are on one face and that each face contains one color group.
+- This check does not rely on permanent sticker identity or a fixed world-face color.
+- Strict `CubeState.isSolved()` remains unchanged and continues to be used by the automatic solved-state sensor.
+- Phase 8 remains skipped/deferred.
+
+
+
+## FIX-534 — Phase 8 responsive product-shell polish
+- **Status:** FIXED
+- **Phase:** Phase 8
+- **Scope:** UI/responsive shell only; Phase 7 gameplay logic is unchanged.
+- **Problem:** Primary game actions were positioned as a separate floating tray, which made the mobile bottom-sheet layout depend on hard-coded vertical offsets and could place controls too close to the cube.
+- **Fix:** Moved Play/Start/Pause/Resume/Finish/Reset into the responsive game panel, made primary/reset actions span the panel width, and added state-specific visual treatment for Preview and Paused badges.
+- **Invariant:** No CubeState, turn engine, shuffle legality, gesture resolver, timer logic, or solved-state logic changed.
+- **Acceptance:** Responsive shell contract added; full regression suite passes.
+
+## FIX-534 — Modern glass session shell and animated lava background
+- **Status:** FIXED
+- **Phase:** 8
+- **Scope:** UI only.
+- Cube Session is now a translucent blurred-glass panel that can collapse toward the right edge and reopen with dedicated controls.
+- Added smooth panel transitions and mobile/landscape adaptations.
+- Added independent red, green, blue, orange, yellow, and white flowing lava-like streams with randomized-looking curved paths and gradients over a dark rock field.
+- Localized user-facing interface text to Indonesian.
+- No CubeState, turn engine, shuffle, interaction, timer, or solved-state behavior changed.
+
+## FIX-535 — Phase 8 modern blue session tab and visible lava background
+- Status: FIXED
+- Phase: Phase 8
+- Scope: visual/product-shell refinement only.
+- Reversed the external session-panel arrows so the left-side control points right to collapse the panel toward the right, while the right-edge reopen control points left to restore it.
+- Replaced the glass session panel treatment with a solid modern tab/card treatment using animated blue gradients on borders, headings, controls, and small UI items.
+- Kept the session panel collapse/open animation smooth and state-safe.
+- Fixed the lava background stacking context so the animated multi-color SVG field renders visibly behind the WebGL cube instead of being hidden beneath the stage background.
+- Preserved the six independent color streams and their directional/dashed animations.
+- No CubeState, turn engine, shuffle, interaction, timer, or solved-state behavior changed.
+
+
+## FIX-536 — Phase 8 retro puzzle visual theme and lava removal
+
+- **Status:** FIXED
+- **Phase:** Phase 8
+- Removed the entire lava background system from `index.html` and `styles.css`; no lava streams, lava SVG gradients, rock-noise layer, or lava animation remain.
+- Replaced the modern/glass/blue-gradient visual direction with a cohesive retro puzzle-machine theme.
+- Buttons, cards, tabs, labels, menu items, and typography now share the same chunky puzzle-console visual language.
+- Session panel remains collapsible to the right and reopenable from the right edge; collapse control points right and reopen control points left to match panel movement.
+- Gameplay, Phase 7 state machine, cube engine, interaction, timer, history, and solved validation are unchanged.
+
+
+### FIX-537 — Main zoom spacing and running sticker light
+- Status: FIXED
+- Phase: 8
+- Main camera framing starts slightly farther away so the Rubik does not dominate the play area.
+- Camera defaults updated to a 9.6 distance with a 6.0–18.0 range.
+- Every visible color sticker now uses a lightweight shader highlight that continuously sweeps across the square, creating a running-light effect.
+- The running light is self-lit and does not add scene lights or shadow maps, preserving the Phase 5/525 performance direction.
+- Gameplay, move logic, sticker identity, and interaction semantics are unchanged.
+
+### FIX-538 — Static LED sticker lighting
+- **Status:** FIXED
+- **Phase:** 8
+- **Change:** Replaced the FIX-537 running-light shader with static LED-like sticker illumination.
+- Colored sticker squares now keep a solid, uniform color with emissive light.
+- Removed the moving highlight and all shader-based gradient/sweep behavior.
+- The farther default camera framing from FIX-537 remains unchanged.
+- Gameplay, sticker identity, turn animation, and performance architecture remain unchanged.
+
+## FIX-539 — Farther Default Zoom + Directional View Controls
+- **Status:** FIXED
+- **Phase:** Phase 8
+- **Changes:**
+  - Default camera distance moved farther to 13.0.
+  - Zoom range expanded to 5.0–24.0 so the cube can be viewed both closer and substantially farther away.
+  - Added dedicated triangular Zoom In / Zoom Out buttons.
+  - Replaced rotate arrow glyphs with directional triangular controls.
+  - Rotate reset is now a circular control.
+  - Refined the session panel open/close tab with a stronger retro-console shape.
+- **Gameplay logic:** unchanged.
+
+## FIX-540 — Literal Shape Controls & Unified Session Tab
+- **Status:** FIXED
+- **Phase:** Phase 8 — UI & Responsive Product Shell
+- **Changes:**
+  - Rotate and zoom controls are now literally rendered as triangle shapes, with no rectangular button surface.
+  - Rotation reset is now literally circular.
+  - Removed the separate open-panel control.
+  - The session tab is now a single physical control attached to the game panel, so it travels with the panel during collapse/reopen.
+  - Collapse/reopen motion uses one slower, smooth cubic-bezier transition with a soft arrow-direction phase.
+  - Existing zoom range, wheel zoom, Rubik rotation and gameplay behavior remain unchanged.
+
+
+## FIX-541 — Literal Shape Cleanup & Persistent Unified Session Tab
+
+- **Status:** FIXED
+- **Phase:** Phase 8
+- **Problem:** Legacy triangle pseudo-elements remained in the stylesheet, and the unified panel tab could disappear or become unreachable after collapse because the collapsed panel disabled pointer events for its own tab.
+- **Fix:** Removed the previous triangle/pseudo-symbol presentation and made each rotate/zoom control itself the literal triangle silhouette; the reset control itself is a circle. Removed all visible symbols from the session tab. The tab is now a tall, narrow control with only one long vertical marker line. The tab remains interactive at the screen edge while the panel is collapsed, with panel content hidden and non-interactive.
+- **Motion:** Collapse/reopen uses a slower 920ms cubic-bezier transition so the tab and panel move as one physical mechanism.
+- **Invariant:** No CubeState, turn engine, shuffle, gesture, timer, history, sticker identity, or solved-state behavior changed.
+- **Acceptance:** Legacy panel-open control absent, legacy tab arrows absent, literal shape controls present, persistent collapsed tab behavior contract present, full regression suite passes.
+
+
+## FIX-542 — Centered View Controls, Full Zoom Bar & Session Panel Refinement
+
+- Status: FIXED
+- Phase: 8
+- Rotate controls are centered inside the session panel.
+- Zoom is now a full-width horizontal bar with literal + and − buttons at its left/right ends.
+- Session panel sizing was refined for a better desktop balance.
+- Session action buttons use a consistent hover/active tactile treatment.
+- Session panel tab remains attached to the panel, taller and narrower, with only a vertical line marker.
+- Panel open/close animation uses a slower smooth easing curve.
+- No gameplay, cube-state, turn, or interaction rules changed.
+
+## FIX-543 — Grab Rotation Follows Pointer Direction
+
+- **Status:** FIXED
+- **Phase:** Phase 8 / interaction refinement
+- **Problem:** Empty-space grab rotation felt inverted: dragging left/right or up/down rotated the Rubik opposite to the pointer movement.
+- **Fix:** Screen-space drag deltas now map directly to the cube orientation quaternion without the previous sign inversion. A positive horizontal drag rotates the Rubik toward the right; a positive vertical drag rotates it toward the downward pointer movement.
+- **Invariant:** Sticker/layer drag resolution, turn engine, camera, history, shuffle, timer, and solved-state behavior are unchanged.
+- **Acceptance:** Horizontal and vertical grab-direction tests verify that the cube follows the pointer direction; full regression suite passes.
+
+
+## FIX-544 — Stable session panel geometry and reserved UI slots
+- **Status:** FIXED
+- **Phase:** Phase 8 — UI & Responsive Product Shell
+- **Goal:** Prevent the session panel from resizing when state-dependent controls or history content change.
+- **Changes:**
+  - Session panel now uses a fixed desktop height of 650px.
+  - Game action area reserves physical slots for all gameplay buttons; inactive buttons become invisible placeholders instead of collapsing layout.
+  - Main button remains present throughout the shuffle lifecycle and changes label from `Main` → `Proses…` → `Siap`.
+  - History receives a dedicated fixed-size `history-screen`; only its text/list contents change and overflow scrolls inside the reserved area.
+  - Responsive mobile sizing remains bounded to the available viewport while staying state-stable.
+- **Behavior preserved:** shuffle, preview, start/pause/resume, finish, reset, timer, move history, cube rotation, zoom, and solved flow.
+
+## FIX-545 — Fixed tab slots, unified gameplay action, and draggable session tab
+
+- **Status:** FIXED
+- **Phase:** Phase 8 — UI & Responsive Product Shell
+- **Goal:** Make the session tab a physically stable interface whose geometry never depends on state or content.
+- **Changes:**
+  - Reorganized the tab into fixed slots: title/tagline, time/move displays, one primary gameplay button, reset slot, fixed three-row history viewport, compact rotate controls, and bottom zoom bar.
+  - Unified the gameplay action into one button: `Main` → `Di proses` → `Mulai` → `Jeda` ↔ `Lanjut`.
+  - Removed the manual Finish button and its UI handler; solved-state detection remains automatic.
+  - Reset occupies a predetermined second action slot and fades in without changing panel geometry.
+  - History renders the full session inside a fixed viewport that shows roughly three rows at once and scrolls internally.
+  - Starting the solve automatically closes the session tab with a slower dedicated auto-close transition.
+  - The attached tab can now be grabbed and dragged horizontally to open/close the panel. Drag motion temporarily follows the pointer, then snaps to the nearest stable position.
+  - Panel/tab dimensions remain fixed while state content changes.
+- **Invariant:** Cube model, turn engine, shuffle legality, sticker identity, timer semantics, solved detection, cube rotation direction, and zoom behavior remain unchanged.
+- **Acceptance:** One gameplay action control owns the complete lifecycle, Finish is absent, reset has a reserved slot, history is fixed-size and internally scrollable, auto-close occurs after Start, grab-to-open/close works, and the full regression suite passes.
+
+## FIX-546 — Compact view controls and bottom-only zoom rail
+
+- **Status:** FIXED
+- **Phase:** Phase 8 — UI & Responsive Product Shell
+- **Goal:** Remove the visible blank action slot, place zoom step buttons beside the rotate controls, and keep the zoom rail alone at the bottom.
+- **Changes:**
+  - The hidden reset action no longer leaves a visible vertical gap between the gameplay action and history.
+  - The panel remains fixed-size; only the inactive action slot collapses visually.
+  - `+` and `−` zoom controls are now vertically stacked beside the rotate cluster.
+  - The bottom zoom control is now a single full-width range bar with no buttons or label beside it.
+  - The existing rotate controls keep their compact centered footprint.
+- **Invariant:** Gameplay state machine, cube model, turn engine, shuffle, timer, history, grab rotation, and panel open/close behavior remain unchanged.
+- **Acceptance:** No empty action gap is rendered when reset is unavailable; zoom steps are adjacent to rotate controls; the bottom rail contains only the zoom range; full regression suite passes.
+
+## FIX-547 — Remove unused information menu and lift compact session panel
+
+The unused top-right information/menu surface was removed from the product shell because the feature is not yet required. Its DOM, interaction handlers, scrim, side-menu content, and dedicated styling were removed. On compact screens the fixed session panel is positioned higher so its full border frame remains visible without changing the panel's established geometry.
+
+### FIX-548 — Compact panel viewport fit
+- **Status:** FIXED
+- **Problem:** The compact session panel could extend below the visible screen after FIX-547 lifted it, leaving the lower border and controls clipped.
+- **Change:** On compact viewports, the panel is anchored to the top of the visible app area and its responsive height is capped to the available viewport height with a small breathing margin. The panel remains state-stable; only the viewport-responsive bound changes with screen size.
+- **Regression:** Existing panel/state behavior remains intact.
+
+
+## FIX-549 — Fixed panel geometry, direct edge zoom, and pinch zoom
+
+- Session panel uses a fixed 360px × 640px CSS design size and no longer derives its dimensions from responsive viewport calculations.
+- Added a bottom breathing space so the internal zoom rail does not touch the panel border.
+- Added a dedicated vertical edge zoom control on compact portrait screens and compact landscape screens, so zoom remains available without opening the session panel.
+- Added two-finger pinch zoom to the camera controller; multi-touch is handed to camera zoom instead of cube/layer dragging.
+- The panel content may scroll on unusually short viewports rather than changing the panel's design dimensions.
+
+## FIX-550 — Clean fixed session panel geometry and direct zoom access
+**Status:** FIXED
+
+### Problem
+The accumulated Phase 8 CSS overrides still contained contradictory responsive rules. The session panel could inherit viewport-derived sizing/positioning, the visible status line consumed layout space, and the final control area could clip the bottom zoom rail. This made the fixed-size panel contract unreliable across portrait/landscape viewports.
+
+### Changes
+- Replaced the accumulated FIX-544..FIX-549 panel override tail with one consolidated FIX-550 layout contract.
+- Session panel uses a fixed 360px × 620px design size; state changes never change its geometry.
+- Panel position uses viewport centering with a minimum 10px edge margin; it does not shrink to fit viewport height.
+- Removed visible status text from the panel flow; the live status region remains visually hidden for accessibility announcements.
+- Main gameplay action remains a single fixed-height control; its label changes Main → Di proses → Mulai → Jeda/Lanjut.
+- Reset uses an animated secondary slot that expands only when needed without resizing the outer panel.
+- History keeps a fixed three-row viewport and scrolls internally.
+- Rotate controls remain compact and centered; +/− stay beside them.
+- The internal zoom bar remains at the bottom of the view-controls area.
+- Direct edge zoom remains available on compact portrait and landscape layouts.
+- Narrow portrait layouts keep the fixed panel size and let the attached tab overlap the edge rather than shrinking the panel.
+- Existing pinch-zoom support is retained and remains separate from one-finger cube rotation.
+- Consolidated conflicting CSS overrides so later fixes no longer fight earlier media-query rules.
+
+### Validation
+- `npm test`: 99/99 passed.
+- No Finish/Start/Pause legacy buttons were reintroduced.
+- Menu/information surface remains removed.

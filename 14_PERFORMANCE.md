@@ -72,3 +72,12 @@ Development mode may expose:
 - FPS
 
 Debug UI must not ship as visible production UI.
+
+
+## FIX-549 — Fixed panel geometry, direct edge zoom, and pinch zoom
+
+- Session panel uses a fixed 360px × 640px CSS design size and no longer derives its dimensions from responsive viewport calculations.
+- Added a bottom breathing space so the internal zoom rail does not touch the panel border.
+- Added a dedicated vertical edge zoom control on compact portrait screens and compact landscape screens, so zoom remains available without opening the session panel.
+- Added two-finger pinch zoom to the camera controller; multi-touch is handed to camera zoom instead of cube/layer dragging.
+- The panel content may scroll on unusually short viewports rather than changing the panel's design dimensions.

@@ -22,6 +22,20 @@ test('cube orientation can turn White toward a fixed camera', () => {
   approx(worldD[0], 0); approx(worldD[1], 0); approx(worldD[2], 1);
 });
 
+test('screen drag rotates the cube in the same horizontal direction as the pointer', () => {
+  const s = createCubeOrientationState();
+  rotateCubeByScreenDelta(s, { dx: 100, dy: 0, sensitivity: 0.006 });
+  const front = rotateVectorByQuaternion([0, 0, 1], s.quaternion);
+  assert.ok(front[0] > 0, `expected front direction to follow rightward drag, got ${front[0]}`);
+});
+
+test('screen drag rotates the cube in the same vertical direction as the pointer', () => {
+  const s = createCubeOrientationState();
+  rotateCubeByScreenDelta(s, { dx: 0, dy: 100, sensitivity: 0.006 });
+  const up = rotateVectorByQuaternion([0, 1, 0], s.quaternion);
+  assert.ok(up[2] > 0, `expected up direction to follow downward drag, got ${up[2]}`);
+});
+
 test('screen rotation accumulates beyond a full 360 degree yaw', () => {
   const s = createCubeOrientationState();
   rotateCubeByScreenDelta(s, { dx: -(Math.PI * 2) / 0.006, dy: 0, cameraRight:[1,0,0], cameraUp:[0,1,0], sensitivity:0.006 });

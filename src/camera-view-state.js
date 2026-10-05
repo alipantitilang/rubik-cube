@@ -1,10 +1,10 @@
 export const DEFAULT_CAMERA_VIEW = Object.freeze({
   yaw: 0.72,
   pitch: 0.56,
-  distance: 8.2,
+  distance: 13.0,
   target: Object.freeze([0, 0, 0]),
-  minDistance: 5.0,
-  maxDistance: 16.0
+  minDistance: 6.0,
+  maxDistance: 24.0
 });
 
 export function createCameraViewState(options = {}) {

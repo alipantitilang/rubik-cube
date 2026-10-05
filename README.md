@@ -1,4 +1,4 @@
-# Rubik 26-Cubies
+# Rubicube — 26-Cubies
 
 Interactive 3D Rubik project with a generic, view-independent layer-turn model and permanent sticker/position tracking.
 
@@ -305,6 +305,3 @@ Compact/mobile session panel is now anchored within the visible viewport and cap
 - Added a dedicated vertical edge zoom control on compact portrait screens and compact landscape screens, so zoom remains available without opening the session panel.
 - Added two-finger pinch zoom to the camera controller; multi-touch is handed to camera zoom instead of cube/layer dragging.
 - The panel content may scroll on unusually short viewports rather than changing the panel's design dimensions.
-
-### FIX-550 panel refinement
-The session panel now uses a single fixed 360×620 design geometry. Responsive behavior positions the panel within the viewport without shrinking its design size. History has a fixed three-row viewport, rotate/+/- controls share a compact row, the long zoom bar remains at the bottom, and direct edge zoom is available on compact touch layouts. The visible status paragraph was removed from the layout flow; its live region remains for accessibility announcements.

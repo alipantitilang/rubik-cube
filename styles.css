@@ -767,98 +767,30 @@ body {
   .panel-tab { transition-duration: 1ms !important; }
 }
 
-/* ===== FIX-550 — Clean fixed session panel geometry and direct zoom access ===== */
-:root {
-  --panel-width: 360px;
-  --panel-height: 620px;
-  --panel-gap: 10px;
-  --panel-open-transition: 760ms cubic-bezier(.16, 1, .3, 1);
-  --panel-drag-transition: 260ms cubic-bezier(.2, .8, .2, 1);
-}
-
-/* One physical design size. State changes never resize the panel. */
+/* ===== FIX-544 — Stable panel geometry and reserved action slots ===== */
 .game-panel {
-  width: var(--panel-width) !important;
-  min-width: var(--panel-width) !important;
-  max-width: var(--panel-width) !important;
-  height: var(--panel-height) !important;
-  min-height: var(--panel-height) !important;
-  max-height: var(--panel-height) !important;
-  top: max(10px, calc((100dvh - var(--panel-height)) / 2)) !important;
-  right: max(8px, env(safe-area-inset-right)) !important;
-  padding: 16px !important;
-  gap: var(--panel-gap) !important;
-  overflow: hidden !important;
-  display: flex !important;
-  flex-direction: column !important;
-  transform: none;
-  transition: transform var(--panel-open-transition), opacity 420ms ease, border-color 420ms ease;
+  height: 650px;
+  min-height: 650px;
+  max-height: 650px;
+  overflow: hidden;
 }
-
-.game-panel.is-collapsed {
-  width: var(--panel-width) !important;
-  min-width: var(--panel-width) !important;
-  max-width: var(--panel-width) !important;
-  height: var(--panel-height) !important;
-  min-height: var(--panel-height) !important;
-  max-height: var(--panel-height) !important;
-  padding: 16px !important;
-  transform: translateX(calc(100% + 18px));
-  opacity: 1;
-  border-color: transparent;
-  overflow: visible !important;
-  pointer-events: auto;
-}
-.game-panel.is-dragging { transition: none !important; user-select: none; }
-.game-panel.is-auto-closing { transition-duration: 760ms; }
-.game-panel > :not(.panel-tab) { transition: opacity 220ms ease, visibility 0s linear 220ms; }
-.game-panel.is-collapsed > :not(.panel-tab) { visibility: hidden; opacity: 0; pointer-events: none; }
-
-/* The visible layout is explicit: title, stats, one main action, history, view controls. */
-.panel-state { flex: 0 0 46px; min-height: 46px; }
-.stats-grid { flex: 0 0 58px; min-height: 58px; }
-.status-line {
-  position: absolute !important;
-  width: 1px !important;
-  height: 1px !important;
-  padding: 0 !important;
-  margin: -1px !important;
-  overflow: hidden !important;
-  clip: rect(0,0,0,0) !important;
-  white-space: nowrap !important;
-  border: 0 !important;
-}
-
-/* Main action changes text in place. Reset gets its own animated slot only when needed. */
 .game-actions {
-  flex: 0 0 auto;
-  min-height: 44px !important;
-  height: auto !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 8px !important;
+  min-height: 188px;
+  grid-template-rows: repeat(4, 44px);
 }
-.action-slot { width: 100%; min-height: 0; overflow: hidden; }
-.action-main { height: 44px; flex: 0 0 44px; }
-.action-reset { height: 0; flex: 0 0 0; opacity: 0; transform: translateY(-10px); transition: height 420ms cubic-bezier(.16,1,.3,1), opacity 260ms ease, transform 420ms cubic-bezier(.16,1,.3,1); }
-.action-reset:has(.control-button:not([hidden])) { height: 44px; flex-basis: 44px; opacity: 1; transform: translateY(0); }
-.action-slot .control-button { width: 100%; height: 44px; min-height: 44px; }
-.action-slot .control-button[hidden] { display: block !important; visibility: hidden; pointer-events: none; opacity: 0; }
-
-/* History has a fixed viewport showing three rows; scrolling stays inside it. */
-.history-section {
-  flex: 0 0 136px;
-  height: 136px;
-  min-height: 136px;
-  max-height: 136px;
-  display: grid;
-  grid-template-rows: auto 1fr;
-  gap: 8px;
+.game-actions .control-button[hidden] {
+  display: block;
+  visibility: hidden;
+  pointer-events: none;
 }
+.game-actions .control-button:disabled {
+  cursor: default;
+}
+.history-section { min-height: 168px; }
 .history-screen {
-  height: 112px;
-  min-height: 112px;
-  max-height: 112px;
+  height: 126px;
+  min-height: 126px;
+  max-height: 126px;
   overflow: hidden;
   border: 2px solid var(--border);
   border-radius: 7px;
@@ -867,31 +799,219 @@ body {
 }
 .history-list {
   height: 100%;
+  min-height: 0;
   max-height: none;
+  overflow: auto;
+  align-content: start;
+}
+
+@media (max-width: 980px) {
+  .game-panel {
+    height: 650px;
+    min-height: 650px;
+    max-height: 650px;
+  }
+}
+
+@media (max-width: 720px) {
+  .game-panel {
+    height: calc(100dvh - 84px);
+    min-height: calc(100dvh - 84px);
+    max-height: calc(100dvh - 84px);
+  }
+  .game-panel.is-collapsed { height: 0; min-height: 0; max-height: 0; }
+  .history-section { min-height: 142px; }
+  .history-screen { height: 100px; min-height: 100px; max-height: 100px; }
+  .game-actions { min-height: 188px; }
+}
+
+@media (max-width: 460px) {
+  .game-panel {
+    height: calc(100dvh - 84px);
+    min-height: calc(100dvh - 84px);
+    max-height: calc(100dvh - 84px);
+  }
+}
+
+/* ===== FIX-545 — Fixed tab slots, unified action control, draggable panel tab ===== */
+:root {
+  --panel-width: 360px;
+  --panel-height: 650px;
+  --panel-open-transition: 760ms cubic-bezier(.16, 1, .3, 1);
+  --panel-drag-transition: 260ms cubic-bezier(.2, .8, .2, 1);
+}
+
+/* The tab has one physical size. State changes only swap content inside its slots. */
+.game-panel {
+  width: var(--panel-width) !important;
+  height: var(--panel-height) !important;
+  min-width: var(--panel-width);
+  min-height: var(--panel-height) !important;
+  max-height: var(--panel-height) !important;
+  overflow: hidden;
+  transition: transform var(--panel-open-transition), opacity 420ms ease, border-color 420ms ease;
+}
+.game-panel.is-collapsed {
+  width: var(--panel-width) !important;
+  height: var(--panel-height) !important;
+  min-height: var(--panel-height) !important;
+  max-height: var(--panel-height) !important;
+  padding: 20px;
+  opacity: 1;
+  transform: translateX(calc(100% + 18px));
+  border-color: transparent;
+  overflow: visible;
+  pointer-events: auto;
+}
+.game-panel.is-dragging {
+  transition: none !important;
+  user-select: none;
+}
+.game-panel.is-auto-closing {
+  transition-duration: 760ms;
+}
+.game-panel > :not(.panel-tab) { transition: opacity 220ms ease, visibility 0s linear 220ms; }
+.game-panel.is-collapsed > :not(.panel-tab) { visibility: hidden; opacity: 0; pointer-events: none; }
+
+.panel-state {
+  min-height: 46px;
+  align-items: start;
+}
+.panel-tagline {
+  margin: 4px 0 0;
+  color: var(--text-dim);
+  font-family: "Courier New", monospace;
+  font-size: 10px;
+  letter-spacing: .04em;
+}
+.status-line {
+  min-height: 17px;
+  margin: 5px 0 7px;
+}
+
+/* Fixed action slots: row 1 = main/start/pause/resume, row 2 = reset. */
+.game-actions {
+  min-height: 104px;
+  height: 104px;
+  grid-template-rows: 44px 44px;
+  gap: 8px;
+}
+.action-slot {
+  min-width: 0;
+  min-height: 44px;
+  display: flex;
+  align-items: stretch;
+}
+.action-slot .control-button {
+  width: 100%;
+  height: 44px;
+  min-height: 44px;
+}
+.action-slot .control-button[hidden] { display: none; }
+
+/* History is a fixed three-row viewport; all older entries scroll inside it. */
+.history-section {
+  height: 166px;
+  min-height: 166px;
+  max-height: 166px;
+}
+.history-screen {
+  height: 116px;
+  min-height: 116px;
+  max-height: 116px;
+  overflow: hidden;
+}
+.history-list {
+  height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
   display: grid;
   grid-auto-rows: 30px;
   align-content: start;
   gap: 4px;
-  scrollbar-width: thin;
-  scrollbar-color: #596171 #171b22;
 }
-.history-move, .history-empty { min-height: 30px; box-sizing: border-box; display: flex; align-items: center; }
+.history-move,
+.history-empty {
+  min-height: 30px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+}
 
-/* View controls stay compact and centered. +/- are beside the rotate pad. */
-.view-section {
-  flex: 1 1 auto;
-  min-height: 0;
-  display: grid;
-  grid-template-rows: auto 1fr;
-  gap: 7px;
+/* Keep view controls compact and centered in their reserved area. */
+.view-section { min-height: 0; }
+.view-controls { gap: 10px; }
+.rotate-grid {
+  width: 168px;
+  grid-template-columns: repeat(3, 44px);
+  grid-template-rows: repeat(3, 44px);
+  gap: 6px;
 }
-.view-controls {
+.icon-button { width: 44px; height: 44px; min-width: 44px; min-height: 44px; }
+.zoom-controls { margin-top: 2px; grid-template-columns: 34px minmax(0,1fr) 34px; gap: 7px; }
+.zoom-step { width: 34px; height: 34px; min-width: 34px; min-height: 34px; }
+
+/* The attached tab itself never changes size. Dragging it controls panel translation. */
+.panel-tab {
+  touch-action: none;
+  cursor: grab;
+  transition: background 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+.panel-tab:active { cursor: grabbing; }
+
+@media (max-width: 720px) {
+  .game-panel {
+    width: min(340px, calc(100vw - 54px)) !important;
+    min-width: min(340px, calc(100vw - 54px));
+    height: calc(100dvh - 84px) !important;
+    min-height: calc(100dvh - 84px) !important;
+    max-height: calc(100dvh - 84px) !important;
+  }
+  .game-panel.is-collapsed {
+    width: min(340px, calc(100vw - 54px)) !important;
+    min-width: min(340px, calc(100vw - 54px));
+    height: calc(100dvh - 84px) !important;
+    min-height: calc(100dvh - 84px) !important;
+    max-height: calc(100dvh - 84px) !important;
+    padding: 15px;
+    transform: translateX(calc(100% + 14px));
+  }
+  .game-panel.is-auto-closing { transition-duration: 680ms; }
+  .panel-state { min-height: 44px; }
+  .history-section { height: 142px; min-height: 142px; max-height: 142px; }
+  .history-screen { height: 96px; min-height: 96px; max-height: 96px; }
+  .game-actions { height: 104px; min-height: 104px; }
+  .rotate-grid { width: 156px; grid-template-columns: repeat(3, 42px); grid-template-rows: repeat(3, 42px); gap: 5px; }
+  .icon-button { width: 42px; height: 42px; min-width: 42px; min-height: 42px; }
+  .zoom-controls { grid-template-columns: 34px minmax(0,1fr) 34px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-panel, .game-panel.is-auto-closing, .panel-tab { transition-duration: 1ms !important; }
+  .game-panel > :not(.panel-tab) { transition-duration: 1ms !important; }
+}
+
+/* ===== FIX-546 — Compact view controls and bottom-only zoom bar ===== */
+/* The action area keeps the panel geometry fixed without reserving a visible blank row. */
+.game-actions {
   min-height: 0;
+  height: auto;
+  grid-template-rows: auto;
+  gap: 8px;
+}
+.game-actions .action-slot {
+  min-height: 0;
+}
+.game-actions .action-slot:has(.control-button[hidden]) {
+  display: none;
+}
+.game-actions .action-slot .control-button[hidden] {
+  display: none;
+}
+
+/* Rotate controls and +/- sit beside each other; the zoom rail lives alone underneath. */
+.view-controls {
   display: grid;
-  grid-template-rows: auto auto;
-  align-content: space-between;
   gap: 8px;
 }
 .view-button-row {
@@ -903,65 +1023,173 @@ body {
 .rotate-grid {
   width: 156px;
   height: 156px;
-  flex: 0 0 156px;
   grid-template-columns: repeat(3, 48px);
   grid-template-rows: repeat(3, 48px);
   gap: 6px;
+  flex: 0 0 auto;
 }
-.icon-button { width: 48px; height: 48px; min-width: 48px; min-height: 48px; }
+.icon-button {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
+}
 .zoom-step-stack {
   width: 38px;
-  flex: 0 0 38px;
   display: grid;
   grid-template-rows: 38px 38px;
   gap: 7px;
+  flex: 0 0 38px;
 }
-.zoom-step { width: 38px; height: 38px; min-width: 38px; min-height: 38px; }
+.zoom-step {
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  min-height: 38px;
+}
 .zoom-controls {
   width: 100%;
   display: block;
-  margin: 0 !important;
-  padding: 0 0 5px;
+  margin-top: 0;
 }
-.zoom-controls input[type="range"] { display: block; width: 100%; min-width: 0; margin: 0; height: 12px; accent-color: var(--accent); cursor: ew-resize; }
-.zoom-meter, .zoom-label { display: none; }
-
-/* Attached tab keeps its physical size and remains the only open/close affordance. */
-.panel-tab {
-  touch-action: none;
-  cursor: grab;
-  transition: background 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+.zoom-controls input[type="range"] {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  accent-color: var(--accent);
 }
-.panel-tab:active { cursor: grabbing; }
+.zoom-meter,
+.zoom-label { display: none; }
 
-/* Portrait: keep the fixed panel fully visible whenever the viewport can physically contain it.
-   At very narrow widths the tab overlaps the panel edge instead of shrinking the panel. */
 @media (max-width: 720px) {
-  .game-panel,
-  .game-panel.is-collapsed {
-    width: var(--panel-width) !important;
-    min-width: var(--panel-width) !important;
-    max-width: var(--panel-width) !important;
-    height: var(--panel-height) !important;
-    min-height: var(--panel-height) !important;
-    max-height: var(--panel-height) !important;
-    top: max(10px, calc((100dvh - var(--panel-height)) / 2)) !important;
-    right: 8px !important;
-    left: auto !important;
+  .view-button-row { gap: 7px; }
+  .rotate-grid {
+    width: 132px;
+    height: 132px;
+    grid-template-columns: repeat(3, 40px);
+    grid-template-rows: repeat(3, 40px);
+    gap: 6px;
   }
-  .panel-tab { left: -7px; width: 18px; height: 122px; }
-  .rotate-grid { width: 140px; height: 140px; flex-basis: 140px; grid-template-columns: repeat(3, 42px); grid-template-rows: repeat(3, 42px); gap: 5px; }
-  .icon-button { width: 42px; height: 42px; min-width: 42px; min-height: 42px; }
-  .zoom-step-stack { width: 34px; flex-basis: 34px; grid-template-rows: 34px 34px; gap: 6px; }
-  .zoom-step { width: 34px; height: 34px; min-width: 34px; min-height: 34px; }
+  .icon-button {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+  }
+  .zoom-step-stack {
+    width: 34px;
+    flex-basis: 34px;
+    grid-template-rows: 34px 34px;
+    gap: 6px;
+  }
+  .zoom-step {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    min-height: 34px;
+  }
 }
 
-/* Landscape gets the same direct edge zoom without requiring the panel to be open. */
-@media (max-width: 980px) and (orientation: landscape) {
-  .edge-zoom { display: grid; height: 150px; }
+/* ===== FIX-547 — Remove unused info/menu surface and lift the session panel ===== */
+/* The top-right menu/information control is intentionally removed until that feature is needed. */
+.app-header {
+  pointer-events: none;
+}
+.app-header .brand { pointer-events: auto; }
+
+/* Keep the fixed panel geometry while moving it higher on compact screens so the complete frame is visible. */
+@media (max-width: 720px) {
+  .game-panel {
+    top: 18px;
+    max-height: calc(100dvh - 36px) !important;
+  }
 }
 
-/* Edge zoom is deliberately outside the panel. It is always available on compact touch layouts. */
+@media (max-width: 460px) {
+  .game-panel {
+    top: 14px;
+    max-height: calc(100dvh - 28px) !important;
+  }
+}
+
+/* ===== FIX-548 — Compact panel viewport fit ===== */
+/* On short screens the panel must stay completely inside the visible app viewport.
+   The fixed geometry remains state-stable; only the responsive viewport height is bounded. */
+@media (max-width: 720px) {
+  .game-panel {
+    top: 0 !important;
+    height: min(var(--panel-height), calc(100dvh - 16px)) !important;
+    min-height: min(var(--panel-height), calc(100dvh - 16px)) !important;
+    max-height: min(var(--panel-height), calc(100dvh - 16px)) !important;
+  }
+  .game-panel.is-collapsed {
+    top: 0 !important;
+    height: min(var(--panel-height), calc(100dvh - 16px)) !important;
+    min-height: min(var(--panel-height), calc(100dvh - 16px)) !important;
+    max-height: min(var(--panel-height), calc(100dvh - 16px)) !important;
+  }
+}
+
+@media (max-width: 460px) {
+  .game-panel {
+    top: 0 !important;
+    height: min(var(--panel-height), calc(100dvh - 16px)) !important;
+    min-height: min(var(--panel-height), calc(100dvh - 16px)) !important;
+    max-height: min(var(--panel-height), calc(100dvh - 16px)) !important;
+  }
+  .game-panel.is-collapsed {
+    top: 0 !important;
+    height: min(var(--panel-height), calc(100dvh - 16px)) !important;
+    min-height: min(var(--panel-height), calc(100dvh - 16px)) !important;
+    max-height: min(var(--panel-height), calc(100dvh - 16px)) !important;
+  }
+}
+
+/* ===== FIX-549 — Fixed panel geometry, bottom breathing room, edge zoom + pinch support ===== */
+:root {
+  --panel-width: 360px;
+  --panel-height: 620px;
+}
+
+/* The session panel has one fixed design size. Browser zoom changes CSS pixels globally,
+   but the panel itself no longer derives its size from viewport width/height. */
+.game-panel {
+  width: var(--panel-width) !important;
+  min-width: var(--panel-width) !important;
+  max-width: var(--panel-width) !important;
+  height: var(--panel-height) !important;
+  min-height: var(--panel-height) !important;
+  max-height: var(--panel-height) !important;
+  top: 50% !important;
+  right: max(12px, env(safe-area-inset-right)) !important;
+  transform: translateY(-50%);
+  padding-bottom: 22px;
+  overflow: hidden;
+}
+.game-panel.is-collapsed {
+  width: var(--panel-width) !important;
+  min-width: var(--panel-width) !important;
+  max-width: var(--panel-width) !important;
+  height: var(--panel-height) !important;
+  min-height: var(--panel-height) !important;
+  max-height: var(--panel-height) !important;
+  transform: translate(100%, -50%);
+}
+.game-panel.is-dragging { transform: translate(0, -50%); }
+.game-panel.is-auto-closing { transform: translate(100%, -50%); }
+
+/* Keep the final zoom rail visibly separated from the lower border. */
+.zoom-controls {
+  margin-top: 2px !important;
+  padding-bottom: 2px;
+}
+.zoom-controls input[type="range"] {
+  height: 12px;
+  cursor: ew-resize;
+}
+
+/* Fixed-size edge zoom: deliberately outside the session panel so zoom never requires opening it. */
 .edge-zoom {
   position: absolute;
   z-index: 24;
@@ -986,8 +1214,39 @@ body {
   cursor: ns-resize;
   transform: rotate(-90deg);
 }
-@media (max-width: 720px) { .edge-zoom { display: grid; } }
 
-@media (prefers-reduced-motion: reduce) {
-  .game-panel, .panel-tab, .control-button, .icon-button, .zoom-step, .action-reset { transition-duration: 1ms !important; }
+@media (max-width: 720px) {
+  .game-panel,
+  .game-panel.is-collapsed {
+    width: var(--panel-width) !important;
+    min-width: var(--panel-width) !important;
+    max-width: var(--panel-width) !important;
+    height: var(--panel-height) !important;
+    min-height: var(--panel-height) !important;
+    max-height: var(--panel-height) !important;
+    top: 50% !important;
+    right: 8px !important;
+  }
+  .game-panel.is-collapsed { transform: translate(100%, -50%); }
+  .game-panel.is-dragging { transform: translate(0, -50%); }
+  .game-panel.is-auto-closing { transform: translate(100%, -50%); }
+  .edge-zoom { display: grid; }
+}
+
+/* Landscape compact screens also get direct zoom access without opening the panel. */
+@media (max-width: 980px) and (orientation: landscape) {
+  .edge-zoom { display: grid; height: 150px; }
+  .game-panel { top: 50% !important; }
+}
+
+@media (max-height: 680px) and (max-width: 720px) {
+  /* Preserve the fixed panel geometry; let the user scroll its content rather than resize it. */
+  .game-panel { overflow-y: auto; scrollbar-width: thin; }
+}
+
+@media (max-height: 640px) {
+  .game-panel { top: 10px !important; transform: none; }
+  .game-panel.is-collapsed { transform: translateX(100%); }
+  .game-panel.is-dragging { transform: translateX(0); }
+  .game-panel.is-auto-closing { transform: translateX(100%); }
 }

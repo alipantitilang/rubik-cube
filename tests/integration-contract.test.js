@@ -73,39 +73,77 @@ test('FIX-539 keeps the main view farther back and adds directional view control
   assert.match(renderer, /emissiveIntensity/);
   assert.doesNotMatch(renderer, /uTime|smoothstep|ShaderMaterial/);
   assert.match(fs.readFileSync(path.join(root, 'index.html'), 'utf8'), /zoom-in|zoom-out|rotate-reset/);
-  assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /FIX-550/);
+  assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /FIX-542/);
 });
 
-test('FIX-550 uses a clean fixed panel layout with compact view controls and direct zoom access', () => {
+test('FIX-542 centers rotate controls and uses a full-width plus/minus zoom bar', () => {
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const css = fs.readFileSync(path.join(root, 'styles.css'), 'utf8');
+  assert.match(html, /id="zoom-out" class="zoom-step zoom-out"/);
+  assert.match(html, /id="zoom-in" class="zoom-step zoom-in"/);
+  assert.match(html, />−<|>\u2212</);
+  assert.match(html, />\+<|>\+<\/button>/);
+  assert.match(css, /FIX-542/);
+  assert.match(css, /zoom-controls \{[\s\S]*width: 100%/);
+  assert.match(css, /grid-template-columns: 38px minmax\(0,1fr\) 38px/);
+  assert.match(css, /rotate-grid \{[\s\S]*margin-inline: auto/);
+  assert.match(css, /clip-path: polygon/);
+  assert.match(css, /clip-path: circle/);
+  assert.match(css, /--panel-transition: 980ms cubic-bezier/);
+  assert.match(css, /--panel-width: 360px/);
+  assert.doesNotMatch(html, /class="zoom-triangle/);
+});
+
+test('FIX-546 compacts the action area and places zoom steps beside rotate controls', () => {
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const css = fs.readFileSync(path.join(root, 'styles.css'), 'utf8');
+  assert.match(html, /class="view-button-row"/);
+  assert.match(html, /class="zoom-step-stack"/);
+  assert.match(html, /id="zoom-in" class="zoom-step zoom-in"/);
+  assert.match(html, /id="zoom-out" class="zoom-step zoom-out"/);
+  assert.match(html, /class="zoom-controls"[^>]*aria-label="Kontrol zoom kubus"/);
+  assert.match(html, /id="zoom-range"/);
+  assert.doesNotMatch(html, /class="zoom-meter"/);
+  assert.match(css, /FIX-546/);
+  assert.match(css, /\.game-actions \{[\s\S]*grid-template-rows: auto/);
+  assert.match(css, /\.game-actions \.action-slot:has\(\.control-button\[hidden\]\)/);
+  assert.match(css, /\.view-button-row \{[\s\S]*justify-content: center/);
+  assert.match(css, /\.zoom-step-stack \{[\s\S]*grid-template-rows: 38px 38px/);
+  assert.match(css, /\.zoom-controls \{[\s\S]*display: block/);
+  assert.match(css, /zoom-meter,\n\.zoom-label \{ display: none/);
+});
+
+
+test('FIX-547 removes the unused information menu surface and lifts the compact panel', () => {
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const css = fs.readFileSync(path.join(root, 'styles.css'), 'utf8');
+  assert.doesNotMatch(html, /id="menu-button"/);
+  assert.doesNotMatch(html, /id="side-menu"/);
+  assert.doesNotMatch(html, /id="menu-scrim"/);
+  assert.match(css, /FIX-547/);
+  assert.match(css, /@media \(max-width: 720px\)[\s\S]*?\.game-panel \{[\s\S]*?top: 18px/);
+  assert.match(css, /@media \(max-width: 460px\)[\s\S]*?\.game-panel \{[\s\S]*?top: 14px/);
+});
+
+test('FIX-548 keeps the compact session panel fully inside the viewport', () => {
+  const css = fs.readFileSync(path.join(root, 'styles.css'), 'utf8');
+  assert.match(css, /FIX-548/);
+  assert.match(css, /top: 0 !important/);
+  assert.match(css, /height: min\(var\(--panel-height\), calc\(100dvh - 16px\)\) !important/);
+  assert.match(css, /max-height: min\(var\(--panel-height\), calc\(100dvh - 16px\)\) !important/);
+});
+
+test('FIX-549 uses fixed panel geometry, leaves bottom breathing room, and exposes edge zoom', () => {
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   const css = fs.readFileSync(path.join(root, 'styles.css'), 'utf8');
   const camera = fs.readFileSync(path.join(root, 'src', 'camera-controller.js'), 'utf8');
   const manual = fs.readFileSync(path.join(root, 'src', 'interaction', 'manual-controller.js'), 'utf8');
-
-  assert.match(html, /id="game-panel" class="game-panel"/);
-  assert.match(html, /id="play-button"/);
-  assert.match(html, /id="reset-button"/);
-  assert.match(html, /class="history-screen"/);
-  assert.match(html, /class="rotate-grid"/);
-  assert.match(html, /class="zoom-step-stack"/);
-  assert.match(html, /id="zoom-in" class="zoom-step zoom-in"/);
-  assert.match(html, /id="zoom-out" class="zoom-step zoom-out"/);
-  assert.match(html, /class="zoom-controls"/);
   assert.match(html, /class="edge-zoom"/);
   assert.match(html, /id="edge-zoom-range"/);
-  assert.doesNotMatch(html, /id="finish-button"|id="start-button"|id="stop-button"/);
-  assert.match(css, /FIX-550/);
+  assert.match(html, /edgeZoomRange\.addEventListener\('input'/);
   assert.match(css, /--panel-width: 360px/);
   assert.match(css, /--panel-height: 620px/);
-  assert.match(css, /height: var\(--panel-height\) !important/);
-  assert.match(css, /top: max\(10px, calc\(\(100dvh - var\(--panel-height\)\) \/ 2\)\) !important/);
-  assert.match(css, /\.status-line \{[\s\S]*position: absolute !important/);
-  assert.match(css, /\.action-main \{ height: 44px/);
-  assert.match(css, /\.action-reset \{ height: 0/);
-  assert.match(css, /\.action-reset:has\(\.control-button:not\(\[hidden\]\)\)/);
-  assert.match(css, /\.history-section \{[\s\S]*height: 136px/);
-  assert.match(css, /grid-auto-rows: 30px/);
-  assert.match(css, /\.zoom-step-stack \{[\s\S]*grid-template-rows: 38px 38px/);
+  assert.match(css, /padding-bottom: 22px/);
   assert.match(css, /\.edge-zoom \{/);
   assert.match(css, /@media \(max-width: 980px\) and \(orientation: landscape\)/);
   assert.match(camera, /this\._touches = new Map\(\)/);
